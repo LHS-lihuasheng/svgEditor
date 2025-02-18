@@ -31,7 +31,6 @@ export default function DraftsPage() {
   return (
     <div className="container mx-auto py-6 h-[calc(100vh-4rem)] overflow-y-auto">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">草稿管理</h1>
         <Button onClick={handleCreateDraft}>
           <Plus className="w-4 h-4 mr-2" />
           新建草稿

@@ -13,13 +13,17 @@ const routes = [
     href: "/",
   },
   {
+    label: "Code",
+    href: "/code",
+  },
+  {
     label: "Drafts",
     href: "/drafts",
   },
   {
     label: "News",
     href: "/news",
-  },
+  }
 ]
 
 export default function TopNav() {
