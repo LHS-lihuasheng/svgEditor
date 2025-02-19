@@ -22,12 +22,12 @@ interface DraftEditorProps {
   onCancel: () => void
 }
 
-export default function DraftEditor({ 
-  initialDraft, 
+export default function DraftEditor({
+  initialDraft,
   mediaId,
   index = 0,
-  onSave, 
-  onCancel 
+  onSave,
+  onCancel
 }: DraftEditorProps) {
   const { cache, updateCache, clearCache } = useDraftCache(mediaId)
   const [draft, setDraft] = useState<NewsItem>(() => {
@@ -44,7 +44,7 @@ export default function DraftEditor({
       show_cover_pic: 0,
       url: "",
     }
-    
+
     return cache || initialDraft || defaultDraft
   })
 
@@ -144,17 +144,17 @@ export default function DraftEditor({
       </div>
       <div>
         <Label htmlFor="digest">摘要</Label>
-        <Textarea 
-          id="digest" 
-          name="digest" 
-          value={draft.digest} 
+        <Textarea
+          id="digest"
+          name="digest"
+          value={draft.digest}
           onChange={handleInputChange}
           placeholder="不填写将自动提取正文前54个字"
         />
       </div>
       <div>
         <Label htmlFor="content">正文内容</Label>
-        <Textarea 
+        <Textarea
           id="content"
           name="content"
           value={draft.content}

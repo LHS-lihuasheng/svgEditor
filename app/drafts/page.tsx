@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import DraftList from "@/components/DraftList"
-import DraftEditor from "@/components/DraftEditor"
+import DraftList from "@/components/draft/DraftList"
+import DraftEditor from "@/components/draft/DraftEditor"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Plus } from "lucide-react"

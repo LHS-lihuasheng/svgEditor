@@ -5,7 +5,7 @@ import "@/app/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import TopNav from "@/components/TopNav"
 import { AssetProvider } from "@/contexts/AssetContext"
-import { DndWrapper } from "@/components/DndWrapper"
+import { DndWrapper } from "@/components/operator/DndWrapper"
 
 const inter = Inter({ subsets: ["latin"] })
 

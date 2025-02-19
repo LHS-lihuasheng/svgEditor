@@ -5,7 +5,6 @@ import type { Component, DragItem } from '@/types/svg-editor'
 import { COMPONENT_TEMPLATES } from '@/types/svg-editor'
 import { Image, LucideCode, LucideRefreshCw, Trash } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { CodeEditor } from '@/components/CodeEditor'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -467,19 +466,6 @@ function ComponentTreeItem({
             </div>
           </DialogContent>
         </Dialog>
-
-        {/* 代码编辑器 */}
-        <CodeEditor
-          component={component}
-          isOpen={isCodeEditorOpen}
-          onClose={() => setIsCodeEditorOpen(false)}
-          onSave={(updatedCode) => {
-            onUpdate({
-              ...component,
-              code: updatedCode
-            })
-          }}
-        />
       </div>
     </div>
   )

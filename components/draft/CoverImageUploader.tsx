@@ -46,17 +46,17 @@ export function CoverImageUploader({
   return (
     <div className="space-y-2">
       <Label>封面图片</Label>
-      <input 
-        ref={fileInputRef} 
-        type="file" 
-        accept="image/*" 
-        onChange={handleImageUpload} 
-        className="hidden" 
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleImageUpload}
+        className="hidden"
       />
       {croppedImages.crop235 || croppedImages.crop11 ? (
         <div className="space-y-4">
           <div className="flex gap-4 w-full items-start">
-            <CoverPreview 
+            <CoverPreview
               imageUrl={croppedImages.crop235 || croppedImages.crop11}
               previews={[
                 {

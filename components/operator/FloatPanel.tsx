@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { GripVertical, Maximize2, Minimize2, Image } from "lucide-react"
 
-export default function FloatPanel() {
+export function FloatPanel() {
   // 状态管理
   const [isExpanded, setIsExpanded] = useState(false)
   const [position, setPosition] = useState({ x: 20, y: 80 })

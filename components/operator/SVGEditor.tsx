@@ -5,16 +5,14 @@ import { Button } from "@/components/ui/button"
 import { useDrop, useDrag } from 'react-dnd'
 import type { Component } from '@/types/svg-editor'
 import { Toolbar } from "./Toolbar"
-import { PropertyEditor } from "./PropertyEditor"
-import { ComponentRenderer } from "./ComponentRenderer"
-import { COMPONENT_TEMPLATES } from '@/types/svg-editor'
+import { FloatPanel } from "./FloatPanel"
 import { ComponentTree } from "./ComponentTree"
+import { COMPONENT_TEMPLATES } from '@/types/svg-editor'
 import { generateCode } from "@/utils/code-generator"
 import { LucideCode, LucideRefreshCw, LucideEye, Settings, Image, Trash, ChevronRight, ChevronLeft } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
-import FloatPanel from "./FloatPanel"
 
 interface DragItem {
   type: Component['type']
