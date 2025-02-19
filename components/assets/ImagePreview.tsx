@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils"
 
 interface ImagePreviewProps {
     file: FileEntry
+    onLoad?: (fileInfo: { dimensions: ImageDimensions; relativePath: string; name: string }) => void
     onClick?: () => void
 }
 
@@ -23,7 +24,7 @@ interface ImageDimensions {
     height: number
 }
 
-export function ImagePreview({ file, onClick }: ImagePreviewProps) {
+export function ImagePreview({ file, onLoad, onClick }: ImagePreviewProps) {
     const [dimensions, setDimensions] = useState<ImageDimensions>({ width: 0, height: 0 })
     const [objectFit, setObjectFit] = useState<'contain' | 'cover'>('contain')
     const containerRef = useRef<HTMLDivElement>(null)
@@ -36,7 +37,17 @@ export function ImagePreview({ file, onClick }: ImagePreviewProps) {
 
         const handleLoad = () => {
             const { naturalWidth, naturalHeight } = image
-            setDimensions({ width: naturalWidth, height: naturalHeight })
+            const dimensions = { width: naturalWidth, height: naturalHeight }
+            setDimensions(dimensions)
+
+            // 更新文件信息
+            if (onLoad) {
+                onLoad({
+                    dimensions,
+                    relativePath: file.relativePath,
+                    name: file.name
+                })
+            }
 
             // 获取容器尺寸
             const container = containerRef.current
@@ -52,7 +63,7 @@ export function ImagePreview({ file, onClick }: ImagePreviewProps) {
 
         image.addEventListener('load', handleLoad)
         return () => image.removeEventListener('load', handleLoad)
-    }, [file.url])
+    }, [file.url, onLoad])
 
     // 格式化文件大小
     const formatFileSize = (bytes: number) => {

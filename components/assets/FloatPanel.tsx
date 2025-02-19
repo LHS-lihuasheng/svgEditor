@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { GripVertical, Maximize2, Minimize2, Image, FolderOpen, Check, X } from "lucide-react"
-import { selectDirectory, loadFiles, clearFiles } from "@/utils/fileSystem"
+import { selectDirectory, clearFiles } from "@/utils/fileSystem"
 import type { FileEntry } from "@/utils/fileSystem"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ImagePreview } from "./ImagePreview"
@@ -16,6 +16,17 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+
+
+interface SelectedImage {
+  name: string
+  relativePath: string
+  dimensions: {
+    width: number
+    height: number
+  }
+  url: string
+}
 
 export function FloatPanel() {
   // 状态管理
@@ -44,6 +55,8 @@ export function FloatPanel() {
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set())
   const [selectionHistory, setSelectionHistory] = useState<Set<string>[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
+  const [selectedImages, setSelectedImages] = useState<Map<string, SelectedImage>>(new Map())
+  const selectedImagesOrder = useRef<string[]>([])
 
   // 优化后的拖拽处理
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -111,16 +124,6 @@ export function FloatPanel() {
     })
   }, [])
 
-  // 加载已保存的文件
-  useEffect(() => {
-    loadFiles().then(({ directories, files }) => {
-      setDirectories(directories)
-      setFiles(files)
-      setCurrentDirectory('root')
-      setCurrentFiles(files.filter(f => f.directory === ''))
-    }).catch(console.error)
-  }, [])
-
   // 选择目录
   const handleSelectDirectory = async () => {
     try {
@@ -149,9 +152,30 @@ export function FloatPanel() {
   // 清理资源
   useEffect(() => {
     return () => {
-      clearFiles().catch(console.error)
+      clearFiles(files)
     }
-  }, [])
+  }, [files])
+
+  // 处理图片加载完成
+  const handleImageLoad = useCallback((path: string, info: {
+    dimensions: { width: number; height: number }
+    relativePath: string
+    name: string
+  }) => {
+    setSelectedImages(prev => {
+      const next = new Map(prev)
+      const file = files.find(f => f.path === path)
+      if (file) {
+        next.set(path, {
+          name: info.name,
+          relativePath: info.relativePath,
+          dimensions: info.dimensions,
+          url: file.url
+        })
+      }
+      return next
+    })
+  }, [files])
 
   // 处理选择变化
   const handleSelectionChange = useCallback((path: string, checked: boolean) => {
@@ -159,12 +183,21 @@ export function FloatPanel() {
       const next = new Set(prev)
       if (checked) {
         next.add(path)
+        selectedImagesOrder.current.push(path)
       } else {
         next.delete(path)
+        selectedImagesOrder.current = selectedImagesOrder.current.filter(p => p !== path)
       }
       return next
     })
   }, [])
+
+  // 获取有序的选中图片信息
+  const getOrderedSelectedImages = useCallback(() => {
+    return selectedImagesOrder.current
+      .map(path => selectedImages.get(path))
+      .filter((img): img is SelectedImage => img !== undefined)
+  }, [selectedImages])
 
   // 全选当前目录
   const handleSelectAll = useCallback(() => {
@@ -355,15 +388,22 @@ export function FloatPanel() {
                   {/* 图片网格 */}
                   <div className="grid grid-cols-5 gap-2">
                     {currentFiles.map((file) => (
-                      <div key={file.path} className="relative group">
+                      <div
+                        key={file.path}
+                        className={cn(
+                          "relative group transition-all duration-200",
+                          selectedFiles.has(file.path) && "ring-2 ring-primary"
+                        )}
+                      >
                         <ImagePreview
                           file={file}
+                          onLoad={(info) => handleImageLoad(file.path, info)}
                           onClick={() => handleSelectionChange(
                             file.path,
                             !selectedFiles.has(file.path)
                           )}
                         />
-                        <div className="absolute top-1 left-1">
+                        <div className="absolute top-1 left-1 z-10">
                           <Checkbox
                             checked={selectedFiles.has(file.path)}
                             onCheckedChange={(checked) =>

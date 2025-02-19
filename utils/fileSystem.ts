@@ -1,4 +1,27 @@
-import { openDB } from 'idb'
+// 文件系统类型定义
+interface FileSystemHandle {
+  kind: 'file' | 'directory'
+  name: string
+}
+
+interface FileSystemFileHandle extends FileSystemHandle {
+  kind: 'file'
+  getFile(): Promise<File>
+}
+
+interface FileSystemDirectoryHandle extends FileSystemHandle {
+  kind: 'directory'
+  entries(): AsyncIterableIterator<[string, FileSystemHandle]>
+}
+
+// 声明全局 window.showDirectoryPicker
+declare global {
+  interface Window {
+    showDirectoryPicker(options?: {
+      mode?: 'read' | 'readwrite'
+    }): Promise<FileSystemDirectoryHandle>
+  }
+}
 
 export interface FileEntry {
   path: string
@@ -8,28 +31,18 @@ export interface FileEntry {
   size: number
   url: string
   directory: string
+  relativePath: string
+  dimensions?: {
+    width: number
+    height: number
+  }
 }
 
 interface FileSystemState {
   currentDirectory: string
   directories: string[]
   files: FileEntry[]
-}
-
-interface FileSystemDirectoryHandle extends FileSystemHandle {
-  entries(): AsyncIterableIterator<[string, FileSystemHandle]>
-}
-
-// 初始化 IndexedDB
-async function initDB() {
-  return openDB('assets-db', 1, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains('files')) {
-        const store = db.createObjectStore('files', { keyPath: 'path' })
-        store.createIndex('by-directory', 'directory')
-      }
-    },
-  })
+  pathMap: Map<string, FileSystemHandle>
 }
 
 // 处理目录路径
@@ -44,7 +57,6 @@ function getDirectoryStructure(files: FileEntry[]): string[] {
   files.forEach(file => {
     const dir = file.directory
     if (dir) {
-      // 添加当前目录及其所有父目录
       const parts = dir.split('/')
       let path = ''
       parts.forEach(part => {
@@ -65,14 +77,14 @@ export async function selectDirectory(): Promise<FileSystemState> {
     })
 
     const files: FileEntry[] = []
-    const db = await initDB()
+    const pathMap = await buildRelativePath(dirHandle)
 
     async function processDirectory(handle: FileSystemDirectoryHandle, path = '') {
-      for await (const entry of handle.values()) {
-        const relativePath = path ? `${path}/${entry.name}` : entry.name
+      for await (const [name, entry] of handle.entries()) {
+        const relativePath = path ? `${path}/${name}` : name
 
         if (entry.kind === 'file') {
-          const file = await entry.getFile()
+          const file = await (entry as FileSystemFileHandle).getFile()
           if (file.type.startsWith('image/')) {
             const fileEntry: FileEntry = {
               path: relativePath,
@@ -81,14 +93,13 @@ export async function selectDirectory(): Promise<FileSystemState> {
               lastModified: file.lastModified,
               size: file.size,
               url: URL.createObjectURL(file),
-              directory: normalizePath(path)
+              directory: normalizePath(path),
+              relativePath: `./${relativePath}`
             }
-
-            await db.put('files', fileEntry)
             files.push(fileEntry)
           }
         } else if (entry.kind === 'directory') {
-          await processDirectory(entry, relativePath)
+          await processDirectory(entry as FileSystemDirectoryHandle, relativePath)
         }
       }
     }
@@ -99,7 +110,8 @@ export async function selectDirectory(): Promise<FileSystemState> {
     return {
       currentDirectory: '',
       directories,
-      files
+      files,
+      pathMap
     }
   } catch (error) {
     console.error('Error selecting directory:', error)
@@ -107,34 +119,7 @@ export async function selectDirectory(): Promise<FileSystemState> {
   }
 }
 
-// 从 IndexedDB 加载文件
-export async function loadFiles(): Promise<FileSystemState> {
-  const db = await initDB()
-  const files = await db.getAll('files')
-  const directories = getDirectoryStructure(files)
-
-  return {
-    currentDirectory: '',
-    directories,
-    files
-  }
-}
-
-// 获取指定目录下的文件
-export async function getFilesInDirectory(directory: string): Promise<FileEntry[]> {
-  const db = await initDB()
-  const index = db.transaction('files').store.index('by-directory')
-  return index.getAll(directory)
-}
-
-// 清理文件 URL
-export async function clearFiles() {
-  const db = await initDB()
-  const files = await db.getAll('files')
-  files.forEach(file => URL.revokeObjectURL(file.url))
-  await db.clear('files')
-}
-
+// 构建相对路径映射
 export async function buildRelativePath(handle: FileSystemDirectoryHandle) {
   const pathMap = new Map<string, FileSystemHandle>()
 
@@ -142,7 +127,7 @@ export async function buildRelativePath(handle: FileSystemDirectoryHandle) {
     const currentPath = path + '/' + handle.name
 
     if (handle.kind === 'directory') {
-      for await (const [, entry] of handle.entries() as AsyncIterableIterator<[string, FileSystemHandle]>) {
+      for await (const [, entry] of handle.entries()) {
         if (entry.kind === 'directory') {
           await build(entry as FileSystemDirectoryHandle, currentPath)
         } else if (entry.kind === 'file') {
@@ -156,4 +141,9 @@ export async function buildRelativePath(handle: FileSystemDirectoryHandle) {
 
   await build(handle)
   return pathMap
+}
+
+// 清理文件 URL
+export function clearFiles(files: FileEntry[]) {
+  files.forEach(file => URL.revokeObjectURL(file.url))
 }

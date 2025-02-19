@@ -37,22 +37,22 @@ export const COMPONENT_TEMPLATES: Record<string, {
   icon: string
 }> = {
   'section': {
-    code: '<section style="height:0">\n  {children}\n</section>',
+    code: '<section style="height: 0px;line-height: 0;pointer-events: none;margin-top:0px;text-align: center;">\n  {children}\n</section>',
     label: '零高盒子',
     icon: '📦'
   },
   'svg': {
-    code: '<svg viewBox="0 0 100 100">\n  {children}\n</svg>',
+    code: '<svg style="background-image: url(&quot;./7.png&quot;); line-height: 0; background-size: cover; background-repeat: no-repeat; margin-top:0px;" viewBox="0 0 1080 2755.00" >\n  { children }\n</svg>',
     label: 'SVG容器',
     icon: '🖼️'
   },
   'foreignObject': {
-    code: '<foreignObject>\n  {children}\n</foreignObject>',
+    code: '<g>\n<foreignObject x="0" y="0" width="100%" height="100%">\n  {children}\n</foreignObject>\n</g>',
     label: 'FO容器',
     icon: '📝'
   },
   'hotspot': {
-    code: '<div class="hotspot">\n  {children}\n</div>',
+    code: '<g id="热区">\n  <rect x="0" y="0" width="100%" height="100%" opacity="0" style="pointer-events: visible;">\n<set attributeName="visibility" to="hidden" begin="click" dur="1ms" fill="freeze">\n  {children}\n</set></rect>\n</g>',
     label: '热区',
     icon: '🎯'
   }

@@ -2,14 +2,11 @@
 
 import { useState, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { useDrop, useDrag } from 'react-dnd'
+import { useDrop } from 'react-dnd'
 import type { Component } from '@/types/svg-editor'
-import { Toolbar } from "./Toolbar"
 import { FloatPanel } from "../assets/FloatPanel"
-import { ComponentTree } from "./ComponentTree"
 import { COMPONENT_TEMPLATES } from '@/types/svg-editor'
 import { generateCode } from "@/utils/code-generator"
-import { LucideCode, LucideRefreshCw, LucideEye, Settings, Image, Trash, ChevronRight, ChevronLeft } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
