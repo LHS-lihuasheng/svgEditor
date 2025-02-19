@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useDrop, useDrag } from 'react-dnd'
 import type { Component } from '@/types/svg-editor'
 import { Toolbar } from "./Toolbar"
-import { FloatPanel } from "./FloatPanel"
+import { FloatPanel } from "../assets/FloatPanel"
 import { ComponentTree } from "./ComponentTree"
 import { COMPONENT_TEMPLATES } from '@/types/svg-editor'
 import { generateCode } from "@/utils/code-generator"
@@ -13,6 +13,8 @@ import { LucideCode, LucideRefreshCw, LucideEye, Settings, Image, Trash, Chevron
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
+import { ComponentList } from "./SVGEditor/components/ComponentList"
+import { EditorArea } from "./SVGEditor/components/EditorArea"
 
 interface DragItem {
   type: Component['type']
@@ -314,100 +316,29 @@ export default function SVGEditor() {
   return (
     <div className="h-full flex bg-gray-50">
       {/* 组件库侧拉栏 */}
-      <div
-        className={cn(
-          "fixed top-[57px] left-0 bottom-0 bg-white shadow-lg transition-transform duration-300 z-10",
-          isToolbarOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-        style={{ width: '280px' }}
-      >
-        <div className="h-full flex flex-col">
-          <div className="p-4 border-b">
-            <h3 className="font-semibold text-gray-700">组件库</h3>
-          </div>
-          <ScrollArea className="flex-1 p-4">
-            <Toolbar onAddComponent={handleAddComponent} />
-          </ScrollArea>
-        </div>
-        {/* 展开/收起按钮 */}
-        <button
-          className="absolute -right-8 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-r-lg p-1.5 hover:bg-gray-50"
-          onClick={() => setIsToolbarOpen(!isToolbarOpen)}
-        >
-          {isToolbarOpen ? (
-            <ChevronLeft className="h-5 w-5 text-gray-600" />
-          ) : (
-            <ChevronRight className="h-5 w-5 text-gray-600" />
-          )}
-        </button>
-      </div>
+      <ComponentList
+        isOpen={isToolbarOpen}
+        onToggle={() => setIsToolbarOpen(!isToolbarOpen)}
+        onAddComponent={handleAddComponent}
+      />
 
       {/* 编辑区 */}
-      <div
-        className={cn(
-          "flex-1 transition-all duration-300",
-          isToolbarOpen ? "ml-[280px]" : "ml-0"
-        )}
-      >
+      <div className={cn(
+        "flex-1 transition-all duration-300",
+        isToolbarOpen ? "ml-[280px]" : "ml-0"
+      )}>
         <div className="h-full flex p-4">
-          {/* 中间编辑区 */}
-          <div className="flex-1 flex flex-col bg-white shadow-sm rounded-lg">
-            {/* 顶部工具栏 */}
-            <div className="h-12 bg-white shadow-sm border-b px-4 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm">
-                  <LucideRefreshCw className="h-4 w-4 mr-2" />
-                  重置
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <LucideEye className="h-4 w-4 mr-2" />
-                  预览
-                </Button>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm">
-                  <Settings className="h-4 w-4 mr-2" />
-                  设置
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => setShowCodePreview(true)}
-                >
-                  <LucideCode className="h-4 w-4 mr-2" />
-                  获取代码
-                </Button>
-              </div>
-            </div>
-
-            {/* 编辑区域 */}
-            <div
-              ref={dropRef}
-              id="editor-area"
-              className="flex-1 p-6 relative overflow-auto"
-              style={{
-                height: 'calc(100vh - 64px)', // 减去顶部导航栏高度
-                minHeight: '600px'
-              }}
-            >
-              {components.length === 0 ? (
-                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
-                  <Image className="h-12 w-12 mb-4 opacity-50" />
-                  <p>点击左侧组件或拖动至此以继续添加</p>
-                </div>
-              ) : (
-                <ComponentTree
-                  components={components}
-                  selectedId={selectedComponent?.id}
-                  onSelect={setSelectedComponent}
-                  onDrop={handleDrop}
-                  onMove={moveComponent}
-                  onUpdate={handleComponentUpdate}
-                  onDelete={handleDelete}
-                />
-              )}
-            </div>
-          </div>
+          <EditorArea
+            dropRef={dropRef}
+            components={components}
+            selectedComponent={selectedComponent}
+            onSelect={setSelectedComponent}
+            onDrop={handleDrop}
+            onMove={moveComponent}
+            onUpdate={handleComponentUpdate}
+            onDelete={handleDelete}
+            onShowCodePreview={() => setShowCodePreview(true)}
+          />
         </div>
       </div>
 
