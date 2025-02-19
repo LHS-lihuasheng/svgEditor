@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { LucideRefreshCw, LucideEye, Settings, LucideCode, Image } from "lucide-react"
+import { LucideRefreshCw, LucideEye, Settings, LucideCode, Image, ImagePlus } from "lucide-react"
 import { ComponentTree } from "../../ComponentTree"
 import type { Component } from "@/types/svg-editor"
 
@@ -15,6 +15,7 @@ interface EditorAreaProps {
   onUpdate: (component: Component) => void
   onDelete: (id: string) => void
   onShowCodePreview: () => void
+  onAddImages?: (targetId: string) => void
 }
 
 export function EditorArea({
@@ -26,7 +27,8 @@ export function EditorArea({
   onMove,
   onUpdate,
   onDelete,
-  onShowCodePreview
+  onShowCodePreview,
+  onAddImages
 }: EditorAreaProps) {
   return (
     <div className="flex-1 flex flex-col bg-white shadow-sm rounded-lg">
@@ -82,6 +84,7 @@ export function EditorArea({
             onMove={onMove}
             onUpdate={onUpdate}
             onDelete={onDelete}
+            onAddImages={onAddImages}
           />
         )}
       </div>

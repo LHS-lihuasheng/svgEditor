@@ -4,14 +4,14 @@ import { useState, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { useDrop } from 'react-dnd'
 import type { Component } from '@/types/svg-editor'
-import { FloatPanel } from "../assets/FloatPanel"
 import { COMPONENT_TEMPLATES } from '@/types/svg-editor'
 import { generateCode } from "@/utils/code-generator"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
-import { ComponentList } from "./SVGEditor/components/ComponentList"
-import { EditorArea } from "./SVGEditor/components/EditorArea"
+import { ComponentList } from "./components/ComponentList"
+import { EditorArea } from "./components/EditorArea"
+import { useAssets } from '@/contexts/AssetContext'
 
 interface DragItem {
   type: Component['type']
@@ -30,6 +30,8 @@ export default function SVGEditor() {
   const [components, setComponents] = useState<Component[]>([])
   const [selectedComponent, setSelectedComponent] = useState<Component | null>(null)
   const [showCodePreview, setShowCodePreview] = useState(false)
+  const { getOrderedSelectedImages, imageAssets } = useAssets()
+  const dropRef = useRef<HTMLDivElement>(null)
 
   const generateUniqueId = (type: Component['type'], components: Component[]): string => {
     const baseId = `${type}-${Date.now()}`
@@ -81,7 +83,6 @@ export default function SVGEditor() {
     )
   }, [])
 
-  const dropRef = useRef(null)
   const [, drop] = useDrop<DragItem, void, any>(() => ({
     accept: ['TOOL', 'COMPONENT'],
     drop: (item, monitor) => {
@@ -186,7 +187,7 @@ export default function SVGEditor() {
       .filter(comp => comp.id !== id)
   }
 
-  const handleDrop = (item: DragItem, targetId: string | null = null) => {
+  const handleDrop = useCallback((item: DragItem, targetId: string | null = null) => {
     if (item.isToolItem) {
       const template = COMPONENT_TEMPLATES[item.type]
       if (!template) {
@@ -240,7 +241,7 @@ export default function SVGEditor() {
         }
       })
     }
-  }
+  }, [])
 
   const isDescendant = (component: Component, targetId: string | null): boolean => {
     if (!targetId || !component || typeof component !== 'object') return false
@@ -287,10 +288,8 @@ export default function SVGEditor() {
       })
   }
 
-  // 添加删除处理函数
   const handleDelete = useCallback((id: string) => {
     setComponents(prev => {
-      // 递归删除组件
       const removeComponentAndChildren = (components: Component[]): Component[] => {
         return components.filter(comp => {
           if (comp.id === id) return false
@@ -304,22 +303,51 @@ export default function SVGEditor() {
       return removeComponentAndChildren(prev)
     })
 
-    // 如果删除的是当前选中的组件，清除选中状态
     if (selectedComponent?.id === id) {
       setSelectedComponent(null)
     }
   }, [selectedComponent])
 
+  const handleAddImages = useCallback((targetId: string) => {
+    const orderedImages = getOrderedSelectedImages()
+
+    const validImages = orderedImages.filter(img => {
+      if (!img) return false
+      if (!imageAssets.has(img.relativePath)) {
+        console.error('路径不存在:', img.relativePath)
+        return false
+      }
+      return true
+    })
+
+    const newComponents = validImages
+      .map((image, index) => ({
+        id: generateUniqueId('svg', components),
+        type: 'svg' as const,
+        position: { x: 0, y: index * 20 },
+        size: image.dimensions,
+        viewBox: `0 0 ${image.dimensions.width} ${image.dimensions.height}`,
+        backgroundImage: image.url,
+        code: `<svg style="background-image:url('${image.relativePath}');background-size:cover" viewBox="0 0 ${image.dimensions.width} ${image.dimensions.height}"/>`
+      }))
+
+    setComponents(prev => {
+      const targetIndex = prev.findIndex(comp => comp.id === targetId)
+      if (targetIndex === -1) return prev
+
+      const updated = [...prev]
+      updated.splice(targetIndex + 1, 0, ...newComponents)
+      return updated
+    })
+  }, [getOrderedSelectedImages, components, imageAssets])
+
   return (
     <div className="h-full flex bg-gray-50">
-      {/* 组件库侧拉栏 */}
       <ComponentList
         isOpen={isToolbarOpen}
         onToggle={() => setIsToolbarOpen(!isToolbarOpen)}
         onAddComponent={handleAddComponent}
       />
-
-      {/* 编辑区 */}
       <div className={cn(
         "flex-1 transition-all duration-300",
         isToolbarOpen ? "ml-[280px]" : "ml-0"
@@ -335,11 +363,10 @@ export default function SVGEditor() {
             onUpdate={handleComponentUpdate}
             onDelete={handleDelete}
             onShowCodePreview={() => setShowCodePreview(true)}
+            onAddImages={handleAddImages}
           />
         </div>
       </div>
-
-      {/* 全局代码预览对话框 */}
       <Dialog open={showCodePreview} onOpenChange={setShowCodePreview}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
@@ -363,8 +390,6 @@ export default function SVGEditor() {
           </div>
         </DialogContent>
       </Dialog>
-      <FloatPanel />
     </div>
   )
 }
-

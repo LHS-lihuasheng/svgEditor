@@ -23,14 +23,14 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
-          <DndWrapper>
-            <AssetProvider>
+          <AssetProvider>
+            <DndWrapper>
               <div className="flex flex-col h-screen bg-gray-50">
                 <TopNav />
                 <main className="flex-1 overflow-hidden">{children}</main>
               </div>
-            </AssetProvider>
-          </DndWrapper>
+            </DndWrapper>
+          </AssetProvider>
         </ThemeProvider>
       </body>
     </html>

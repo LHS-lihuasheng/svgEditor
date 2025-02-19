@@ -1,4 +1,5 @@
-import SVGEditor from "@/components/operator/SVGEditor"
+import SVGEditor from "@/components/operator/SVGEditor/index"
+// import SVGEditor from "@/components/operator/SVGEditor"
 
 export default function OperationsPage() {
   return (

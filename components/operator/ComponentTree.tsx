@@ -3,7 +3,7 @@
 import { useDrag, useDrop } from 'react-dnd'
 import type { Component, DragItem } from '@/types/svg-editor'
 import { COMPONENT_TEMPLATES } from '@/types/svg-editor'
-import { Image, LucideCode, LucideRefreshCw, Trash } from 'lucide-react'
+import { Image, LucideCode, LucideRefreshCw, Trash, ImagePlus } from 'lucide-react'
 import { useRef, useState } from 'react'
 import {
   AlertDialog,
@@ -18,6 +18,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 interface ComponentTreeProps {
   components: Component[]
@@ -28,6 +29,7 @@ interface ComponentTreeProps {
   onMove: (dragIndex: number, hoverIndex: number, parentId: string | null) => void
   onUpdate: (updated: Component) => void
   onDelete: (id: string) => void
+  onAddImages?: (targetId: string) => void
 }
 
 export function ComponentTree({
@@ -38,7 +40,8 @@ export function ComponentTree({
   onDrop,
   onMove,
   onUpdate,
-  onDelete
+  onDelete,
+  onAddImages
 }: ComponentTreeProps) {
   // 添加类型检查，过滤掉无效的组件
   const validComponents = components.filter((component): component is Component => {
@@ -71,6 +74,7 @@ export function ComponentTree({
             onMove={onMove}
             onUpdate={onUpdate}
             onDelete={onDelete}
+            onAddImages={onAddImages}
           />
         ))}
       </div>
@@ -89,7 +93,8 @@ function ComponentTreeItem({
   onDrop,
   onMove,
   onUpdate,
-  onDelete
+  onDelete,
+  onAddImages
 }: {
   component: Component
   isSelected: boolean
@@ -102,6 +107,7 @@ function ComponentTreeItem({
   onMove: (dragIndex: number, hoverIndex: number, parentId: string | null) => void
   onUpdate: (updated: Component) => void
   onDelete: (id: string) => void
+  onAddImages?: (targetId: string) => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [isCodeEditorOpen, setIsCodeEditorOpen] = useState(false)
@@ -302,6 +308,7 @@ function ComponentTreeItem({
             onMove={onMove}
             onUpdate={onUpdate}
             onDelete={onDelete}
+            onAddImages={onAddImages}
           />
         ))}
       </div>
@@ -362,6 +369,21 @@ function ComponentTreeItem({
           >
             <Trash className="h-4 w-4" />
           </button>
+          {/* 只在 SVG 容器上显示添加图片按钮 */}
+          {component.type === 'svg' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                onAddImages?.(component.id)
+              }}
+              className="h-7 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            >
+              <ImagePlus className="h-4 w-4 mr-1" />
+              <span className="text-xs">添加图片</span>
+            </Button>
+          )}
         </div>
 
         {/* 组件内容区 - 添加 component-content 类名 */}

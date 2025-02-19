@@ -42,7 +42,7 @@ export const COMPONENT_TEMPLATES: Record<string, {
     icon: '📦'
   },
   'svg': {
-    code: '<svg style="background-image: url(&quot;./7.png&quot;); line-height: 0; background-size: cover; background-repeat: no-repeat; margin-top:0px;" viewBox="0 0 1080 2755.00" >\n  { children }\n</svg>',
+    code: '<svg style="background-image: url(&quot;relativePath&quot;); line-height: 0; background-size: cover; background-repeat: no-repeat; margin-top:0px;" viewBox="0 0 width height" >\n  { children }\n</svg>',
     label: 'SVG容器',
     icon: '🖼️'
   },

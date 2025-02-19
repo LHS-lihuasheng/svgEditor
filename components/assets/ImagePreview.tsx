@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import {
     Tooltip,
     TooltipContent,
@@ -15,7 +15,13 @@ import { cn } from "@/lib/utils"
 
 interface ImagePreviewProps {
     file: FileEntry
-    onLoad?: (fileInfo: { dimensions: ImageDimensions; relativePath: string; name: string }) => void
+    onLoad: (info: {
+        dimensions: { width: number; height: number }
+        relativePath: string
+        name: string
+        url: string
+    }) => void
+    children?: React.ReactNode
     onClick?: () => void
 }
 
@@ -24,19 +30,16 @@ interface ImageDimensions {
     height: number
 }
 
-export function ImagePreview({ file, onLoad, onClick }: ImagePreviewProps) {
+export function ImagePreview({ file, onLoad, children, onClick }: ImagePreviewProps) {
     const [dimensions, setDimensions] = useState<ImageDimensions>({ width: 0, height: 0 })
     const [objectFit, setObjectFit] = useState<'contain' | 'cover'>('contain')
     const containerRef = useRef<HTMLDivElement>(null)
     const imageRef = useRef<HTMLImageElement>(null)
 
     // 监听图片加载完成，获取实际尺寸
-    useEffect(() => {
-        const image = imageRef.current
-        if (!image) return
-
-        const handleLoad = () => {
-            const { naturalWidth, naturalHeight } = image
+    const handleLoad = useCallback(() => {
+        if (imageRef.current) {
+            const { naturalWidth, naturalHeight } = imageRef.current
             const dimensions = { width: naturalWidth, height: naturalHeight }
             setDimensions(dimensions)
 
@@ -45,7 +48,8 @@ export function ImagePreview({ file, onLoad, onClick }: ImagePreviewProps) {
                 onLoad({
                     dimensions,
                     relativePath: file.relativePath,
-                    name: file.name
+                    name: file.name,
+                    url: file.url
                 })
             }
 
@@ -60,10 +64,15 @@ export function ImagePreview({ file, onLoad, onClick }: ImagePreviewProps) {
                 setObjectFit(imageRatio > containerRatio ? 'contain' : 'cover')
             }
         }
+    }, [file, onLoad])
+
+    useEffect(() => {
+        const image = imageRef.current
+        if (!image) return
 
         image.addEventListener('load', handleLoad)
         return () => image.removeEventListener('load', handleLoad)
-    }, [file.url, onLoad])
+    }, [handleLoad])
 
     // 格式化文件大小
     const formatFileSize = (bytes: number) => {

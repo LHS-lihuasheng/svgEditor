@@ -70,14 +70,16 @@ function getDirectoryStructure(files: FileEntry[]): string[] {
 }
 
 // 选择目录并处理文件
-export async function selectDirectory(): Promise<FileSystemState> {
+export async function selectDirectory(
+  existingHandle?: FileSystemDirectoryHandle
+): Promise<{
+  directories: string[]
+  files: FileEntry[]
+  currentDirectory: string
+}> {
   try {
-    const dirHandle = await window.showDirectoryPicker({
-      mode: 'read'
-    })
-
+    const directoryHandle = existingHandle || await window.showDirectoryPicker()
     const files: FileEntry[] = []
-    const pathMap = await buildRelativePath(dirHandle)
 
     async function processDirectory(handle: FileSystemDirectoryHandle, path = '') {
       for await (const [name, entry] of handle.entries()) {
@@ -94,7 +96,7 @@ export async function selectDirectory(): Promise<FileSystemState> {
               size: file.size,
               url: URL.createObjectURL(file),
               directory: normalizePath(path),
-              relativePath: `./${relativePath}`
+              relativePath: await getRelativePath(directoryHandle, entry as FileSystemFileHandle) || `./${relativePath}`
             }
             files.push(fileEntry)
           }
@@ -104,18 +106,17 @@ export async function selectDirectory(): Promise<FileSystemState> {
       }
     }
 
-    await processDirectory(dirHandle)
+    await processDirectory(directoryHandle)
     const directories = getDirectoryStructure(files)
 
     return {
-      currentDirectory: '',
-      directories,
+      directories: Array.from(new Set(directories)),
       files,
-      pathMap
+      currentDirectory: 'root'
     }
   } catch (error) {
-    console.error('Error selecting directory:', error)
-    throw error
+    console.error('目录选择错误:', error)
+    return { directories: [], files: [], currentDirectory: 'root' }
   }
 }
 
@@ -146,4 +147,19 @@ export async function buildRelativePath(handle: FileSystemDirectoryHandle) {
 // 清理文件 URL
 export function clearFiles(files: FileEntry[]) {
   files.forEach(file => URL.revokeObjectURL(file.url))
+}
+
+// 新增获取相对路径方法
+export async function getRelativePath(
+  directoryHandle: FileSystemDirectoryHandle,
+  fileHandle: FileSystemFileHandle
+): Promise<string | null> {
+  try {
+    const pathArray = await directoryHandle.resolve(fileHandle)
+    if (!pathArray) return null
+    return `./${pathArray.join('/')}`.replace(/\/+/g, '/')
+  } catch (error) {
+    console.warn(`无法解析 ${fileHandle.name} 的相对路径`, error)
+    return null
+  }
 }

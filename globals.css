@@ -1,0 +1,54 @@
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .asset-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 50;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .asset-sidebar:not([data-state="open"]) {
+    transform: translateX(-100%);
+  }
+  
+  .asset-sidebar[data-state="open"] {
+    width: 100vw !important;
+  }
+} 
+
+.asset-manager-panel {
+  z-index: 100;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.asset-manager-panel:not(.open) {
+  transform: translateY(-10px);
+  pointer-events: none;
+} 
+
+.toolbar-section {
+  width: 240px;
+  min-height: 100vh;
+  padding: 1rem;
+  background: #fff;
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.asset-toolbar {
+  @apply shadow-[4px_0_15px_rgba(0,0,0,0.1)] z-20;
+  transition: width 0.3s ease;
+}
+
+.draggable-toolbar {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 0.75rem;
+  flex: 1;
+}
+
+.main-content {
+  @apply flex-1 flex flex-col overflow-hidden;
+} 

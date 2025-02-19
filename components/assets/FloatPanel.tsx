@@ -16,6 +16,8 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useAssets } from "@/contexts/AssetContext"
+import { normalizeAssetPath, formatDisplayPath } from '@/utils/pathUtils'
 
 
 interface SelectedImage {
@@ -29,6 +31,13 @@ interface SelectedImage {
 }
 
 export function FloatPanel() {
+  const {
+    loadAssets,
+    selectImage,
+    selectedImagePaths,
+    getOrderedSelectedImages
+  } = useAssets()
+
   // 状态管理
   const [isExpanded, setIsExpanded] = useState(false)
   const [position, setPosition] = useState({ x: 20, y: 80 })
@@ -52,11 +61,6 @@ export function FloatPanel() {
   const [currentDirectory, setCurrentDirectory] = useState('root')
   const [directories, setDirectories] = useState<string[]>([])
   const [currentFiles, setCurrentFiles] = useState<FileEntry[]>([])
-  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set())
-  const [selectionHistory, setSelectionHistory] = useState<Set<string>[]>([])
-  const [historyIndex, setHistoryIndex] = useState(-1)
-  const [selectedImages, setSelectedImages] = useState<Map<string, SelectedImage>>(new Map())
-  const selectedImagesOrder = useRef<string[]>([])
 
   // 优化后的拖拽处理
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -128,14 +132,24 @@ export function FloatPanel() {
   const handleSelectDirectory = async () => {
     try {
       setIsLoading(true)
-      const { directories, files, currentDirectory } = await selectDirectory()
+
+      // 只调用一次目录选择
+      const directoryHandle = await window.showDirectoryPicker()
+      console.log('已选择目录:', directoryHandle.name)
+
+      // 同时执行资源加载和文件列表更新
+      const [_, { directories, files }] = await Promise.all([
+        loadAssets(directoryHandle),
+        selectDirectory(directoryHandle) // 修改selectDirectory以接受已有句柄
+      ])
+
       setDirectories(directories)
       setFiles(files)
-      setCurrentDirectory(currentDirectory)
-      setCurrentFiles(files.filter(f => f.directory === currentDirectory))
+      setCurrentDirectory('root')
+      setCurrentFiles(files)
       setIsExpanded(true)
     } catch (error) {
-      console.error('Error selecting directory:', error)
+      console.error('目录选择错误:', error)
     } finally {
       setIsLoading(false)
     }
@@ -162,87 +176,58 @@ export function FloatPanel() {
     relativePath: string
     name: string
   }) => {
-    setSelectedImages(prev => {
-      const next = new Map(prev)
-      const file = files.find(f => f.path === path)
+    setFiles(prev => {
+      const next = [...prev]
+      const file = next.find(f => f.path === path)
       if (file) {
-        next.set(path, {
-          name: info.name,
-          relativePath: info.relativePath,
-          dimensions: info.dimensions,
-          url: file.url
-        })
-      }
-      return next
-    })
-  }, [files])
-
-  // 处理选择变化
-  const handleSelectionChange = useCallback((path: string, checked: boolean) => {
-    setSelectedFiles(prev => {
-      const next = new Set(prev)
-      if (checked) {
-        next.add(path)
-        selectedImagesOrder.current.push(path)
-      } else {
-        next.delete(path)
-        selectedImagesOrder.current = selectedImagesOrder.current.filter(p => p !== path)
+        file.name = info.name
+        file.relativePath = info.relativePath
+        file.dimensions = info.dimensions
+        file.url = info.url
       }
       return next
     })
   }, [])
 
-  // 获取有序的选中图片信息
-  const getOrderedSelectedImages = useCallback(() => {
-    return selectedImagesOrder.current
-      .map(path => selectedImages.get(path))
-      .filter((img): img is SelectedImage => img !== undefined)
-  }, [selectedImages])
+  // 处理选择变化
+  const handleSelectionChange = useCallback((path: string, checked: boolean) => {
+    const normalizedPath = normalizeAssetPath(path)
+    selectImage(normalizedPath)
+  }, [selectImage])
 
   // 全选当前目录
   const handleSelectAll = useCallback(() => {
-    const newSelection = new Set([...selectedFiles])
-    currentFiles.forEach(file => newSelection.add(file.path))
-
-    // 保存历史
-    setSelectionHistory(prev => [...prev.slice(0, historyIndex + 1), selectedFiles])
-    setHistoryIndex(prev => prev + 1)
-
-    setSelectedFiles(newSelection)
-  }, [currentFiles, selectedFiles, historyIndex])
+    currentFiles.forEach(file => {
+      const path = normalizeAssetPath(file.path)
+      if (!selectedImagePaths.includes(path)) {
+        selectImage(path)
+      }
+    })
+  }, [currentFiles, selectedImagePaths, selectImage])
 
   // 取消当前目录所有选择
   const handleDeselectAll = useCallback(() => {
-    const newSelection = new Set([...selectedFiles])
-    currentFiles.forEach(file => newSelection.delete(file.path))
+    currentFiles.forEach(file => {
+      const path = normalizeAssetPath(file.path)
+      if (selectedImagePaths.includes(path)) {
+        selectImage(path)
+      }
+    })
+  }, [currentFiles, selectedImagePaths, selectImage])
 
-    // 保存历史
-    setSelectionHistory(prev => [...prev.slice(0, historyIndex + 1), selectedFiles])
-    setHistoryIndex(prev => prev + 1)
-
-    setSelectedFiles(newSelection)
-  }, [currentFiles, selectedFiles, historyIndex])
-
-  // 撤销/重做选择
-  const handleUndo = useCallback(() => {
-    if (historyIndex > 0) {
-      setHistoryIndex(prev => prev - 1)
-      setSelectedFiles(selectionHistory[historyIndex - 1])
-    }
-  }, [historyIndex, selectionHistory])
-
-  const handleRedo = useCallback(() => {
-    if (historyIndex < selectionHistory.length - 1) {
-      setHistoryIndex(prev => prev + 1)
-      setSelectedFiles(selectionHistory[historyIndex + 1])
-    }
-  }, [historyIndex, selectionHistory])
+  const handleImageClick = useCallback((file: FileEntry) => {
+    const normalizedPath = normalizeAssetPath(file.relativePath)
+    selectImage(normalizedPath)
+  }, [selectImage])
 
   return (
     <div
       ref={panelRef}
       onMouseDown={handleMouseDown}
-      className="fixed bg-background shadow-lg rounded-lg border z-50 transition-all"
+      className={cn(
+        "fixed right-0 top-0 h-full bg-white shadow-lg transition-all duration-300 z-50",
+        isExpanded ? "w-[480px]" : "w-[240px]"
+      )}
       style={{
         left: position.x,
         top: position.y,
@@ -362,57 +347,41 @@ export function FloatPanel() {
                         <X className="h-4 w-4 mr-1" />
                         取消
                       </Button>
-                      <div className="flex items-center space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={handleUndo}
-                          disabled={historyIndex <= 0}
-                        >
-                          ↶
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={handleRedo}
-                          disabled={historyIndex >= selectionHistory.length - 1}
-                        >
-                          ↷
-                        </Button>
-                      </div>
                     </div>
                   </div>
 
                   {/* 图片网格 */}
                   <div className="grid grid-cols-5 gap-2">
-                    {currentFiles.map((file) => (
-                      <div
-                        key={file.path}
-                        className={cn(
-                          "relative group transition-all duration-200",
-                          selectedFiles.has(file.path) && "ring-2 ring-primary"
-                        )}
-                      >
-                        <ImagePreview
-                          file={file}
-                          onLoad={(info) => handleImageLoad(file.path, info)}
-                          onClick={() => handleSelectionChange(
-                            file.path,
-                            !selectedFiles.has(file.path)
+                    {currentFiles.map((file) => {
+                      const normalizedPath = normalizeAssetPath(file.path)
+                      const isSelected = selectedImagePaths.includes(normalizedPath)
+
+                      return (
+                        <div
+                          key={file.path}
+                          className={cn(
+                            "relative group transition-all duration-200",
+                            isSelected && "ring-2 ring-primary"
                           )}
-                        />
-                        <div className="absolute top-1 left-1 z-10">
+                          onClick={() => handleSelectionChange(file.path, !isSelected)}
+                        >
+                          <ImagePreview
+                            file={file}
+                            onLoad={(info) => handleImageLoad(file.path, info)}
+                          >
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
+                              {formatDisplayPath(file.relativePath)}
+                            </div>
+                          </ImagePreview>
                           <Checkbox
-                            checked={selectedFiles.has(file.path)}
+                            checked={isSelected}
                             onCheckedChange={(checked) =>
                               handleSelectionChange(file.path, checked as boolean)
                             }
                           />
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )}
