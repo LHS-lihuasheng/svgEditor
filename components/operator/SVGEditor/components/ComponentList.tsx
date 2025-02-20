@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback} from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
     ChevronLeft,
@@ -19,13 +19,6 @@ import { Button } from "@/components/ui/button"
 import { selectDirectory } from "@/utils/fileSystem"
 import type { FileEntry } from "@/utils/fileSystem"
 import { ImagePreview } from "@/components/assets/ImagePreview"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useAssets } from "@/contexts/AssetContext"
 import { normalizeAssetPath, formatDisplayPath } from '@/utils/pathUtils'

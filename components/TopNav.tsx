@@ -3,9 +3,6 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Search, Bell, ChevronDown } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const routes = [
   {
@@ -49,21 +46,6 @@ export default function TopNav() {
             </Link>
           ))}
         </div>
-      </div>
-      <div className="ml-auto flex items-center gap-4">
-        <Button variant="ghost" size="icon">
-          <Search className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon">
-          <Bell className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon">
-          <ChevronDown className="h-5 w-5" />
-        </Button>
-        <Avatar>
-          <AvatarImage src="/placeholder.svg" />
-          <AvatarFallback>U</AvatarFallback>
-        </Avatar>
       </div>
     </nav>
   )
