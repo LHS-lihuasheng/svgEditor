@@ -25,19 +25,19 @@ export async function getAccessToken(): Promise<string> {
   }
 
   try {
-    const response = await fetch(
-      `${WECHAT_API_BASE}/token?grant_type=client_credential&appid=${APPID}&secret=${SECRET}`,
-    )
-    const data: AccessTokenResponse | AccessTokenError = await response.json()
+    // 修改为调用本地API路由
+    const response = await fetch('/api/token')
+    const result = await response.json()
 
-    if ("errcode" in data) {
-      throw new Error(`Failed to get access token: ${data.errmsg}`)
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to get access token')
     }
 
-    accessToken = data.access_token
-    expirationTime = Date.now() + (data.expires_in - 300) * 1000 // Subtract 5 minutes for safety
+    accessToken = result.access_token
+    // 使用API返回的过期时间（单位秒转换为毫秒）
+    expirationTime = Date.now() + result.expires_in * 1000
 
-    return accessToken
+    return accessToken as string
   } catch (error) {
     console.error("Error fetching access token:", error)
     throw error
