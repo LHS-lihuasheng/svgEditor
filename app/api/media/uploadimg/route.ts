@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server"
-import { getAccessToken } from "@/lib/accessToken"
+import { handleTokenRequest } from "@/lib/server/accessToken"
 
 export async function POST(request: Request) {
   try {
     const formData = await request.formData()
     const file = formData.get("media") as File
-    
+
     if (!file) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 })
     }
@@ -19,8 +19,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "File too large" }, { status: 400 })
     }
 
-    const token = await getAccessToken()
-    const uploadUrl = `https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=${token}`
+    const tokenResponse = await handleTokenRequest()
+
+    if ("errcode" in tokenResponse) {
+      return NextResponse.json(
+        { "errcode": tokenResponse.errcode, "errmsg": tokenResponse.errmsg },
+        { status: 200 }
+      )
+    }
+
+    const accessToken = tokenResponse.access_token
+    const uploadUrl = `https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=${accessToken}`
 
     const wxFormData = new FormData()
     wxFormData.append("media", file)

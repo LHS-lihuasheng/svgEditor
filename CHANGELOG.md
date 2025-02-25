@@ -2,6 +2,16 @@
 
 ## [未发布]
 
+### 2025-02-26
+- 调整accesstoken的获取方式
+  - 后端统一使用@lib/server/accessToken.ts获取相应体
+  - 前端通过@app/api/token/route.ts获取token,并进行缓存
+  - TODO：
+    - 将前端使用token的逻辑抽象
+    - DraftEditor的缓存逻辑调整
+    - DraftEditor的封面图片裁切显示修复
+    - DraftList的多次请求
+
 ### 新增
 - 选择图片后一键生成组件
 - 使用AssetsContext管理图片资源

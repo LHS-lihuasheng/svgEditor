@@ -8,28 +8,86 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { fetchDrafts, type DraftItem, deleteDraft, getDraft, type NewsItem } from "@/lib/api"
 import { formatDistanceToNow } from "date-fns"
 import { Eye, Pencil, Trash, RefreshCw } from "lucide-react"
-import { useAccessToken } from "@/lib/accessToken"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { QRCodeSVG } from "qrcode.react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function DraftList() {
   const [drafts, setDrafts] = useState<DraftItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { token, error: tokenError } = useAccessToken()
+  const [accessToken, setAccessToken] = useState<string | null>(null)
+  const [tokenError, setTokenError] = useState<string | null>(null)
   const { value: cachedDrafts, setValue: setCachedDrafts } = useLocalStorage<DraftItem[]>("cachedDrafts", [])
+  const { value: cachedToken, setValue: setCachedToken } = useLocalStorage<{ token: string, expiry: number } | null>("accessToken", null)
   const [previewDraft, setPreviewDraft] = useState<NewsItem | null>(null)
+
+  // 获取访问令牌
+  useEffect(() => {
+    const fetchToken = async () => {
+      // 先检查本地缓存的token是否有效
+      if (cachedToken && cachedToken.expiry > Date.now()) {
+        setAccessToken(cachedToken.token)
+        return
+      }
+
+      try {
+        const response = await fetch('/api/token')
+        const data = await response.json()
+        
+        if (response.ok) {
+          setAccessToken(data.access_token)
+          // 计算过期时间并缓存token
+          const expiryTime = Date.now() + (data.expires_in * 1000) // 正确计算过期时间
+          setCachedToken({
+            token: data.access_token,
+            expiry: expiryTime
+          })
+          setTokenError(null)
+        } else {
+          setTokenError(data.error || '获取访问令牌失败')
+          setAccessToken(null)
+          setCachedToken(null)
+        }
+      } catch (err) {
+        setTokenError(err instanceof Error ? err.message : '获取访问令牌失败')
+        setAccessToken(null)
+        setCachedToken(null)
+      }
+    }
+
+    fetchToken()
+
+    // 使用空依赖数组，确保该effect仅在组件挂载时运行一次
+  }, [])
+
+  // 可以添加另一个useEffect来监听cachedToken的变化
+  useEffect(() => {
+    if (cachedToken && cachedToken.expiry > Date.now()) {
+      setAccessToken(cachedToken.token)
+    }
+  }, [cachedToken])
 
   const loadDrafts = useCallback(
     async (forceRefresh = false) => {
-      if (!token) return
+      if (!accessToken) return
 
       try {
         setLoading(true)
         setError(null)
 
+        // 如果不强制刷新且有缓存，使用缓存
         if (!forceRefresh && cachedDrafts.length > 0) {
           setDrafts(cachedDrafts)
           setLoading(false)
@@ -51,14 +109,14 @@ export default function DraftList() {
         setLoading(false)
       }
     },
-    [token, cachedDrafts, setCachedDrafts],
+    [accessToken, cachedDrafts, setCachedDrafts],
   )
 
   useEffect(() => {
-    if (token) {
+    if (accessToken) {
       loadDrafts()
     }
-  }, [loadDrafts, token])
+  }, [loadDrafts, accessToken])
 
   const handleRefresh = () => {
     loadDrafts(true)
@@ -86,11 +144,26 @@ export default function DraftList() {
   }
 
   if (tokenError) {
-    return <div>错误：无法获取访问令牌。请稍后再试。</div>
+    return <div>错误：无法获取访问令牌。{tokenError}</div>
   }
 
-  if (!token) {
-    return <div>正在加载访问令牌...</div>
+  if (!accessToken) {
+    return <>
+      <AlertDialog>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>无法访问</AlertDialogTitle>
+            <AlertDialogDescription>
+              无法获取访问令牌，请稍后再试
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction>确认</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   }
 
   return (

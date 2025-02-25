@@ -1,18 +1,18 @@
 "use client"
 
 import type React from "react"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { createDraft, updateDraft, uploadMaterial } from "@/lib/api"
-import { useAccessToken } from "@/lib/accessToken"
 import { useDraftCache } from "@/hooks/useDraftCache"
 import { useImageCrop } from "@/hooks/useImageCrop"
 import { CoverImageUploader } from "./CoverImageUploader"
 import type { NewsItem, CropState, CroppedImages } from "@/types/draft"
+import { useLocalStorage } from "@/hooks/useLocalStorage"
 
 interface DraftEditorProps {
   initialDraft?: NewsItem
@@ -58,7 +58,34 @@ export default function DraftEditor({
     handleCropComplete,
   } = useImageCrop(cache?.originalImage || null, cache?.crops)
 
-  const { token } = useAccessToken()
+  const [accessToken, setAccessToken] = useState<string | null>(null)
+  const { value: cachedToken, setValue: setCachedToken } = useLocalStorage<{ token: string, expiry: number } | null>("accessToken", null)
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      if (cachedToken && cachedToken.expiry > Date.now()) {
+        setAccessToken(cachedToken.token)
+        return
+      }
+
+      try {
+        const response = await fetch('/api/token')
+        const data = await response.json()
+
+        if (!data.error && !data.errcode) {
+          setAccessToken(data.access_token)
+          setCachedToken({
+            token: data.access_token,
+            expiry: Date.now() + (data.expires_in - 300) * 1000
+          })
+        }
+      } catch (err) {
+        console.error("获取访问令牌失败:", err)
+      }
+    }
+
+    fetchToken()
+  }, [cachedToken, setCachedToken])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -86,7 +113,7 @@ export default function DraftEditor({
   }, [handleCropComplete, updateCache])
 
   const handleSave = useCallback(async () => {
-    if (!token || !draft.title || !draft.content || !draft.thumb_media_id) {
+    if (!accessToken || !draft.title || !draft.content || !draft.thumb_media_id) {
       return
     }
 
@@ -101,7 +128,7 @@ export default function DraftEditor({
     } catch (error) {
       console.error("Error saving draft:", error)
     }
-  }, [draft, mediaId, index, token, onSave, clearCache])
+  }, [draft, mediaId, index, accessToken, onSave, clearCache])
 
   const handleCancel = () => {
     clearCache()

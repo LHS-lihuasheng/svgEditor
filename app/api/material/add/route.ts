@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getAccessToken } from "@/lib/accessToken"
+import { handleTokenRequest } from "@/lib/server/accessToken"
 
 const MAX_SIZES = {
   image: 10 * 1024 * 1024, // 10MB
@@ -41,12 +41,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "File too large" }, { status: 400 })
     }
 
-    const token = await getAccessToken()
-    const uploadUrl = `https://api.weixin.qq.com/cgi-bin/material/add_material?access_token=${token}&type=${type}`
+    const tokenResponse = await handleTokenRequest()
+
+    if ("errcode" in tokenResponse) {
+      return NextResponse.json(
+        { "errcode": tokenResponse.errcode, "errmsg": tokenResponse.errmsg },
+        { status: 200 }
+      )
+    }
+
+    const accessToken = tokenResponse.access_token
+    const uploadUrl = `https://api.weixin.qq.com/cgi-bin/material/add_material?access_token=${accessToken}&type=${type}`
 
     const wxFormData = new FormData()
     wxFormData.append("media", file)
-    
+
     if (type === "video" && description) {
       wxFormData.append("description", description)
     }

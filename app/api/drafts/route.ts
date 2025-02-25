@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server"
-import { getAccessToken } from "@/lib/accessToken"
+import { handleTokenRequest } from "@/lib/server/accessToken"
 
 const WECHAT_API_BASE = "https://api.weixin.qq.com/cgi-bin"
 
 export async function POST(request: Request) {
   try {
-    const accessToken = await getAccessToken()
+    const tokenResponse = await handleTokenRequest()
 
+    if ("errcode" in tokenResponse) {
+      return NextResponse.json(
+        { "errcode": tokenResponse.errcode, "errmsg": tokenResponse.errmsg },
+        { status: 200 }
+      )
+    }
+
+    const accessToken = tokenResponse.access_token
     const { offset, count, no_content } = await request.json()
 
     const response = await fetch(`${WECHAT_API_BASE}/draft/batchget?access_token=${accessToken}`, {
