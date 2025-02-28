@@ -9,8 +9,8 @@ import { generateCode } from "@/utils/code-generator"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
-import { ComponentList } from "./components/ComponentList"
-import { EditorArea } from "./components/EditorArea"
+import { SideBarMenu } from "./sideBarMenu/index"
+import { EditorArea } from "./EditorArea"
 import { useAssets } from '@/contexts/AssetContext'
 
 interface DragItem {
@@ -343,7 +343,7 @@ export default function SVGEditor() {
 
   return (
     <div className="h-full flex bg-gray-50">
-      <ComponentList
+      <SideBarMenu
         isOpen={isToolbarOpen}
         onToggle={() => setIsToolbarOpen(!isToolbarOpen)}
         onAddComponent={handleAddComponent}

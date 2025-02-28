@@ -21,7 +21,6 @@ interface ImagePreviewProps {
         name: string
         url: string
     }) => void
-    children?: React.ReactNode
     onClick?: () => void
 }
 
@@ -30,7 +29,7 @@ interface ImageDimensions {
     height: number
 }
 
-export function ImagePreview({ file, onLoad, children, onClick }: ImagePreviewProps) {
+export function ImagePreview({ file, onLoad, onClick }: ImagePreviewProps) {
     const [dimensions, setDimensions] = useState<ImageDimensions>({ width: 0, height: 0 })
     const [objectFit, setObjectFit] = useState<'contain' | 'cover'>('contain')
     const containerRef = useRef<HTMLDivElement>(null)
