@@ -1,5 +1,5 @@
-import type { Component } from '@/types/svg-editor'
-import { COMPONENT_TEMPLATES } from '@/types/svg-editor'
+import type { Component } from '@/types/atomicComponent'
+import { COMPONENT_TEMPLATES } from '@/types/atomicComponent'
 
 export function generateCode(components: Component[]): string {
   if (!Array.isArray(components)) return ''
@@ -23,7 +23,7 @@ export function generateCode(components: Component[]): string {
         // 获取代码模板
         const template = COMPONENT_TEMPLATES[component.type]
         let code = component.code || template.code || ''
-        
+
         // 处理子组件
         if (Array.isArray(component.children) && component.children.length > 0) {
           const childrenCode = generateCode(component.children)
@@ -31,7 +31,7 @@ export function generateCode(components: Component[]): string {
         } else {
           code = code.replace('{children}', '')
         }
-        
+
         return code
       } catch (error) {
         console.error('Error generating code for component:', component, error)

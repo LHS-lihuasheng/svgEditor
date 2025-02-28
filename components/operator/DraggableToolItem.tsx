@@ -1,7 +1,7 @@
 import { useDrag } from 'react-dnd'
 import { Button } from "@/components/ui/button"
-import type { Component } from "@/types/svg-editor"
-import { COMPONENT_TEMPLATES } from '@/types/svg-editor'
+import type { Component } from "@/types/atomicComponent"
+import { COMPONENT_TEMPLATES } from '@/types/atomicComponent'
 
 interface DraggableToolItemProps {
   type: Component['type']

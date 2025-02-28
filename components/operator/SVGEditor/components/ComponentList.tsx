@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback} from "react"
+import { useState, useCallback } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
     ChevronLeft,
@@ -10,11 +10,12 @@ import {
     FolderOpen,
     Check,
     X,
-    RefreshCw
+    RefreshCw,
+    Settings
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Toolbar } from "../../Toolbar"
-import type { Component } from "@/types/svg-editor"
+import type { Component } from "@/types/atomicComponent"
 import { Button } from "@/components/ui/button"
 import { selectDirectory } from "@/utils/fileSystem"
 import type { FileEntry } from "@/utils/fileSystem"
@@ -45,7 +46,7 @@ interface DirectoryNode {
 }
 
 export function ComponentList({ isOpen, onToggle, onAddComponent }: ComponentListProps) {
-    const [activeTab, setActiveTab] = useState<'components' | 'assets'>('components')
+    const [activeTab, setActiveTab] = useState<'components' | 'assets' | 'parameters'>('components')
     const {
         loadAssets,
         selectImage,
@@ -182,7 +183,7 @@ export function ComponentList({ isOpen, onToggle, onAddComponent }: ComponentLis
     }
 
     // 修改按钮点击处理逻辑
-    const handleTabChange = useCallback((tab: 'components' | 'assets') => {
+    const handleTabChange = useCallback((tab: 'components' | 'assets' | 'parameters') => {
         // 如果当前是收起状态，先展开侧边栏
         if (!isOpen) {
             onToggle()
@@ -287,6 +288,19 @@ export function ComponentList({ isOpen, onToggle, onAddComponent }: ComponentLis
                     <button
                         className={cn(
                             "h-12 flex items-center justify-center hover:bg-gray-100 transition-colors",
+                            activeTab === 'parameters' && "bg-gray-100"
+                        )}
+                        onClick={() => handleTabChange('parameters')}
+                    >
+                        <Settings className={cn(
+                            "h-5 w-5 transition-colors",
+                            activeTab === 'parameters' ? "text-primary" : "text-muted-foreground"
+                        )} />
+                    </button>
+
+                    <button
+                        className={cn(
+                            "h-12 flex items-center justify-center hover:bg-gray-100 transition-colors",
                             activeTab === 'assets' && "bg-gray-100"
                         )}
                         onClick={() => handleTabChange('assets')}
@@ -316,6 +330,38 @@ export function ComponentList({ isOpen, onToggle, onAddComponent }: ComponentLis
                         {activeTab === 'components' ? (
                             <div className="p-4">
                                 <Toolbar onAddComponent={onAddComponent} />
+                            </div>
+                        ) : activeTab === 'parameters' ? (
+                            <div className="p-4">
+                                <div className="space-y-4">
+                                    <h3 className="text-sm font-medium">组件参数设置</h3>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm">宽度</label>
+                                            <input
+                                                type="number"
+                                                className="w-20 px-2 py-1 border rounded"
+                                                placeholder="自动"
+                                            />
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm">高度</label>
+                                            <input
+                                                type="number"
+                                                className="w-20 px-2 py-1 border rounded"
+                                                placeholder="自动"
+                                            />
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm">定位方式</label>
+                                            <select className="w-32 px-2 py-1 border rounded">
+                                                <option>静态</option>
+                                                <option>绝对定位</option>
+                                                <option>固定定位</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         ) : (
                             <div className="p-4 space-y-4">

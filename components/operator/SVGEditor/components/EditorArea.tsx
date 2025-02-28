@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { LucideRefreshCw, LucideEye, Settings, LucideCode, Image, ImagePlus } from "lucide-react"
 import { ComponentTree } from "../../ComponentTree"
-import type { Component } from "@/types/svg-editor"
+import type { Component } from "@/types/atomicComponent"
 
 interface EditorAreaProps {
   dropRef: React.RefObject<HTMLDivElement>

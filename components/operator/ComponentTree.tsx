@@ -1,8 +1,8 @@
 "use client"
 
 import { useDrag, useDrop } from 'react-dnd'
-import type { Component, DragItem } from '@/types/svg-editor'
-import { COMPONENT_TEMPLATES } from '@/types/svg-editor'
+import type { Component, DragItem } from '@/types/atomicComponent'
+import { COMPONENT_TEMPLATES } from '@/types/atomicComponent'
 import { Image, LucideCode, LucideRefreshCw, Trash, ImagePlus } from 'lucide-react'
 import { useRef, useState } from 'react'
 import {

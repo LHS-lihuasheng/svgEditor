@@ -1,5 +1,5 @@
 import { DraggableToolItem } from "./DraggableToolItem"
-import type { Component } from '@/types/svg-editor'
+import type { Component } from '@/types/atomicComponent'
 
 interface ToolbarProps {
   onAddComponent: (type: Component['type'], position: { x: number; y: number }) => void

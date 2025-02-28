@@ -3,8 +3,8 @@
 import { useState, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { useDrop } from 'react-dnd'
-import type { Component } from '@/types/svg-editor'
-import { COMPONENT_TEMPLATES } from '@/types/svg-editor'
+import type { Component } from '@/types/atomicComponent'
+import { COMPONENT_TEMPLATES } from '@/types/atomicComponent'
 import { generateCode } from "@/utils/code-generator"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
