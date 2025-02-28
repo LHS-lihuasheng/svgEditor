@@ -3,7 +3,7 @@
 import type React from "react"
 import { createContext, useState, useContext, useCallback, useEffect } from "react"
 import { normalizeAssetPath } from '@/utils/pathUtils'
-import { getRelativePath } from '@/utils/fileSystem'
+import { getRelativePath } from '@/utils/file-utils'
 
 // 图片资源数据结构
 interface ImageAsset {

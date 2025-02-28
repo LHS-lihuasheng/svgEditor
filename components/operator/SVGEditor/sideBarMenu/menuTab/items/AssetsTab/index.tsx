@@ -3,12 +3,12 @@
 import { useState, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { DirectoryTree } from "./DirectoryTree"
-import { selectDirectory } from "@/utils/fileSystem"
+import { selectDirectory } from "@/utils/file-utils"
 import { FolderOpen, RefreshCw, Check, X } from "lucide-react"
 import { ImagePreview } from "@/components/assets/ImagePreview"
 import { Checkbox } from "@/components/ui/checkbox"
 import { normalizeAssetPath, formatDisplayPath } from '@/utils/pathUtils'
-import type { FileEntry } from "@/utils/fileSystem"
+import type { FileEntry } from "@/utils/file-utils"
 import { cn } from "@/lib/utils"
 import { useAssets } from "@/contexts/AssetContext"
 

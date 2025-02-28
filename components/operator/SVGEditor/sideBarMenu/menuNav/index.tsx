@@ -1,18 +1,17 @@
 "use client"
 
 import { useCallback } from "react"
-import { cn } from "@/lib/utils"
 import { Boxes, ImageIcon, Settings, ChevronLeft, ChevronRight } from "lucide-react"
+import { useMenuBar } from "@/contexts/MenuBarContext"
+import { NavButton } from "./navButton/index"
+export function NavBar() {
+  const { isMenuBarOpen, setIsMenuBarOpen, activeTab: currentActiveTab, setActiveTab } = useMenuBar()
 
-interface NavBarProps {
-  isOpen: boolean
-  activeTab: 'components' | 'parameters' | 'assets'
-  onTabChange: (tab: 'components' | 'parameters' | 'assets') => void
-  onToggle: () => void
-}
+  const toggleMenuBar = () => {
+    setIsMenuBarOpen(!isMenuBarOpen)
+  }
 
-export function NavBar({ activeTab, onTabChange, isOpen, onToggle }: NavBarProps) {
-  const buttons = [
+  const navButtons: { id: string, icon: any, label: string }[] = [
     {
       id: 'components',
       icon: Boxes,
@@ -33,42 +32,39 @@ export function NavBar({ activeTab, onTabChange, isOpen, onToggle }: NavBarProps
   // 修改按钮点击处理逻辑
   const handleTabChange = useCallback((tab: 'components' | 'assets' | 'parameters') => {
     // 如果点击的是当前已激活的标签页，则切换侧边栏状态
-    if (tab === activeTab) {
-      onToggle()
+    if (tab === currentActiveTab) {
+      toggleMenuBar()
       return
     }
 
     // 如果当前是收起状态，先展开侧边栏
-    if (!isOpen) {
-      onToggle()
+    if (!isMenuBarOpen) {
+      toggleMenuBar()
     }
     // 稍后切换标签页保证动画效果
-    setTimeout(() => onTabChange(tab), 50)
-  }, [isOpen, onToggle, onTabChange, activeTab])
+    setTimeout(() => setActiveTab(tab), 50)
+  }, [isMenuBarOpen, setActiveTab, currentActiveTab])
 
   return (
     <div className="w-12 border-r flex flex-col">
-      {buttons.map(({ id, icon: Icon, label }) => (
-        <button
+      {/* 侧边栏按钮 */}
+      {navButtons.map(({ id, icon, label }) => (
+        <NavButton
           key={id}
-          className={cn(
-            "h-12 flex items-center justify-center hover:bg-gray-100 transition-colors",
-            activeTab === id && "bg-gray-100"
-          )}
-          onClick={() => handleTabChange(id as 'components' | 'assets' | 'parameters')}
-          title={label}
-        >
-          <Icon className={cn(
-            "h-5 w-5 transition-colors",
-            activeTab === id ? "text-primary" : "text-muted-foreground"
-          )} />
-        </button>
+          id={id}
+          label={label}
+          icon={icon}
+          currentActiveTab={currentActiveTab}
+          handleTabChange={handleTabChange}
+        />
       ))}
+
+      {/* 侧边栏折叠按钮 */}
       <button
         className="mt-auto h-12 flex items-center justify-center hover:bg-gray-100 border-t"
-        onClick={onToggle}
+        onClick={() => setIsMenuBarOpen(!isMenuBarOpen)}
       >
-        {isOpen ? (
+        {isMenuBarOpen ? (
           <ChevronLeft className="h-5 w-5 text-muted-foreground" />
         ) : (
           <ChevronRight className="h-5 w-5 text-muted-foreground" />

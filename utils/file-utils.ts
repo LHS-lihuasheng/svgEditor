@@ -38,13 +38,6 @@ export interface FileEntry {
   }
 }
 
-interface FileSystemState {
-  currentDirectory: string
-  directories: string[]
-  files: FileEntry[]
-  pathMap: Map<string, FileSystemHandle>
-}
-
 // 处理目录路径
 function normalizePath(path: string): string {
   return path.replace(/^\/+|\/+$/g, '')
@@ -120,36 +113,13 @@ export async function selectDirectory(
   }
 }
 
-// 构建相对路径映射
-export async function buildRelativePath(handle: FileSystemDirectoryHandle) {
-  const pathMap = new Map<string, FileSystemHandle>()
-
-  const build = async (handle: FileSystemDirectoryHandle, path = '') => {
-    const currentPath = path + '/' + handle.name
-
-    if (handle.kind === 'directory') {
-      for await (const [, entry] of handle.entries()) {
-        if (entry.kind === 'directory') {
-          await build(entry as FileSystemDirectoryHandle, currentPath)
-        } else if (entry.kind === 'file') {
-          pathMap.set('.' + currentPath, entry)
-        }
-      }
-    } else if (handle.kind === 'file') {
-      pathMap.set('.' + path, handle)
-    }
-  }
-
-  await build(handle)
-  return pathMap
-}
 
 // 清理文件 URL
 export function clearFiles(files: FileEntry[]) {
   files.forEach(file => URL.revokeObjectURL(file.url))
 }
 
-// 新增获取相对路径方法
+// 获取相对路径
 export async function getRelativePath(
   directoryHandle: FileSystemDirectoryHandle,
   fileHandle: FileSystemFileHandle
@@ -162,4 +132,26 @@ export async function getRelativePath(
     console.warn(`无法解析 ${fileHandle.name} 的相对路径`, error)
     return null
   }
+}
+
+// 构建相对路径映射
+export async function buildPathToHandle(rootHandle: FileSystemDirectoryHandle) {
+  const pathMap = new Map<string, FileSystemHandle>()
+
+  const build = async (currentHandle: FileSystemDirectoryHandle) => {
+    for await (const [, entry] of currentHandle.entries()) {
+      if (entry.kind === 'directory') {
+        await build(entry as FileSystemDirectoryHandle)
+      } else if (entry.kind === 'file') {
+        // 使用getRelativePath获取相对于根目录的路径
+        const relativePath = await getRelativePath(rootHandle, entry as FileSystemFileHandle)
+        if (relativePath) {
+          pathMap.set(relativePath, entry)
+        }
+      }
+    }
+  }
+
+  await build(rootHandle)
+  return pathMap
 }

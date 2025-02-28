@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/tooltip"
 import { formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
-import type { FileEntry } from "@/utils/fileSystem"
+import type { FileEntry } from "@/utils/file-utils"
 import { Image } from "lucide-react"
 import { cn } from "@/lib/utils"
 

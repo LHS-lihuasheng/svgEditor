@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils"
 import { SideBarMenu } from "./sideBarMenu/index"
 import { EditorArea } from "./EditorArea"
 import { useAssets } from '@/contexts/AssetContext'
+import { MenuBarProvider } from '@/contexts/MenuBarContext'
+
 
 interface DragItem {
   type: Component['type']
@@ -26,7 +28,6 @@ interface DragItem {
 }
 
 export default function SVGEditor() {
-  const [isToolbarOpen, setIsToolbarOpen] = useState(false)
   const [components, setComponents] = useState<Component[]>([])
   const [selectedComponent, setSelectedComponent] = useState<Component | null>(null)
   const [showCodePreview, setShowCodePreview] = useState(false)
@@ -342,54 +343,47 @@ export default function SVGEditor() {
   }, [getOrderedSelectedImages, components, imageAssets])
 
   return (
-    <div className="h-full flex bg-gray-50">
-      <SideBarMenu
-        isOpen={isToolbarOpen}
-        onToggle={() => setIsToolbarOpen(!isToolbarOpen)}
-        onAddComponent={handleAddComponent}
-      />
-      <div className={cn(
-        "flex-1 transition-all duration-300",
-        isToolbarOpen ? "ml-[280px]" : "ml-0"
-      )}>
-        <div className="h-full flex p-4">
-          <EditorArea
-            dropRef={dropRef}
-            components={components}
-            selectedComponent={selectedComponent}
-            onSelect={setSelectedComponent}
-            onDrop={handleDrop}
-            onMove={moveComponent}
-            onUpdate={handleComponentUpdate}
-            onDelete={handleDelete}
-            onShowCodePreview={() => setShowCodePreview(true)}
-            onAddImages={handleAddImages}
-          />
-        </div>
+    <MenuBarProvider>
+      <div className="h-full flex bg-gray-50">
+        <SideBarMenu
+          onAddComponent={handleAddComponent}
+        />
+        <EditorArea
+          dropRef={dropRef}
+          components={components}
+          selectedComponent={selectedComponent}
+          onSelect={setSelectedComponent}
+          onDrop={handleDrop}
+          onMove={moveComponent}
+          onUpdate={handleComponentUpdate}
+          onDelete={handleDelete}
+          onShowCodePreview={() => setShowCodePreview(true)}
+          onAddImages={handleAddImages}
+        />
+        <Dialog open={showCodePreview} onOpenChange={setShowCodePreview}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>完整代码预览</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[70vh]">
+              <pre className="p-4 bg-gray-50 rounded-lg">
+                <code className="text-sm text-gray-700 whitespace-pre-wrap break-all">
+                  {generateCode(components)}
+                </code>
+              </pre>
+            </ScrollArea>
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCodePreview(false)}
+              >
+                关闭
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
-      <Dialog open={showCodePreview} onOpenChange={setShowCodePreview}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>完整代码预览</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[70vh]">
-            <pre className="p-4 bg-gray-50 rounded-lg">
-              <code className="text-sm text-gray-700 whitespace-pre-wrap break-all">
-                {generateCode(components)}
-              </code>
-            </pre>
-          </ScrollArea>
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowCodePreview(false)}
-            >
-              关闭
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+    </MenuBarProvider>
   )
 }
