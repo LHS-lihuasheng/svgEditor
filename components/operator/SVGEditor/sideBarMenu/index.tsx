@@ -11,7 +11,7 @@ interface SideBarMenuProps {
 }
 
 export function SideBarMenu({ onAddComponent }: SideBarMenuProps) {
-    const { isMenuBarOpen, activeTab: currentActiveTab } = useMenuBar()
+    const { isMenuBarOpen} = useMenuBar()
 
     return (
         <div
