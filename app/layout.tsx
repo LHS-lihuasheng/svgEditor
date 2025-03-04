@@ -27,7 +27,7 @@ export default function RootLayout({
             <DndWrapper>
               <div className="flex flex-col h-screen bg-gray-50">
                 <TopNav />
-                <main className="flex-1 overflow-hidden">{children}</main>
+                <main className="flex-1 overflow-auto">{children}</main>
               </div>
             </DndWrapper>
           </AssetProvider>

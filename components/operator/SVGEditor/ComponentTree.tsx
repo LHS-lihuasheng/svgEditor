@@ -18,6 +18,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
+import { generateCode } from '@/utils/code-generator'
 
 interface ComponentTreeProps {
   components: Component[]
@@ -132,38 +133,24 @@ function ComponentTreeItem({
       if (!ref.current) return
       if (!item.isToolItem && item.id === component.id) return
 
-      const componentRect = ref.current.getBoundingClientRect()
-      const contentRect = ref.current.querySelector('.component-content')?.getBoundingClientRect()
-      if (!contentRect || !componentRect) return
-
+      // 计算鼠标位置相对于组件的位置
+      const hoverBoundingRect = ref.current.getBoundingClientRect()
+      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
       const clientOffset = monitor.getClientOffset()
       if (!clientOffset) return
 
-      // 计算相对于整个组件的位置（包括标题栏）
-      const hoverClientY = clientOffset.y - componentRect.top
-      const componentHeight = componentRect.height
+      const hoverClientY = clientOffset.y - hoverBoundingRect.top
 
-      // 扩大标题栏和边缘的响应区域
-      const headerHeight = 32 // 标题栏高度
-      const edgeSize = 20    // 边缘响应区域大小
+      // 确定放置位置
+      const hoverThreshold = 0.1; // 上下区域阈值
+      const relativePosition = hoverClientY / (hoverBoundingRect.bottom - hoverBoundingRect.top);
 
-      // 判断拖拽位置
-      if (hoverClientY < headerHeight + edgeSize) {
-        // 上方区域（包括标题栏），作为同级
+      if (relativePosition < hoverThreshold) {
         item.dropPosition = 'before'
-      } else if (hoverClientY > componentHeight - edgeSize) {
-        // 下方边缘，作为同级
-        item.dropPosition = 'after'
-      } else if (
-        // 检查是否在左侧边缘
-        clientOffset.x < componentRect.left + edgeSize ||
-        // 或右侧边缘
-        clientOffset.x > componentRect.right - edgeSize
-      ) {
-        // 在侧边拖动时，优先作为同级
+      } else if (relativePosition > (1 - hoverThreshold)) {
         item.dropPosition = 'after'
       } else {
-        // 中间区域，尝试嵌套
+        // 禁止将组件嵌套到自己或自己的子组件中
         if (!isDescendant(component, item.id)) {
           item.dropPosition = 'nested'
         } else {
@@ -171,66 +158,24 @@ function ComponentTreeItem({
         }
       }
     },
+
     drop: (item: DragItem, monitor) => {
-      if (!ref.current) return
-      if (!item.isToolItem && item.id === component.id) return
       if (monitor.didDrop()) return
 
-      const componentRect = ref.current.getBoundingClientRect()
-      const contentRect = ref.current.querySelector('.component-content')?.getBoundingClientRect()
-      if (!contentRect || !componentRect) return
-
-      const clientOffset = monitor.getClientOffset()
-      if (!clientOffset) return
-
-      const hoverClientY = clientOffset.y - componentRect.top
-      const componentHeight = componentRect.height
-      const headerHeight = 32
-      const edgeSize = 20
-
-      // 使用与 hover 相同的逻辑处理放置
-      if (hoverClientY < headerHeight + edgeSize) {
-        // 放在当前组件前面
-        if (!item.isToolItem && item.index !== undefined) {
-          onMove(item.index, index, parentId)
-        } else {
-          onDrop(item, parentId)
-        }
-      } else if (hoverClientY > componentHeight - edgeSize) {
-        // 放在当前组件后面
-        if (!item.isToolItem && item.index !== undefined) {
-          onMove(item.index, index + 1, parentId)
-        } else {
-          onDrop(item, parentId)
-        }
-      } else if (
-        clientOffset.x < componentRect.left + edgeSize ||
-        clientOffset.x > componentRect.right - edgeSize
-      ) {
-        // 侧边放置，作为同级
-        if (!item.isToolItem && item.index !== undefined) {
-          onMove(item.index, index + 1, parentId)
-        } else {
-          onDrop(item, parentId)
-        }
-      } else {
-        // 中间区域，尝试嵌套
-        if (!isDescendant(component, item.id)) {
-          onDrop(item, component.id)
-        } else {
-          // 如果不能嵌套，则放在后面
-          if (!item.isToolItem && item.index !== undefined) {
-            onMove(item.index, index + 1, parentId)
-          } else {
-            onDrop(item, parentId)
-          }
-        }
+      // 确保设置了 dropPosition
+      const finalItem = { ...item };
+      if (!finalItem.dropPosition) {
+        finalItem.dropPosition = 'after' // 默认值
       }
+
+      onDrop(finalItem, component.id)
+      return { handled: true }
     },
-    collect: monitor => ({
+
+    collect: (monitor) => ({
       isOver: monitor.isOver(),
       isOverCurrent: monitor.isOver({ shallow: true }),
-      dropPosition: monitor.getClientOffset()
+      dropPosition: (monitor.getItem() as DragItem)?.dropPosition
     })
   })
 
@@ -248,17 +193,16 @@ function ComponentTreeItem({
   const getDropIndicatorStyle = () => {
     if (!isOverCurrent || !dropPosition) return null
 
-    const contentRect = ref.current?.querySelector('.component-content')?.getBoundingClientRect()
-    if (!contentRect) return null
-
-    const hoverClientY = dropPosition.y - contentRect.top
-
-    if (hoverClientY < 10) {
-      return 'before'
-    } else if (hoverClientY > contentRect.height - 10) {
-      return 'nested'
-    } else {
-      return 'after'
+    // 直接使用既定的dropPosition来确定样式
+    switch (dropPosition) {
+      case 'before':
+        return 'before';
+      case 'after':
+        return 'after';
+      case 'nested':
+        return 'nested';
+      default:
+        return null;
     }
   }
 
@@ -462,7 +406,7 @@ function ComponentTreeItem({
             <ScrollArea className="max-h-[60vh]">
               <pre className="p-4 bg-gray-50 rounded-lg">
                 <code className="text-sm text-gray-700 whitespace-pre-wrap break-all">
-                  {component.code || COMPONENT_TEMPLATES[component.type]?.code || ''}
+                  {generateCode(component)}
                 </code>
               </pre>
             </ScrollArea>

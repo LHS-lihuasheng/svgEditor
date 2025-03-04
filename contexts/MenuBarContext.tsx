@@ -3,15 +3,15 @@ import { createContext, useState, useContext } from "react";
 interface MenuBarContextType {
     isMenuBarOpen: boolean
     setIsMenuBarOpen: (isOpen: boolean) => void
-    activeTab: 'components' | 'parameters' | 'assets'
-    setActiveTab: (tab: 'components' | 'parameters' | 'assets') => void
+    activeTab: 'components' | 'assets'
+    setActiveTab: (tab: 'components' | 'assets') => void
 }
 
 const MenuBarContext = createContext<MenuBarContextType | null>(null)
 
 export function MenuBarProvider({ children }: { children: React.ReactNode }) {
     const [isMenuBarOpen, setIsMenuBarOpen] = useState(false)
-    const [activeTab, setActiveTab] = useState<'components' | 'parameters' | 'assets'>('components')
+    const [activeTab, setActiveTab] = useState<'components' | 'assets'>('components')
 
     return (
         <MenuBarContext.Provider value={{ isMenuBarOpen, setIsMenuBarOpen, activeTab, setActiveTab }}>

@@ -2,7 +2,7 @@
 
 import { useCallback } from "react"
 import { cn } from "@/lib/utils"
-import { Boxes, ImageIcon, Settings, ChevronLeft, ChevronRight } from "lucide-react"
+import { Boxes, ImageIcon, ChevronLeft, ChevronRight } from "lucide-react"
 import { useMenuBar } from "@/contexts/MenuBarContext"
 
 interface NavButtonProps {
@@ -10,7 +10,7 @@ interface NavButtonProps {
   label: string
   icon: any
   currentActiveTab: string
-  handleTabChange: (tab: 'components' | 'assets' | 'parameters') => void
+  handleTabChange: (tab: 'components' | 'assets') => void
 }
 
 function NavButton({ id, label, icon: Icon, currentActiveTab, handleTabChange }: NavButtonProps) {
@@ -21,7 +21,7 @@ function NavButton({ id, label, icon: Icon, currentActiveTab, handleTabChange }:
         "h-12 flex items-center justify-center hover:bg-gray-100 transition-colors",
         currentActiveTab === id && "bg-gray-100"
       )}
-      onClick={() => handleTabChange(id as 'components' | 'assets' | 'parameters')}
+      onClick={() => handleTabChange(id as 'components' | 'assets')}
       title={label}
     >
       <Icon className={cn(
@@ -46,11 +46,6 @@ export function NavBar() {
       label: '组件库'
     },
     {
-      id: 'parameters',
-      icon: Settings,
-      label: '参数设置'
-    },
-    {
       id: 'assets',
       icon: ImageIcon,
       label: '素材管理'
@@ -58,7 +53,7 @@ export function NavBar() {
   ]
 
   // 修改按钮点击处理逻辑
-  const handleTabChange = useCallback((tab: 'components' | 'assets' | 'parameters') => {
+  const handleTabChange = useCallback((tab: 'components' | 'assets') => {
     // 如果点击的是当前已激活的标签页，则切换侧边栏状态
     if (tab === currentActiveTab) {
       toggleMenuBar()

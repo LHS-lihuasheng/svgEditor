@@ -1,43 +1,36 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { LucideRefreshCw, LucideEye, Settings, LucideCode, Image, ImagePlus } from "lucide-react"
+import { LucideRefreshCw, LucideEye, Settings, LucideCode, Image } from "lucide-react"
 import { ComponentTree } from "./ComponentTree"
-import type { Component } from "@/types/atomicComponent"
 import { useMenuBar } from "@/contexts/MenuBarContext"
 import { cn } from "@/lib/utils"
+import { useEditor } from '@/contexts/EditorContext'
+import { useParametersPanel } from "@/contexts/ParametersPanelContext"
+
 interface EditorAreaProps {
   dropRef: React.RefObject<HTMLDivElement>
-  components: Component[]
-  selectedComponent: Component | null
-  onSelect: (component: Component | null) => void
-  onDrop: (item: any, targetId: string | null) => void
-  onMove: (dragIndex: number, hoverIndex: number, parentId: string | null) => void
-  onUpdate: (component: Component) => void
-  onDelete: (id: string) => void
-  onShowCodePreview: () => void
-  onAddImages?: (targetId: string) => void
 }
 
-export function EditorArea({
-  dropRef,
-  components,
-  selectedComponent,
-  onSelect,
-  onDrop,
-  onMove,
-  onUpdate,
-  onDelete,
-  onShowCodePreview,
-  onAddImages
-}: EditorAreaProps) {
+export function EditorArea({ dropRef }: EditorAreaProps) {
   const { isMenuBarOpen } = useMenuBar()
+  const { isPanelOpen } = useParametersPanel()
+  const {
+    components,
+    selectedComponent,
+    setSelectedComponent,
+    handleDrop,
+    moveComponent,
+    updateComponent,
+    deleteComponent,
+    setShowCodePreview
+  } = useEditor()
+
   return (
     <div className={cn(
-      "flex-1 transition-all duration-300",
-      isMenuBarOpen ? "ml-[280px]" : "ml-0"
+      "flex-1 transition-all duration-300 ml-96 mr-96",
     )}>
-      <div className="h-full flex p-4">
+      <div className="h-full flex">
         <div className="flex-1 flex flex-col bg-white shadow-sm rounded-lg">
           {/* 顶部工具栏 */}
           <div className="h-12 bg-white shadow-sm border-b px-4 flex items-center justify-between">
@@ -59,7 +52,7 @@ export function EditorArea({
               <Button
                 variant="default"
                 size="sm"
-                onClick={onShowCodePreview}
+                onClick={() => setShowCodePreview(true)}
               >
                 <LucideCode className="h-4 w-4 mr-2" />
                 获取代码
@@ -74,7 +67,7 @@ export function EditorArea({
             className="flex-1 p-6 relative overflow-auto"
             style={{
               height: 'calc(100vh - 64px)', // 减去顶部导航栏高度
-              minHeight: '600px'
+              minHeight: '80vh'
             }}
           >
             {components.length === 0 ? (
@@ -86,12 +79,11 @@ export function EditorArea({
               <ComponentTree
                 components={components}
                 selectedId={selectedComponent?.id}
-                onSelect={onSelect}
-                onDrop={onDrop}
-                onMove={onMove}
-                onUpdate={onUpdate}
-                onDelete={onDelete}
-                onAddImages={onAddImages}
+                onSelect={(component) => setSelectedComponent(component)}
+                onDrop={(item) => handleDrop(item, null)}
+                onMove={(dragIndex, hoverIndex, parentId) => moveComponent(dragIndex, hoverIndex, parentId)}
+                onUpdate={(component) => updateComponent(component)}
+                onDelete={(id) => deleteComponent(id)}
               />
             )}
           </div>

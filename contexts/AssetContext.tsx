@@ -28,6 +28,7 @@ interface AssetContextType {
   rootDirectory: FileSystemDirectoryHandle | null // 当前根目录句柄
   setRootDirectory: (handle: FileSystemDirectoryHandle | null) => void // 设置根目录
   refreshAssets: () => Promise<void>        // 刷新资源列表
+  shiftFirstSelectedImage: () => ImageAsset | undefined
 }
 
 const AssetContext = createContext<AssetContextType | null>(null)
@@ -79,13 +80,14 @@ export function AssetProvider({ children }: { children: React.ReactNode }) {
           const dimensions = await getImageDimensions(url)
 
           // 存储到资源表
-          newAssets.set(cleanPath, {
+          const newImage: ImageAsset = {
             name: file.name,
             relativePath: cleanPath,
             url,
             dimensions,
             lastModified: file.lastModified
-          })
+          }
+          newAssets.set(cleanPath, newImage)
         }
       } else if (entry.kind === 'directory') {
         // 递归处理子目录
@@ -150,6 +152,14 @@ export function AssetProvider({ children }: { children: React.ReactNode }) {
     setHistoryIndex(prev => prev + 1)
   }, [selectedImagePaths])
 
+  // 在 AssetProvider 中添加方法
+  const shiftFirstSelectedImage = useCallback(() => {
+    if (selectedImagePaths.length === 0) return undefined
+    const firstPath = selectedImagePaths[0]
+    setSelectedImagePaths(prev => prev.slice(1))
+    return imageAssets.get(firstPath)
+  }, [selectedImagePaths, imageAssets])
+
   return (
     <AssetContext.Provider
       value={{
@@ -163,7 +173,8 @@ export function AssetProvider({ children }: { children: React.ReactNode }) {
         findImageByPath,
         rootDirectory,
         setRootDirectory,
-        refreshAssets
+        refreshAssets,
+        shiftFirstSelectedImage
       }}
     >
       {children}
