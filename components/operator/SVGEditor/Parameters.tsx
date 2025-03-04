@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useParametersPanel } from "@/contexts/ParametersPanelContext"
 import { useEditor } from "@/contexts/EditorContext"
@@ -15,8 +15,6 @@ import { Switch } from "@/components/ui/switch"
 import get from "lodash/get"
 import set from "lodash/set"
 import { useAssets } from '@/contexts/AssetContext'
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ImageIcon } from "lucide-react"
 
 interface ParametersProps {
     selectedComponent: any | null;
@@ -25,42 +23,37 @@ interface ParametersProps {
 export function Parameters({ selectedComponent }: ParametersProps) {
     const { isPanelOpen, togglePanel } = useParametersPanel();
     const { updateComponent } = useEditor();
-    const { imageAssets, shiftFirstSelectedImage } = useAssets();
+    const { shiftFirstSelectedImage } = useAssets();
 
+    // 更新组件属性的通用处理函数
     const handlePropertyChange = (property: string, value: any) => {
         if (!selectedComponent) return;
 
-        // 创建组件的副本
+        // 创建组件的副本并更新属性
         const updatedComponent = JSON.parse(JSON.stringify(selectedComponent));
-
-        // 使用lodash的set函数设置嵌套属性
         set(updatedComponent, property, value);
-
-        // 更新组件
         updateComponent(updatedComponent);
     };
 
     // 处理viewBox变更
-    const handleViewBoxChange = (field: keyof Component['viewBox'], value: string) => {
+    const handleViewBoxChange = (field: keyof any, value: string) => {
         if (!selectedComponent) return;
 
         const viewBox = { ...(selectedComponent.viewBox || {}) };
         viewBox[field] = value ? parseFloat(value) : undefined;
-
         handlePropertyChange('viewBox', viewBox);
     };
 
     // 处理margin变更
-    const handleMarginChange = (field: keyof Component['style']['margin'], value: string) => {
+    const handleMarginChange = (field: keyof any, value: string) => {
         if (!selectedComponent) return;
 
         const margin = { ...(get(selectedComponent, 'style.margin') || {}) };
         margin[field] = value ? parseFloat(value) : undefined;
-
         handlePropertyChange('style.margin', margin);
     };
 
-    // 修改图片选择器渲染逻辑
+    // 渲染图片选择器
     const renderImageSelector = (control: PropertyControl, currentValue: string) => {
         const currentPath = get(selectedComponent, 'style.backgroundImage')?.replace(/url\(['"](.+)['"]\)/, '$1') || '';
 
@@ -73,10 +66,15 @@ export function Parameters({ selectedComponent }: ParametersProps) {
                             id={control.property}
                             value={currentPath}
                             onChange={(e) => {
+                                const updatedComponent = JSON.parse(JSON.stringify(selectedComponent));
+                                if (!updatedComponent.style) {
+                                    updatedComponent.style = {};
+                                }
                                 const url = e.target.value ? `url('${e.target.value}')` : '';
-                                handlePropertyChange(control.property, url);
+                                updatedComponent.style.backgroundImage = url;
+                                updateComponent(updatedComponent);
                             }}
-                            placeholder="Enter image URL"
+                            placeholder="输入图片URL"
                         />
                     </div>
                     <Button
@@ -85,17 +83,22 @@ export function Parameters({ selectedComponent }: ParametersProps) {
                         onClick={() => {
                             const selectedImage = shiftFirstSelectedImage();
                             if (selectedImage) {
-                                // 设置背景图路径
-                                const url = `url('${selectedImage.relativePath}')`;
-                                handlePropertyChange(control.property, url);
-
-                                // 自动设置viewBox的width和height
-                                const newViewBox = {
-                                    ...selectedComponent.viewBox,
+                                const updatedComponent = JSON.parse(JSON.stringify(selectedComponent));
+                                if (!updatedComponent.style) {
+                                    updatedComponent.style = {};
+                                }
+                                
+                                // 设置背景图片
+                                updatedComponent.style.backgroundImage = `url('${selectedImage.relativePath}')`;
+                                
+                                // 更新viewBox以匹配图片尺寸
+                                updatedComponent.viewBox = {
+                                    ...updatedComponent.viewBox,
                                     width: selectedImage.dimensions.width,
                                     height: selectedImage.dimensions.height
                                 };
-                                handlePropertyChange('viewBox', newViewBox);
+                                
+                                updateComponent(updatedComponent);
                             }
                         }}
                     >
@@ -125,38 +128,30 @@ export function Parameters({ selectedComponent }: ParametersProps) {
                 <div className="space-y-2" key={control.property}>
                     <Label>{control.label}</Label>
                     <div className="grid grid-cols-4 gap-2">
-                        <div>
-                            <Input
-                                type="number"
-                                value={viewBox.x?.toString() || ''}
-                                onChange={(e) => handleViewBoxChange('x', e.target.value)}
-                                placeholder="x"
-                            />
-                        </div>
-                        <div>
-                            <Input
-                                type="number"
-                                value={viewBox.y?.toString() || ''}
-                                onChange={(e) => handleViewBoxChange('y', e.target.value)}
-                                placeholder="y"
-                            />
-                        </div>
-                        <div>
-                            <Input
-                                type="number"
-                                value={viewBox.width?.toString() || ''}
-                                onChange={(e) => handleViewBoxChange('width', e.target.value)}
-                                placeholder="width"
-                            />
-                        </div>
-                        <div>
-                            <Input
-                                type="number"
-                                value={viewBox.height?.toString() || ''}
-                                onChange={(e) => handleViewBoxChange('height', e.target.value)}
-                                placeholder="height"
-                            />
-                        </div>
+                        <Input
+                            type="number"
+                            value={viewBox.x?.toString() || ''}
+                            onChange={(e) => handleViewBoxChange('x', e.target.value)}
+                            placeholder="x"
+                        />
+                        <Input
+                            type="number"
+                            value={viewBox.y?.toString() || ''}
+                            onChange={(e) => handleViewBoxChange('y', e.target.value)}
+                            placeholder="y"
+                        />
+                        <Input
+                            type="number"
+                            value={viewBox.width?.toString() || ''}
+                            onChange={(e) => handleViewBoxChange('width', e.target.value)}
+                            placeholder="宽度"
+                        />
+                        <Input
+                            type="number"
+                            value={viewBox.height?.toString() || ''}
+                            onChange={(e) => handleViewBoxChange('height', e.target.value)}
+                            placeholder="高度"
+                        />
                     </div>
                 </div>
             );
@@ -169,38 +164,30 @@ export function Parameters({ selectedComponent }: ParametersProps) {
                 <div className="space-y-2" key={control.property}>
                     <Label>{control.label}</Label>
                     <div className="grid grid-cols-4 gap-2">
-                        <div>
                             <Input
                                 type="number"
                                 value={margin.top?.toString() || ''}
                                 onChange={(e) => handleMarginChange('top', e.target.value)}
                                 placeholder="top"
-                            />
-                        </div>
-                        <div>
-                            <Input
-                                type="number"
-                                value={margin.right?.toString() || ''}
-                                onChange={(e) => handleMarginChange('right', e.target.value)}
-                                placeholder="right"
-                            />
-                        </div>
-                        <div>
-                            <Input
-                                type="number"
-                                value={margin.bottom?.toString() || ''}
-                                onChange={(e) => handleMarginChange('bottom', e.target.value)}
-                                placeholder="bottom"
-                            />
-                        </div>
-                        <div>
-                            <Input
-                                type="number"
-                                value={margin.left?.toString() || ''}
-                                onChange={(e) => handleMarginChange('left', e.target.value)}
-                                placeholder="left"
-                            />
-                        </div>
+                        />
+                        <Input
+                            type="number"
+                            value={margin.right?.toString() || ''}
+                            onChange={(e) => handleMarginChange('right', e.target.value)}
+                            placeholder="right"
+                        />
+                        <Input
+                            type="number"
+                            value={margin.bottom?.toString() || ''}
+                            onChange={(e) => handleMarginChange('bottom', e.target.value)}
+                            placeholder="bottom"
+                        />
+                        <Input
+                            type="number"
+                            value={margin.left?.toString() || ''}
+                            onChange={(e) => handleMarginChange('left', e.target.value)}
+                            placeholder="left"
+                        />
                     </div>
                 </div>
             );
@@ -208,6 +195,7 @@ export function Parameters({ selectedComponent }: ParametersProps) {
 
         const value = get(selectedComponent, control.property);
 
+        // 根据控件类型渲染不同的UI组件
         switch (control.type) {
             case 'string':
                 return (
@@ -258,7 +246,7 @@ export function Parameters({ selectedComponent }: ParametersProps) {
                             onValueChange={(value) => handlePropertyChange(control.property, value)}
                         >
                             <SelectTrigger id={control.property}>
-                                <SelectValue placeholder="Select option" />
+                                <SelectValue placeholder="选择选项" />
                             </SelectTrigger>
                             <SelectContent>
                                 {control.options?.map(option => (
@@ -302,7 +290,6 @@ export function Parameters({ selectedComponent }: ParametersProps) {
     // 获取当前选中组件类型的属性控制器
     const getPropertyControls = () => {
         if (!selectedComponent) return [];
-
         const template = COMPONENT_TEMPLATES[selectedComponent.type];
         return template?.propertyControls || [];
     };
@@ -325,21 +312,21 @@ export function Parameters({ selectedComponent }: ParametersProps) {
 
             {isPanelOpen && (
                 <div className="p-4 pt-12">
-                    <h3 className="font-medium text-sm mb-2">Parameters</h3>
+                    <h3 className="font-medium text-sm mb-2">参数设置</h3>
                     <ScrollArea className="h-[calc(100vh-120px)]">
                         {selectedComponent ? (
                             <div className="space-y-4">
                                 <div className="text-sm">
-                                    <span className="font-medium">Component ID: </span>
+                                    <span className="font-medium">组件ID: </span>
                                     <span>{selectedComponent.id}</span>
                                 </div>
                                 <div className="text-sm">
-                                    <span className="font-medium">Component Type: </span>
+                                    <span className="font-medium">组件类型: </span>
                                     <span>{selectedComponent.type}</span>
                                 </div>
 
                                 <div className="border-t pt-4 mt-4">
-                                    <h4 className="font-medium text-sm mb-3">Properties</h4>
+                                    <h4 className="font-medium text-sm mb-3">属性</h4>
                                     <div className="space-y-4">
                                         {getPropertyControls().map(control => renderPropertyControl(control))}
                                     </div>
@@ -347,7 +334,7 @@ export function Parameters({ selectedComponent }: ParametersProps) {
                             </div>
                         ) : (
                             <div className="text-sm text-gray-500">
-                                Select a component to edit its properties
+                                请选择一个组件来编辑其属性
                             </div>
                         )}
                     </ScrollArea>

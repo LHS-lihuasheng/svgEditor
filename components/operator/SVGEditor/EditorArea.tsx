@@ -10,9 +10,10 @@ import { useParametersPanel } from "@/contexts/ParametersPanelContext"
 
 interface EditorAreaProps {
   dropRef: React.RefObject<HTMLDivElement>
+  onAddImages?: (componentId: string) => void
 }
 
-export function EditorArea({ dropRef }: EditorAreaProps) {
+export function EditorArea({ dropRef, onAddImages }: EditorAreaProps) {
   const { isMenuBarOpen } = useMenuBar()
   const { isPanelOpen } = useParametersPanel()
   const {
@@ -84,6 +85,7 @@ export function EditorArea({ dropRef }: EditorAreaProps) {
                 onMove={(dragIndex, hoverIndex, parentId) => moveComponent(dragIndex, hoverIndex, parentId)}
                 onUpdate={(component) => updateComponent(component)}
                 onDelete={(id) => deleteComponent(id)}
+                onAddImages={onAddImages}
               />
             )}
           </div>

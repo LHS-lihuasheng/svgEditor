@@ -12,6 +12,7 @@ import { MenuBarProvider } from '@/contexts/MenuBarContext'
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Parameters } from "./Parameters"
 import { ParametersPanelProvider } from '@/contexts/ParametersPanelContext'
+import { useAssets } from '@/contexts/AssetContext'
 
 // 编辑器容器组件
 export default function SVGEditorContainer() {
@@ -35,8 +36,10 @@ function SVGEditor() {
     showCodePreview,
     setShowCodePreview,
     selectedComponent,
-    handleDrop
+    handleDrop,
+    updateComponent
   } = useEditor()
+  const { shiftFirstSelectedImage } = useAssets()
 
   // 设置拖放区域
   const [, drop] = useDrop<any, void, any>(() => ({
@@ -70,10 +73,57 @@ function SVGEditor() {
     }
   }))
 
+  // 添加图片处理函数
+  const handleAddImages = (componentId: string) => {
+    const selectedImage = shiftFirstSelectedImage()
+
+    if (selectedImage && componentId) {
+      // 查找目标组件
+      const findComponent = (comps: Component[], id: string): Component | undefined => {
+        for (const comp of comps) {
+          if (comp.id === id) return comp
+          if (comp.children) {
+            const found = findComponent(comp.children, id)
+            if (found) return found
+          }
+        }
+        return undefined
+      }
+
+      const targetComponent = findComponent(components, componentId)
+
+      if (targetComponent) {
+        // 创建组件的副本
+        const updatedComponent = JSON.parse(JSON.stringify(targetComponent))
+
+        // 确保style对象存在
+        if (!updatedComponent.style) {
+          updatedComponent.style = {}
+        }
+
+        // 设置背景图片
+        updatedComponent.style.backgroundImage = `url('${selectedImage.relativePath}')`
+
+        // 更新viewBox以匹配图片尺寸
+        updatedComponent.viewBox = {
+          ...updatedComponent.viewBox,
+          width: selectedImage.dimensions.width,
+          height: selectedImage.dimensions.height
+        }
+
+        // 更新组件
+        updateComponent(updatedComponent)
+      }
+    }
+  }
+
   return (
     <div className="h-full flex bg-gray-50">
       <SideBarMenu onAddComponent={() => { }} selectedComponent={selectedComponent} />
-      <EditorArea dropRef={drop as unknown as React.RefObject<HTMLDivElement>} />
+      <EditorArea
+        dropRef={drop as unknown as React.RefObject<HTMLDivElement>}
+        onAddImages={handleAddImages}
+      />
       <Parameters selectedComponent={selectedComponent} />
 
       <Dialog open={showCodePreview} onOpenChange={setShowCodePreview}>

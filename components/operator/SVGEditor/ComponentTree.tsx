@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { generateCode } from '@/utils/code-generator'
+import { useAssets } from '@/contexts/AssetContext'
 
 interface ComponentTreeProps {
   components: Component[]
@@ -29,7 +30,6 @@ interface ComponentTreeProps {
   onMove: (dragIndex: number, hoverIndex: number, parentId: string | null) => void
   onUpdate: (updated: Component) => void
   onDelete: (id: string) => void
-  onAddImages?: (targetId: string) => void
 }
 
 export function ComponentTree({
@@ -41,7 +41,6 @@ export function ComponentTree({
   onMove,
   onUpdate,
   onDelete,
-  onAddImages
 }: ComponentTreeProps) {
   // 添加类型检查，过滤掉无效的组件
   const validComponents = components.filter((component): component is Component => {
@@ -51,6 +50,40 @@ export function ComponentTree({
     }
     return true
   })
+
+  const { shiftFirstSelectedImage } = useAssets();
+
+  const handleAddImages = (componentId: string) => {
+    const selectedImage = shiftFirstSelectedImage();
+
+    if (selectedImage && componentId) {
+      // 获取要更新的组件
+      const componentToUpdate = components.find(comp => comp.id === componentId);
+
+      if (componentToUpdate) {
+        // 创建组件的副本
+        const updatedComponent = JSON.parse(JSON.stringify(componentToUpdate));
+
+        // 确保style对象存在
+        if (!updatedComponent.style) {
+          updatedComponent.style = {};
+        }
+
+        // 设置背景图片
+        updatedComponent.style.backgroundImage = `url('${selectedImage.relativePath}')`;
+
+        // 更新viewBox以匹配图片尺寸
+        updatedComponent.viewBox = {
+          ...updatedComponent.viewBox,
+          width: selectedImage.dimensions.width,
+          height: selectedImage.dimensions.height
+        };
+
+        // 更新组件
+        onUpdate(updatedComponent);
+      }
+    }
+  };
 
   return (
     <div
@@ -74,7 +107,7 @@ export function ComponentTree({
             onMove={onMove}
             onUpdate={onUpdate}
             onDelete={onDelete}
-            onAddImages={onAddImages}
+            onAddImages={handleAddImages}
           />
         ))}
       </div>
@@ -324,7 +357,6 @@ function ComponentTreeItem({
               className="h-7 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
             >
               <ImagePlus className="h-4 w-4 mr-1" />
-              <span className="text-xs">添加图片</span>
             </Button>
           )}
         </div>
