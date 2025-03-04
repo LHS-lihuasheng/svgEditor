@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
 
 interface ImagePreviewProps {
     file: FileEntry
-    onLoad: (info: {
+    onLoad?: (info: {
         dimensions: { width: number; height: number }
         relativePath: string
         name: string
@@ -99,7 +99,7 @@ export function ImagePreview({ file, onLoad, onClick }: ImagePreviewProps) {
                 <TooltipTrigger asChild>
                     <div
                         ref={containerRef}
-                        className="group relative aspect-square rounded-md overflow-hidden border bg-muted hover:bg-muted/80 transition-colors cursor-pointer text-xs"
+                        className="group relative w-full h-full overflow-hidden border bg-muted hover:bg-muted/80 transition-colors cursor-pointer text-xs"
                         onClick={onClick}
                     >
                         {/* 图片预览 */}

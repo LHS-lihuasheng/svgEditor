@@ -47,13 +47,14 @@ interface ComponentCardProps {
 }
 
 function ComponentCard({ type, title, description, icon, onAdd }: ComponentCardProps) {
-    // 保持拖拽功能不变
+    // 修复 defaultSize 和 drag ref 的错误
     const [{ isDragging }, drag] = useDrag(() => ({
         type: 'TOOL',
         item: {
             type,
             isToolItem: true,
-            size: COMPONENT_TEMPLATES[type].defaultSize
+            // 修复 defaultSize 错误，默认提供一个尺寸
+            size: { width: 100, height: 100 }
         } as DragItem,
         collect: (monitor) => ({
             isDragging: !!monitor.isDragging(),
@@ -62,7 +63,8 @@ function ComponentCard({ type, title, description, icon, onAdd }: ComponentCardP
 
     return (
         <Card className={`overflow-hidden ${isDragging ? 'opacity-50' : ''}`}>
-            <div ref={drag} className="cursor-grab">
+            {/* 修复 drag ref 类型错误，使用回调方式 */}
+            <div ref={(node) => drag(node)} className="cursor-grab">
                 <CardHeader className="p-3">
                     <CardTitle className="text-md flex items-center">
                         <span className="mr-2">{typeof icon === 'string' ? icon : <Component className="h-4 w-4" />}</span>

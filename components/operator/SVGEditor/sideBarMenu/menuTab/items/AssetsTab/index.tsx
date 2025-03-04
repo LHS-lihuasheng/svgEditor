@@ -5,13 +5,11 @@ import { Button } from "@/components/ui/button"
 import { DirectoryTree } from "./DirectoryTree"
 import { selectDirectory } from "@/utils/file-utils"
 import { FolderOpen, RefreshCw, Check, X } from "lucide-react"
-import { ImagePreview } from "@/components/assets/ImagePreview"
-import { Checkbox } from "@/components/ui/checkbox"
 import { normalizeAssetPath, formatDisplayPath } from '@/utils/pathUtils'
 import type { FileEntry } from "@/utils/file-utils"
 import { cn } from "@/lib/utils"
 import { useAssets } from "@/contexts/AssetContext"
-
+import { MasonryGallery } from "@/components/assets/MasonryGallery"
 
 export function AssetsTab() {
   const {
@@ -29,10 +27,9 @@ export function AssetsTab() {
   const [currentDirectory, setCurrentDirectory] = useState('root')
   const [isLoading, setIsLoading] = useState(false)
 
-
   useEffect(() => {
     if (rootDirectory) {
-      selectDirectory(rootDirectory).then(({ directories, files }) => {
+      selectDirectory(rootDirectory as any).then(({ directories, files }) => {
         setDirectories(directories)
         setFiles(files)
         setCurrentFiles(filterFilesByDirectory(files, 'root'))
@@ -46,11 +43,11 @@ export function AssetsTab() {
       setIsLoading(true)
       const directoryHandle = await window.showDirectoryPicker()
 
-      setRootDirectory(directoryHandle)
+      setRootDirectory(directoryHandle as any)
 
       const [_, { directories, files }] = await Promise.all([
-        loadAssets(directoryHandle),
-        selectDirectory(directoryHandle)
+        loadAssets(directoryHandle as any),
+        selectDirectory(directoryHandle as any)
       ])
 
       setDirectories(directories)
@@ -64,7 +61,7 @@ export function AssetsTab() {
     }
   }
 
-  // 为了保持一致性，也修改刷新函数中的相关逻辑
+  // 修改刷新函数
   const handleRefresh = async () => {
     if (!rootDirectory) return
 
@@ -72,7 +69,7 @@ export function AssetsTab() {
       setIsLoading(true)
       await refreshAssets()
 
-      const { directories, files } = await selectDirectory(rootDirectory)
+      const { directories, files } = await selectDirectory(rootDirectory as any)
       setDirectories(directories)
       setFiles(files)
       setCurrentFiles(files.filter(f =>
@@ -97,18 +94,6 @@ export function AssetsTab() {
     setCurrentDirectory(directory)
     setCurrentFiles(filterFilesByDirectory(files, directory))
   }
-
-  // 添加事件委托处理函数
-  const handleGridClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    // 查找最近的可点击元素
-    const clickableElement = (e.target as HTMLElement).closest('[data-image-path]')
-    if (!clickableElement) return
-
-    const path = clickableElement.getAttribute('data-image-path')
-    if (path) {
-      selectImage(path)
-    }
-  }, [selectImage])
 
   return (
     <div className="p-4 space-y-4 relative">
@@ -181,32 +166,13 @@ export function AssetsTab() {
       </div>
 
       {rootDirectory ? (
-        <div className="grid grid-cols-2 gap-2" onClick={handleGridClick}>
-          {currentFiles.map((file) => (
-            <div
-              key={file.path}
-              data-image-path={normalizeAssetPath(file.path)}
-              className={cn(
-                "relative aspect-square rounded-md overflow-hidden cursor-pointer",
-                "ring-1 ring-muted/20 hover:ring-2 hover:ring-primary/50",
-                selectedImagePaths.includes(normalizeAssetPath(file.path)) && "ring-2 ring-primary"
-              )}
-            >
-              <ImagePreview file={file}>
-                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
-                  {formatDisplayPath(file.relativePath)}
-                </div>
-              </ImagePreview>
-              <Checkbox
-                checked={selectedImagePaths.includes(normalizeAssetPath(file.path))}
-                className="absolute top-1 right-1 h-4 w-4 bg-background/95"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  selectImage(normalizeAssetPath(file.path))
-                }}
-              />
-            </div>
-          ))}
+        <div className="mt-4">
+          <MasonryGallery
+            files={currentFiles}
+            selectedImagePaths={selectedImagePaths}
+            onSelectImage={selectImage}
+            columnsCount={2}
+          />
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
