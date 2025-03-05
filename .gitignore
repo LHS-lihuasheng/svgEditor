@@ -3,12 +3,17 @@
 # dependencies
 /node_modules
 
+#----------------------------------------------
+# 构建和输出目录
+#----------------------------------------------
 # next.js
 /.next/
 /out/
 
-# production
+# 生产环境构建文件
 /build
+/dist
+/public/dist
 
 # debug
 npm-debug.log*
@@ -25,3 +30,71 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#----------------------------------------------
+# 系统文件
+#----------------------------------------------
+# macOS系统文件
+**/.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Windows系统文件
+**/Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux系统文件
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+#----------------------------------------------
+# 开发环境文件
+#----------------------------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# 保留示例环境文件
+!.env/example
+# 或者如果是 .env.example 文件
+!.env.example
+
+# 缓存目录
+.cache/
+.temp/
+.tmp/
+.eslintcache
+.stylelintcache
+
+#----------------------------------------------
+# 版本控制相关
+#----------------------------------------------
+# Vercel
+.vercel
+
+# 测试覆盖率报告
+/coverage
+
+#----------------------------------------------
+# 其他
+#----------------------------------------------
+# 临时文件
+*.bak
+*.tmp
+.temp
+temp/
+
+# 包管理器锁文件（取消注释如需忽略）
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
