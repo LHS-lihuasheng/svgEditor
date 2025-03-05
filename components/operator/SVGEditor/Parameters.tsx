@@ -23,7 +23,7 @@ interface ParametersProps {
 export function Parameters({ selectedComponent }: ParametersProps) {
     const { isPanelOpen, togglePanel } = useParametersPanel();
     const { updateComponent } = useEditor();
-    const { shiftFirstSelectedImage } = useAssets();
+    const { shiftFirstSelectedImage, findImageByPath } = useAssets();
 
     // 更新组件属性的通用处理函数
     const handlePropertyChange = (property: string, value: any) => {
@@ -55,7 +55,26 @@ export function Parameters({ selectedComponent }: ParametersProps) {
 
     // 渲染图片选择器
     const renderImageSelector = (control: PropertyControl, currentValue: string) => {
+        // 从组件中获取当前路径
         const currentPath = get(selectedComponent, 'style.backgroundImage')?.replace(/url\(['"](.+)['"]\)/, '$1') || '';
+
+        // 使用useState存储预览URL，初始为空
+        const [previewUrl, setPreviewUrl] = useState<string>('');
+
+        // 当组件或当前值变化时，更新预览URL
+        useEffect(() => {
+            // 先尝试从资产库找到对应的图片
+            const imageAsset = findImageByPath?.(currentPath);
+            if (imageAsset) {
+                // 如果找到图片资产，使用其Blob URL
+                setPreviewUrl(`url('${imageAsset.url}')`);
+            } else if (currentPath) {
+                // 否则使用当前路径
+                setPreviewUrl(`url('${currentPath}')`);
+            } else {
+                setPreviewUrl('');
+            }
+        }, [selectedComponent, currentPath]);
 
         return (
             <div className="space-y-2" key={control.property}>
@@ -87,17 +106,19 @@ export function Parameters({ selectedComponent }: ParametersProps) {
                                 if (!updatedComponent.style) {
                                     updatedComponent.style = {};
                                 }
-                                
-                                // 设置背景图片
+
+                                // 设置背景图片 - 使用相对路径
                                 updatedComponent.style.backgroundImage = `url('${selectedImage.relativePath}')`;
-                                
+
+                                // 立即设置预览URL为Blob URL
+                                setPreviewUrl(`url('${selectedImage.url}')`);
+
                                 // 更新viewBox以匹配图片尺寸
                                 updatedComponent.viewBox = {
                                     ...updatedComponent.viewBox,
                                     width: selectedImage.dimensions.width,
                                     height: selectedImage.dimensions.height
                                 };
-                                
                                 updateComponent(updatedComponent);
                             }
                         }}
@@ -109,7 +130,7 @@ export function Parameters({ selectedComponent }: ParametersProps) {
                     <div className="mt-2 relative w-full h-20 bg-gray-100 rounded-md overflow-hidden">
                         <div
                             className="absolute inset-0 bg-contain bg-center bg-no-repeat"
-                            style={{ backgroundImage: currentValue }}
+                            style={{ backgroundImage: previewUrl || `url('${currentPath}')` }}
                         />
                     </div>
                 )}
@@ -164,11 +185,11 @@ export function Parameters({ selectedComponent }: ParametersProps) {
                 <div className="space-y-2" key={control.property}>
                     <Label>{control.label}</Label>
                     <div className="grid grid-cols-4 gap-2">
-                            <Input
-                                type="number"
-                                value={margin.top?.toString() || ''}
-                                onChange={(e) => handleMarginChange('top', e.target.value)}
-                                placeholder="top"
+                        <Input
+                            type="number"
+                            value={margin.top?.toString() || ''}
+                            onChange={(e) => handleMarginChange('top', e.target.value)}
+                            placeholder="top"
                         />
                         <Input
                             type="number"
