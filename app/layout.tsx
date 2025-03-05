@@ -5,7 +5,6 @@ import "@/app/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import TopNav from "@/components/TopNav"
 import { AssetProvider } from "@/contexts/AssetContext"
-import { DndWrapper } from "@/components/operator/DndWrapper"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -24,12 +23,10 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <AssetProvider>
-            <DndWrapper>
               <div className="flex flex-col h-screen bg-gray-50">
                 <TopNav />
                 <main className="flex-1 overflow-auto">{children}</main>
               </div>
-            </DndWrapper>
           </AssetProvider>
         </ThemeProvider>
       </body>

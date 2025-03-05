@@ -1,5 +1,4 @@
-import type { BaseComponent } from '@/types/atomicComponents/baseComponent'
-import type { SVGPicComponent } from '@/types/atomicComponents/svgComponent'
+import type { BaseComponent } from '@/types/core'
 import type { CSSProperties } from 'react'
 
 // 将组件对象转换为HTML代码字符串
@@ -12,7 +11,7 @@ export function generateCode(components: BaseComponent | BaseComponent[]): strin
 function generateComponentCode(component: BaseComponent): string {
   switch (component.type) {
     case 'svgPic':
-      return generateSvgCode(component as SVGPicComponent)
+      return generateSvgCode(component)
     case 'g':
       return generateGroupCode(component)
     case 'rect':
@@ -22,7 +21,7 @@ function generateComponentCode(component: BaseComponent): string {
   }
 }
 
-function generateSvgCode(component: SVGPicComponent): string {
+function generateSvgCode(component: BaseComponent): string {
   const viewBox = component.viewBox || {};
   const vbArray = [
     viewBox.x ?? 0,
