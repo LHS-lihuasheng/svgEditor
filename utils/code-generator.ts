@@ -1,22 +1,28 @@
-import { Component } from '@/types/atomicComponent'
+import type { BaseComponent } from '@/types/atomicComponents/baseComponent'
+import type { SVGPicComponent } from '@/types/atomicComponents/svgComponent'
+import type { CSSProperties } from 'react'
 
 // 将组件对象转换为HTML代码字符串
-export function generateCode(components: Component | Component[]): string {
+export function generateCode(components: BaseComponent | BaseComponent[]): string {
   // 统一转换为数组
   const componentsArray = Array.isArray(components) ? components : [components]
   return componentsArray.map(component => generateComponentCode(component)).join('\n\n')
 }
 
-function generateComponentCode(component: Component): string {
+function generateComponentCode(component: BaseComponent): string {
   switch (component.type) {
-    case 'svg':
-      return generateSvgCode(component)
+    case 'svgPic':
+      return generateSvgCode(component as SVGPicComponent)
+    case 'g':
+      return generateGroupCode(component)
+    case 'rect':
+      return generateRectCode(component)
     default:
-      return `<!-- Unsupported component type: ${component.type} -->`
+      return `<!-- 不支持的组件类型: ${component.type} -->`
   }
 }
 
-function generateSvgCode(component: Component): string {
+function generateSvgCode(component: SVGPicComponent): string {
   const viewBox = component.viewBox || {};
   const vbArray = [
     viewBox.x ?? 0,
@@ -25,6 +31,7 @@ function generateSvgCode(component: Component): string {
     viewBox.height ?? 0
   ].join(' ');
 
+  // 转换样式时处理特殊格式
   const style = generateStyle(component.style || {})
   const children = component.children?.map(child => generateComponentCode(child)).join('\n') || ''
 
@@ -36,21 +43,54 @@ function generateSvgCode(component: Component): string {
     return `<svg style="${style}" viewBox="${vbArray}" >
 </svg>`
   }
-
 }
 
-function generateStyle(style: React.CSSProperties): string {
+function generateGroupCode(component: BaseComponent): string {
+  const style = generateStyle(component.style || {})
+  const attributes = component.attributes ?
+    Object.entries(component.attributes)
+      .map(([key, value]) => `${key}="${value}"`)
+      .join(' ') : '';
+
+  const children = component.children?.map(child => generateComponentCode(child)).join('\n') || ''
+
+  return `<g style="${style}" ${attributes}>
+  ${children}
+</g>`
+}
+
+function generateRectCode(component: BaseComponent): string {
+  const style = generateStyle(component.style || {})
+  const attributes = component.attributes ?
+    Object.entries(component.attributes)
+      .map(([key, value]) => `${key}="${value}"`)
+      .join(' ') : '';
+
+  return `<rect style="${style}" ${attributes} />`
+}
+
+// 处理margin对象为字符串
+function processMargin(margin: any): string {
+  if (typeof margin === 'object') {
+    const top = margin.top ?? 0;
+    const right = margin.right ?? 0;
+    const bottom = margin.bottom ?? 0;
+    const left = margin.left ?? 0;
+    return `${top}px ${right}px ${bottom}px ${left}px`;
+  }
+  return margin;
+}
+
+function generateStyle(style: Record<string, any>): string {
+  // 创建一个新对象来避免修改原始对象
+  const processedStyle: Record<string, any> = { ...style };
+
   // 处理margin对象
   if (style.margin && typeof style.margin === 'object') {
-    const m = style.margin as any;
-    const top = m.top ?? 0;
-    const right = m.right ?? top;
-    const bottom = m.bottom ?? top;
-    const left = m.left ?? right ?? top;
-    style.margin = `${top}px ${right}px ${bottom}px ${left}px`;
+    processedStyle.margin = processMargin(style.margin);
   }
 
-  return Object.entries(style)
+  return Object.entries(processedStyle)
     .map(([key, value]) => `${hyphenate(key)}: ${value};`)
     .join(' ')
 }

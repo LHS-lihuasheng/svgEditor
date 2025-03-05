@@ -1,29 +1,30 @@
 "use client"
 
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
-import type { Component } from '@/types/atomicComponent'
-import { COMPONENT_TEMPLATES } from '@/types/atomicComponent'
+import type { ComponentType } from '@/types/atomicComponents/index'
+import { COMPONENT_TEMPLATES } from '@/types/atomicComponents/index'
+import { BaseComponent } from '@/types/atomicComponents/baseComponent'
 
 // 定义Context类型
 interface EditorContextType {
     // 状态
-    components: Component[]
-    selectedComponent: Component | null
+    components: BaseComponent[]
+    selectedComponent: BaseComponent | null
     showCodePreview: boolean
 
     // 操作
-    setComponents: React.Dispatch<React.SetStateAction<Component[]>>
-    setSelectedComponent: (component: Component | null) => void
-    updateComponent: (updated: Component) => void
-    addComponent: (type: Component['type'], position: { x: number; y: number }) => void
+    setComponents: React.Dispatch<React.SetStateAction<BaseComponent[]>>
+    setSelectedComponent: (BaseComponent: BaseComponent | null) => void
+    updateComponent: (updated: BaseComponent) => void
+    addComponent: (type: BaseComponent['type']) => void
     deleteComponent: (id: string) => void
     moveComponent: (dragIndex: number, hoverIndex: number, parentId: string | null) => void
     setShowCodePreview: (show: boolean) => void
     handleDrop: (item: any, targetId: string | null) => void
 
     // 辅助方法
-    findComponentById: (components: Component[], id: string) => [Component | null, Component[] | null]
-    generateUniqueId: (type: Component['type']) => string
+    findComponentById: (components: BaseComponent[], id: string) => [BaseComponent | null, BaseComponent[] | null]
+    generateUniqueId: (type: BaseComponent['type']) => string
 }
 
 // 创建Context
@@ -31,31 +32,17 @@ const EditorContext = createContext<EditorContextType | null>(null)
 
 // Provider组件
 export function EditorProvider({ children }: { children: React.ReactNode }) {
-    const [components, setComponents] = useState<Component[]>([])
-    const [selectedComponent, setSelectedComponent] = useState<Component | null>(null)
+    const [components, setComponents] = useState<BaseComponent[]>([])
+    const [selectedComponent, setSelectedComponent] = useState<BaseComponent | null>(null)
     const [showCodePreview, setShowCodePreview] = useState(false)
 
-    // 在EditorProvider的开头添加
-    useEffect(() => {
-        // 加载自定义模板
-        try {
-            const saved = localStorage.getItem("svg-editor-custom-templates")
-            if (saved) {
-                const customTemplates = JSON.parse(saved)
-                Object.assign(COMPONENT_TEMPLATES, customTemplates)
-            }
-        } catch (error) {
-            console.error("Failed to load custom templates:", error)
-        }
-    }, [])
-
     // 生成唯一ID
-    const generateUniqueId = useCallback((type: Component['type']): string => {
+    const generateUniqueId = useCallback((type: BaseComponent['type']): string => {
         const baseId = `${type}-${Date.now()}`
         let id = baseId
         let counter = 1
 
-        const isIdExists = (comps: Component[], checkId: string): boolean => {
+        const isIdExists = (comps: BaseComponent[], checkId: string): boolean => {
             return comps.some(comp => {
                 if (comp.id === checkId) return true
                 if (comp.children) return isIdExists(comp.children, checkId)
@@ -72,7 +59,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     }, [components])
 
     // 查找组件
-    const findComponentById = useCallback((components: Component[], id: string): [Component | null, Component[] | null] => {
+    const findComponentById = useCallback((components: BaseComponent[], id: string): [BaseComponent | null, BaseComponent[] | null] => {
         if (!Array.isArray(components)) return [null, null]
 
         for (let i = 0; i < components.length; i++) {
@@ -90,20 +77,17 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     // 添加组件
-    const addComponent = useCallback((type: "svg", position: { x: number; y: number }) => {
-        if (type !== 'svg') {
-            console.warn('只支持添加SVG组件')
+    const addComponent = useCallback((type: "svgPic") => {
+        if (type !== 'svgPic') {
+            console.warn('只支持添加SVG图片')
             return
         }
-        
+
         setComponents(prev => {
             const template = COMPONENT_TEMPLATES[type]
-            const newComponent: Component = {
+            const newComponent: BaseComponent = {
                 id: generateUniqueId(type),
                 type,
-                position,
-                size: template.defaultSize || { width: '100%', height: 'auto' },
-                code: template.code,
                 children: [],
                 ...(template.defaultProperties || {})
             }
@@ -113,15 +97,15 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     }, [generateUniqueId])
 
     // 更新组件
-    const updateComponent = useCallback((updated: Component) => {
+    const updateComponent = useCallback((updated: BaseComponent) => {
         // 深拷贝组件，避免引用问题
         const updatedComponent = JSON.parse(JSON.stringify(updated))
 
         setComponents(prevComponents => {
             const newComponents = [...prevComponents]
-            const [component, parentArray] = findComponentById(newComponents, updated.id)
+            const [BaseComponent, parentArray] = findComponentById(newComponents, updated.id)
 
-            if (component && parentArray) {
+            if (BaseComponent && parentArray) {
                 // 找到组件在父数组中的索引
                 const index = parentArray.findIndex(c => c.id === updated.id)
                 if (index !== -1) {
@@ -140,7 +124,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     // 删除组件
     const deleteComponent = useCallback((id: string) => {
         setComponents(prev => {
-            const deleteFromTree = (components: Component[]): Component[] => {
+            const deleteFromTree = (components: BaseComponent[]): BaseComponent[] => {
                 return components.filter(comp => {
                     if (comp.id === id) return false
                     if (comp.children && comp.children.length > 0) {
@@ -165,7 +149,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
             const components = JSON.parse(JSON.stringify(prevComponents))
 
             // 查找源组件
-            const findComponentByIndex = (components: Component[], index: number, parentId: string | null): [Component, Component[] | null] | null => {
+            const findComponentByIndex = (components: BaseComponent[], index: number, parentId: string | null): [BaseComponent, BaseComponent[] | null] | null => {
                 if (!Array.isArray(components)) return null
 
                 if (!parentId) {
@@ -175,16 +159,16 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
                     return null
                 }
 
-                for (const component of components) {
-                    if (component.id === parentId && Array.isArray(component.children)) {
-                        if (index >= 0 && index < component.children.length) {
-                            return [component.children[index], component.children]
+                for (const BaseComponent of components) {
+                    if (BaseComponent.id === parentId && Array.isArray(BaseComponent.children)) {
+                        if (index >= 0 && index < BaseComponent.children.length) {
+                            return [BaseComponent.children[index], BaseComponent.children]
                         }
                         return null
                     }
 
-                    if (Array.isArray(component.children)) {
-                        const result = findComponentByIndex(component.children, index, parentId)
+                    if (Array.isArray(BaseComponent.children)) {
+                        const result = findComponentByIndex(BaseComponent.children, index, parentId)
                         if (result) return result
                     }
                 }
@@ -220,7 +204,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     // 处理拖放
     const handleDrop = useCallback((item: any, targetId: string | null = null) => {
         if (item.isToolItem) {
-            const template = COMPONENT_TEMPLATES[item.type]
+            const template = COMPONENT_TEMPLATES[item.type as keyof typeof COMPONENT_TEMPLATES]
             if (!template) {
                 console.error(`Template not found for type: ${item.type}`)
                 return
@@ -228,13 +212,9 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
 
             setComponents(prev => {
                 // 创建新组件
-                const newComponent: Component = {
+                const newComponent: BaseComponent = {
                     id: generateUniqueId(item.type),
                     type: item.type,
-                    position: { x: 0, y: 0 },
-                    size: template.defaultSize || { width: '100%', height: 'auto' },
-                    tag: template.tag,
-                    attributes: template.defaultAttributes || {},
                     children: [],
                     ...(template.defaultProperties || {})
                 }
@@ -253,23 +233,20 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
                 const [movedComponent] = findComponentById(prev, item.id)
                 if (!movedComponent) return prev
 
-                const template = COMPONENT_TEMPLATES[movedComponent.type]
+                const template = COMPONENT_TEMPLATES[movedComponent.type as keyof typeof COMPONENT_TEMPLATES]
                 if (!template) {
                     console.error(`Template not found for type: ${movedComponent.type}`)
                     return prev
                 }
 
-                const componentToMove: Component = {
+                const componentToMove: BaseComponent = {
                     ...movedComponent,
-                    position: { x: 0, y: 0 },
-                    tag: template.tag,
-                    attributes: template.defaultAttributes || {},
                     children: Array.isArray(movedComponent.children) ? [...movedComponent.children] : []
                 }
 
                 if (targetId === item.id) return prev
 
-                const isDescendant = (parent: Component, childId: string): boolean => {
+                const isDescendant = (parent: BaseComponent, childId: string): boolean => {
                     if (!parent.children) return false
                     return parent.children.some(child =>
                         child.id === childId || isDescendant(child, childId)
@@ -285,7 +262,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
                 }
 
                 // 删除原有组件
-                const removeComponent = (components: Component[], id: string): Component[] => {
+                const removeComponent = (components: BaseComponent[], id: string): BaseComponent[] => {
                     return components.filter(comp => {
                         if (comp.id === id) return false
                         if (comp.children && comp.children.length > 0) {
@@ -307,11 +284,11 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
 
     // 辅助函数：更新组件树
     const updateComponentTree = useCallback((
-        components: Component[],
+        components: BaseComponent[],
         targetId: string,
-        movedComponent: Component,
+        movedComponent: BaseComponent,
         dropPosition: 'before' | 'after' | 'nested' = 'after'
-    ): Component[] => {
+    ): BaseComponent[] => {
         if (!Array.isArray(components)) return []
 
         return components
@@ -348,7 +325,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
                     return [...acc, ...curr]
                 }
                 return [...acc, curr]
-            }, [] as Component[])
+            }, [] as BaseComponent[])
     }, [])
 
     // 优化性能：记忆化value对象

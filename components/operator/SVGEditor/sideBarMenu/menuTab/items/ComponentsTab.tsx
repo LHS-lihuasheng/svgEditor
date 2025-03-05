@@ -3,13 +3,14 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { DragItem } from "@/types/atomicComponent"
-import { COMPONENT_TEMPLATES } from "@/types/atomicComponent"
+import type { ComponentType, BaseComponent } from "@/types/atomicComponents/index"
+import { COMPONENT_TEMPLATES } from "@/types/atomicComponents/index"
 import { Paintbrush, Component, Box } from "lucide-react"
 import { useDrag } from "react-dnd"
+import type { DragItem } from "@/types/atomicComponents/baseComponent"
 
 interface ComponentsTabProps {
-    onAddComponent: (type: "svg", position: { x: number, y: number }) => void
+    onAddComponent: (type: ComponentType) => void
 }
 
 export function ComponentsTab({ onAddComponent }: ComponentsTabProps) {
@@ -23,14 +24,17 @@ export function ComponentsTab({ onAddComponent }: ComponentsTabProps) {
 
                 <ScrollArea className="h-[calc(100vh-240px)]">
                     <div className="grid grid-cols-1 gap-4 pr-4">
-                        {/* 只显示SVG组件 */}
-                        <ComponentCard
-                            type="svg"
-                            title={COMPONENT_TEMPLATES.svg.label}
-                            description={COMPONENT_TEMPLATES.svg.description || ''}
-                            icon={COMPONENT_TEMPLATES.svg.icon}
-                            onAdd={(type) => onAddComponent(type, { x: 100, y: 100 })}
-                        />
+                        {/* 显示所有组件 */}
+                        {Object.entries(COMPONENT_TEMPLATES).map(([type, template]) => (
+                            <ComponentCard
+                                key={type}
+                                type={type as ComponentType}
+                                title={template.label}
+                                description={template.description || ''}
+                                icon={template.icon}
+                                onAdd={(type) => onAddComponent(type)}
+                            />
+                        ))}
                     </div>
                 </ScrollArea>
             </div>
@@ -39,11 +43,11 @@ export function ComponentsTab({ onAddComponent }: ComponentsTabProps) {
 }
 
 interface ComponentCardProps {
-    type: "svg"
+    type: ComponentType
     title: string
     description: string
     icon: React.ReactNode | string
-    onAdd: (type: "svg") => void
+    onAdd: (type: ComponentType) => void
 }
 
 function ComponentCard({ type, title, description, icon, onAdd }: ComponentCardProps) {
@@ -53,8 +57,7 @@ function ComponentCard({ type, title, description, icon, onAdd }: ComponentCardP
         item: {
             type,
             isToolItem: true,
-            // 修复 defaultSize 错误，默认提供一个尺寸
-            size: { width: 100, height: 100 }
+            id: `temp-${Date.now()}` // 添加临时ID
         } as DragItem,
         collect: (monitor) => ({
             isDragging: !!monitor.isDragging(),
@@ -63,8 +66,10 @@ function ComponentCard({ type, title, description, icon, onAdd }: ComponentCardP
 
     return (
         <Card className={`overflow-hidden ${isDragging ? 'opacity-50' : ''}`}>
-            {/* 修复 drag ref 类型错误，使用回调方式 */}
-            <div ref={(node) => drag(node)} className="cursor-grab">
+            <div
+                ref={drag as React.RefObject<HTMLDivElement>}
+                className="cursor-grab"
+            >
                 <CardHeader className="p-3">
                     <CardTitle className="text-md flex items-center">
                         <span className="mr-2">{typeof icon === 'string' ? icon : <Component className="h-4 w-4" />}</span>

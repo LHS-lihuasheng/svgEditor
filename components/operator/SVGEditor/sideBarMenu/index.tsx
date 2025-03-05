@@ -1,15 +1,15 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import type { Component } from "@/types/atomicComponent"
+import type { BaseComponent } from "@/types/atomicComponents/index"
 import { useMenuBar } from "@/contexts/MenuBarContext"
 import { NavBar } from "./menuNav"
 import { MenuTab } from "./menuTab/index"
 
 interface SideBarMenuProps {
-    onAddComponent: (type: Component['type'], position: { x: number; y: number }) => void
-    selectedComponent: Component | null
-    onUpdateComponent?: (component: Component) => void
+    onAddComponent: (type: BaseComponent['type']) => void
+    selectedComponent: BaseComponent | null
+    onUpdateComponent?: (component: BaseComponent) => void
 }
 
 export function SideBarMenu({ onAddComponent, selectedComponent, onUpdateComponent }: SideBarMenuProps) {

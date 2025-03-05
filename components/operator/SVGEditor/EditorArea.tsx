@@ -3,19 +3,15 @@
 import { Button } from "@/components/ui/button"
 import { LucideRefreshCw, LucideEye, Settings, LucideCode, Image } from "lucide-react"
 import { ComponentTree } from "./ComponentTree"
-import { useMenuBar } from "@/contexts/MenuBarContext"
 import { cn } from "@/lib/utils"
 import { useEditor } from '@/contexts/EditorContext'
-import { useParametersPanel } from "@/contexts/ParametersPanelContext"
+import type { BaseComponent } from "@/types/atomicComponents/index"
 
 interface EditorAreaProps {
   dropRef: React.RefObject<HTMLDivElement>
-  onAddImages?: (componentId: string) => void
 }
 
-export function EditorArea({ dropRef, onAddImages }: EditorAreaProps) {
-  const { isMenuBarOpen } = useMenuBar()
-  const { isPanelOpen } = useParametersPanel()
+export function EditorArea({ dropRef }: EditorAreaProps) {
   const {
     components,
     selectedComponent,
@@ -85,7 +81,6 @@ export function EditorArea({ dropRef, onAddImages }: EditorAreaProps) {
                 onMove={(dragIndex, hoverIndex, parentId) => moveComponent(dragIndex, hoverIndex, parentId)}
                 onUpdate={(component) => updateComponent(component)}
                 onDelete={(id) => deleteComponent(id)}
-                onAddImages={onAddImages}
               />
             )}
           </div>

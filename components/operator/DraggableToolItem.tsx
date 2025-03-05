@@ -1,7 +1,7 @@
 import { useDrag } from 'react-dnd'
 import { Button } from "@/components/ui/button"
-import type { Component, ComponentTemplate } from "@/types/atomicComponent"
-import { COMPONENT_TEMPLATES } from '@/types/atomicComponent'
+import type { ComponentType } from "@/types/atomicComponents/index"
+import { COMPONENT_TEMPLATES } from '@/types/atomicComponents/index'
 import {
   Tooltip,
   TooltipContent,
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/tooltip"
 
 interface DraggableToolItemProps {
-  type: Component['type']
+  type: ComponentType
   label?: string
   icon?: string
   showDescription?: boolean
@@ -30,7 +30,6 @@ export function DraggableToolItem({
       type,
       isToolItem: true,
       id: `temp-${Date.now()}`,
-      size: template?.defaultSize || { width: 100, height: 100 },
       index: -1,
     }),
     collect: (monitor) => ({

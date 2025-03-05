@@ -2,12 +2,12 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useMenuBar } from "@/contexts/MenuBarContext"
 import { ComponentsTab } from "./items/ComponentsTab"
 import { AssetsTab } from "./items/AssetsTab/index"
-import type { Component } from "@/types/atomicComponent"
+import type { BaseComponent } from "@/types/atomicComponents/index"
 
 interface MenuTabProps {
-    onAddComponent: (type: Component['type'], position: { x: number; y: number }) => void
-    selectedComponent: Component | null
-    onUpdateComponent?: (component: Component) => void
+    onAddComponent: (type: BaseComponent['type']) => void
+    selectedComponent: BaseComponent | null
+    onUpdateComponent?: (component: BaseComponent) => void
 }
 
 export function MenuTab({ onAddComponent, selectedComponent, onUpdateComponent }: MenuTabProps) {

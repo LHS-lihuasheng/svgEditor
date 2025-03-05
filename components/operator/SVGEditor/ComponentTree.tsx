@@ -1,9 +1,9 @@
 "use client"
 
-import { useDrag, useDrop } from 'react-dnd'
-import type { Component, DragItem } from '@/types/atomicComponent'
-import { COMPONENT_TEMPLATES } from '@/types/atomicComponent'
-import { Image, LucideCode, LucideRefreshCw, Trash, ImagePlus } from 'lucide-react'
+import { useDrag, useDrop, DropTargetMonitor } from 'react-dnd'
+import type { BaseComponent, DragItem, ComponentType } from '@/types/atomicComponents/index'
+import { COMPONENT_TEMPLATES } from '@/types/atomicComponents/index'
+import { Image, LucideCode, LucideRefreshCw, Trash, ImagePlus, PlusIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
 import {
   AlertDialog,
@@ -20,15 +20,16 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { generateCode } from '@/utils/code-generator'
 import { useAssets } from '@/contexts/AssetContext'
+import { useEditor } from '@/contexts/EditorContext'
 
 interface ComponentTreeProps {
-  components: Component[]
+  components: BaseComponent[]
   selectedId?: string
   level?: number
-  onSelect: (component: Component) => void
+  onSelect: (component: BaseComponent) => void
   onDrop: (item: DragItem, targetId: string | null) => void
   onMove: (dragIndex: number, hoverIndex: number, parentId: string | null) => void
-  onUpdate: (updated: Component) => void
+  onUpdate: (updated: BaseComponent) => void
   onDelete: (id: string) => void
 }
 
@@ -43,7 +44,7 @@ export function ComponentTree({
   onDelete,
 }: ComponentTreeProps) {
   // 添加类型检查，过滤掉无效的组件
-  const validComponents = components.filter((component): component is Component => {
+  const validComponents = components.filter((component): component is BaseComponent => {
     if (!component || typeof component !== 'object') {
       console.warn('Invalid component found:', component)
       return false
@@ -83,6 +84,65 @@ export function ComponentTree({
         onUpdate(updatedComponent);
       }
     }
+  };
+
+  // 组件树项渲染
+  function renderComponent(component: BaseComponent, level: number) {
+    const isContainer = component.type === 'svgPic'
+    const hasChildren = component.children && component.children.length > 0;
+
+    return (
+      <div className="component-item" style={{ paddingLeft: `${level * 8}px` }}>
+        <div className="component-header">
+          <span>{COMPONENT_TEMPLATES[component.type].label}</span>
+
+          {/* 组件操作按钮 */}
+          <div className="component-actions">
+            {/* 编辑按钮 */}
+            {/* 删除按钮 */}
+
+            {/* 只在容器组件上显示添加子组件按钮 */}
+            {isContainer && (
+              <Button
+                onClick={() => showAddChildMenu(component.id)}
+                className="add-child-button"
+              >
+                <PlusIcon />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* 子组件列表 */}
+        {hasChildren && (
+          <div className="component-children">
+            {component.children!.map(child => renderComponent(child, level + 1))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const showAddChildMenu = (componentId: string) => {
+    // 确保findComponentById和addComponent可用
+    const { findComponentById, addComponent } = useEditor();
+
+    // 获取组件类型
+    const [targetComponent] = findComponentById(components, componentId);
+    if (!targetComponent) return;
+
+    // 找出模板允许的子组件类型
+    const template = COMPONENT_TEMPLATES[targetComponent.type];
+    const allowedChildren = template?.allowedChildren || [];
+
+    if (allowedChildren.length === 0) {
+      alert('此组件不允许添加子组件');
+      return;
+    }
+
+    // 简化版：直接添加第一个允许的子组件类型
+    const childType = allowedChildren[0] as ComponentType;
+    addComponent(childType);
   };
 
   return (
@@ -129,16 +189,16 @@ function ComponentTreeItem({
   onDelete,
   onAddImages
 }: {
-  component: Component
+  component: BaseComponent
   isSelected: boolean
   level: number
   index: number
   parentId: string | null
   selectedId?: string
-  onSelect: (component: Component) => void
+  onSelect: (component: BaseComponent) => void
   onDrop: (item: DragItem, targetId: string | null) => void
   onMove: (dragIndex: number, hoverIndex: number, parentId: string | null) => void
-  onUpdate: (updated: Component) => void
+  onUpdate: (updated: BaseComponent) => void
   onDelete: (id: string) => void
   onAddImages?: (targetId: string) => void
 }) {
@@ -146,6 +206,7 @@ function ComponentTreeItem({
   const [isCodeEditorOpen, setIsCodeEditorOpen] = useState(false)
   const [showDeleteAlert, setShowDeleteAlert] = useState(false)  // 添加删除确认状态
   const [showCodePreview, setShowCodePreview] = useState(false)
+  const [previewComponent, setPreviewComponent] = useState<BaseComponent | null>(null)
 
   const [{ isDragging }, drag] = useDrag({
     type: 'COMPONENT',
@@ -160,9 +221,72 @@ function ComponentTreeItem({
     })
   })
 
-  const [{ isOver, isOverCurrent, dropPosition }, drop] = useDrop({
-    accept: ['TOOL', 'COMPONENT'],
-    hover: (item: DragItem, monitor) => {
+
+  // 检查组件是否为目标的后代（防止循环嵌套）
+  const isDescendant = (parent: BaseComponent, childId: string): boolean => {
+    if (!parent.children) return false;
+
+    return parent.children.some(child =>
+      child.id === childId || isDescendant(child, childId)
+    );
+  };
+
+  // 获取放置位置（前、后、内部）
+  const getDropPosition = (monitor: DropTargetMonitor): 'before' | 'after' | 'nested' => {
+    const clientOffset = monitor.getClientOffset();
+
+    if (!clientOffset || !ref.current) {
+      return 'after';
+    }
+
+    const hoverBoundingRect = ref.current.getBoundingClientRect();
+    const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+
+    // 计算鼠标位置相对于组件的位置
+    const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+
+    // 计算相对鼠标位置与组件中心的距离（百分比）
+    const relativePosition = Math.abs(hoverClientY - hoverMiddleY) / hoverMiddleY;
+
+    // 如果鼠标位置非常接近中心（20%范围内），视为嵌套放置
+    if (relativePosition < 0.2) {
+      return 'nested';
+    }
+
+    // 否则根据鼠标在组件上方还是下方决定放置位置
+    return hoverClientY < hoverMiddleY ? 'before' : 'after';
+  };
+
+  const [{ isOver, isOverCurrent, dropPosition }, drop] = useDrop(() => ({
+    // 接受所有组件类型
+    accept: Object.keys(COMPONENT_TEMPLATES),
+
+    // 判断是否可以放置
+    canDrop: (item: DragItem) => {
+      // 检查是否允许嵌套
+      if (component && item.type) {
+        const template = COMPONENT_TEMPLATES[component.type];
+
+        // 1. 检查目标组件是否允许此类型的子组件
+        if (dropPosition === 'nested' &&
+          (!template.allowedChildren ||
+            !template.allowedChildren.includes(item.type))) {
+          return false;
+        }
+
+        // 2. 防止循环嵌套
+        if (dropPosition === 'nested' &&
+          item.id &&
+          isDescendant(component, item.id)) {
+          return false;
+        }
+      }
+
+      return true;
+    },
+
+    // 处理悬停事件
+    hover: (item, monitor) => {
       if (!ref.current) return
       if (!item.isToolItem && item.id === component.id) return
 
@@ -192,35 +316,32 @@ function ComponentTreeItem({
       }
     },
 
-    drop: (item: DragItem, monitor) => {
-      if (monitor.didDrop()) return
-
-      // 确保设置了 dropPosition
-      const finalItem = { ...item };
-      if (!finalItem.dropPosition) {
-        finalItem.dropPosition = 'after' // 默认值
+    // 处理放置事件
+    drop: (item, monitor) => {
+      if (monitor.didDrop()) {
+        // 已被子组件处理
+        return;
       }
 
-      onDrop(finalItem, component.id)
-      return { handled: true }
+      if (item.isToolItem) {
+        // 添加新组件
+        onDrop(item, component.id);
+      } else {
+        // 移动现有组件
+        onMove(item.index!, index, component.id);
+      }
+
+      return { id: component.id };
     },
 
+    // 收集属性
     collect: (monitor) => ({
       isOver: monitor.isOver(),
       isOverCurrent: monitor.isOver({ shallow: true }),
-      dropPosition: (monitor.getItem() as DragItem)?.dropPosition
+      dropPosition: getDropPosition(monitor)
     })
-  })
+  }), [component.id, index, onDrop, onMove]);
 
-  // 添加检查组件是否是另一个组件的后代的辅助函数
-  const isDescendant = (targetComponent: Component, sourceId: string | undefined): boolean => {
-    if (!sourceId) return false
-    if (!targetComponent.children) return false
-
-    return targetComponent.children.some(child =>
-      child.id === sourceId || isDescendant(child, sourceId)
-    )
-  }
 
   // 计算拖放指示器的位置和样式
   const getDropIndicatorStyle = () => {
@@ -250,46 +371,25 @@ function ComponentTreeItem({
 
   // 确保组件内容区域的渲染也有类型检查
   const renderChildren = () => {
-    if (!component.children) return null
-
-    const validChildren = component.children.filter((child): child is Component => {
-      if (!child || typeof child !== 'object') {
-        console.warn('Invalid child component found:', child)
-        return false
-      }
-      return true
-    })
-
-    if (validChildren.length === 0) {
-      return (
-        <div className="text-gray-400 text-sm text-center py-2">
-          拖拽组件到这里
-        </div>
-      )
+    if (!component.children || component.children.length === 0) {
+      return null;
     }
 
     return (
-      <div className="space-y-2">
-        {validChildren.map((child, childIndex) => (
-          <ComponentTreeItem
-            key={child.id}
-            component={child}
-            isSelected={selectedId ? child.id === selectedId : false}
-            level={level + 1}
-            index={childIndex}
-            parentId={component.id}  // 传递当前组件ID作为父ID
-            selectedId={selectedId}
-            onSelect={onSelect}
-            onDrop={onDrop}
-            onMove={onMove}
-            onUpdate={onUpdate}
-            onDelete={onDelete}
-            onAddImages={onAddImages}
-          />
-        ))}
+      <div className="ml-4 pl-2 border-l border-gray-200">
+        <ComponentTree
+          components={component.children}
+          selectedId={selectedId}
+          level={level + 1}
+          onSelect={onSelect}
+          onDrop={onDrop}
+          onMove={onMove}
+          onUpdate={onUpdate}
+          onDelete={onDelete}
+        />
       </div>
-    )
-  }
+    );
+  };
 
   // 修改删除处理函数
   const handleDelete = (e: React.MouseEvent) => {
@@ -299,9 +399,10 @@ function ComponentTreeItem({
 
   // 处理代码预览
   const handleCodePreview = (e: React.MouseEvent) => {
-    e.stopPropagation()  // 防止触发选中事件
-    setShowCodePreview(true)
-  }
+    e.stopPropagation();
+    setShowCodePreview(true);
+    setPreviewComponent(component);
+  };
 
   return (
     <div style={{ marginLeft: level * 16 }}>
@@ -346,7 +447,7 @@ function ComponentTreeItem({
             <Trash className="h-4 w-4" />
           </button>
           {/* 只在 SVG 容器上显示添加图片按钮 */}
-          {component.type === 'svg' && (
+          {component.type === 'svgPic' && (
             <Button
               variant="ghost"
               size="sm"
@@ -425,44 +526,22 @@ function ComponentTreeItem({
         </AlertDialog>
 
         {/* 代码预览对话框 */}
-        <Dialog open={showCodePreview} onOpenChange={setShowCodePreview}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>
-                <div className="flex items-center">
-                  <span className="mr-2">{template.icon}</span>
-                  <span>{template.label} 组件代码</span>
-                </div>
-              </DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[60vh]">
-              <pre className="p-4 bg-gray-50 rounded-lg">
-                <code className="text-sm text-gray-700 whitespace-pre-wrap break-all">
-                  {generateCode(component)}
-                </code>
-              </pre>
-            </ScrollArea>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCodePreview(false)}
-              >
-                关闭
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => {
-                  setShowCodePreview(false)
-                  setIsCodeEditorOpen(true)
-                }}
-              >
-                编辑代码
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {showCodePreview && (
+          <Dialog open={showCodePreview} onOpenChange={setShowCodePreview}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>组件代码</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="max-h-[60vh]">
+                <pre className="p-4 bg-gray-50 rounded-lg">
+                  <code className="text-sm text-gray-700 whitespace-pre-wrap break-all">
+                    {generateCode(component)}
+                  </code>
+                </pre>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </div>
   )

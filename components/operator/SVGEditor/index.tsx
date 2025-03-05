@@ -13,6 +13,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { Parameters } from "./Parameters"
 import { ParametersPanelProvider } from '@/contexts/ParametersPanelContext'
 import { useAssets } from '@/contexts/AssetContext'
+import type { BaseComponent } from '@/types/atomicComponents/index'
 
 // 编辑器容器组件
 export default function SVGEditorContainer() {
@@ -61,10 +62,6 @@ function SVGEditor() {
         // 重用handleDrop，但传入坐标
         const positionedItem = {
           ...item,
-          position: {
-            x: Math.max(0, Math.min(x, editorRect.width - 100)),
-            y: Math.max(0, Math.min(y, editorRect.height - 100))
-          }
         }
         handleDrop(positionedItem, null)
       } else {
@@ -79,7 +76,7 @@ function SVGEditor() {
 
     if (selectedImage && componentId) {
       // 查找目标组件
-      const findComponent = (comps: Component[], id: string): Component | undefined => {
+      const findComponent = (comps: BaseComponent[], id: string): BaseComponent | undefined => {
         for (const comp of comps) {
           if (comp.id === id) return comp
           if (comp.children) {

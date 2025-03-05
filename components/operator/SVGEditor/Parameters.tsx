@@ -7,7 +7,8 @@ import { ChevronLeft, ChevronRight, ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useParametersPanel } from "@/contexts/ParametersPanelContext"
 import { useEditor } from "@/contexts/EditorContext"
-import { PropertyControl, COMPONENT_TEMPLATES } from "@/types/atomicComponent"
+import { PropertyControl } from "@/types/atomicComponents/baseComponent"
+import { COMPONENT_TEMPLATES } from "@/types/atomicComponents/index"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -18,6 +19,20 @@ import { useAssets } from '@/contexts/AssetContext'
 
 interface ParametersProps {
     selectedComponent: any | null;
+}
+
+interface Margin {
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+}
+
+interface ViewBox {
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
 }
 
 export function Parameters({ selectedComponent }: ParametersProps) {
@@ -36,21 +51,82 @@ export function Parameters({ selectedComponent }: ParametersProps) {
     };
 
     // 处理viewBox变更
-    const handleViewBoxChange = (field: keyof any, value: string) => {
+    const handleViewBoxChange = (field: keyof ViewBox, value: string) => {
         if (!selectedComponent) return;
 
-        const viewBox = { ...(selectedComponent.viewBox || {}) };
-        viewBox[field] = value ? parseFloat(value) : undefined;
-        handlePropertyChange('viewBox', viewBox);
+        const currentViewBox = getCurrentViewBox();
+        const numericValue = value === '' ? undefined : Number(value);
+
+        handlePropertyChange('viewBox', {
+            ...currentViewBox,
+            [field]: numericValue
+        });
     };
 
-    // 处理margin变更
-    const handleMarginChange = (field: keyof any, value: string) => {
-        if (!selectedComponent) return;
+    // 获取组件模板的默认margin值
+    const getDefaultMargin = (): Margin => {
+        const template = COMPONENT_TEMPLATES[selectedComponent.type as keyof typeof COMPONENT_TEMPLATES];
+        return template?.defaultProperties?.style?.margin || {};
+    };
 
-        const margin = { ...(get(selectedComponent, 'style.margin') || {}) };
-        margin[field] = value ? parseFloat(value) : undefined;
-        handlePropertyChange('style.margin', margin);
+    // 新增margin字符串解析方法
+    const parseMarginValue = (value: any): Margin => {
+        if (typeof value === 'string') {
+            const values = value.split(/[^\d.-]+/).filter(Boolean).map(Number);
+            return {
+                top: values[0],
+                right: values[1],
+                bottom: values[2],
+                left: values[3]
+            };
+        }
+        return value || {};
+    };
+
+    // 修改获取当前margin值的逻辑
+    const getCurrentMargin = (): Margin => {
+        return {
+            ...parseMarginValue(get(selectedComponent, 'style.margin'))
+        };
+    };
+
+    // 修改handleMarginChange处理逻辑
+    const handleMarginChange = (field: keyof Margin, value: string) => {
+        const currentMargin = getCurrentMargin();
+        const numericValue = value === '' ? undefined : Number(value);
+
+        handlePropertyChange('style.margin', {
+            ...currentMargin,
+            [field]: numericValue
+        });
+    };
+
+    // 获取组件模板的默认viewBox值
+    const getDefaultViewBox = (): ViewBox => {
+        const template = COMPONENT_TEMPLATES[selectedComponent.type as keyof typeof COMPONENT_TEMPLATES];
+        return template?.defaultProperties?.viewBox || {};
+    };
+
+    // 修改获取当前viewBox值的逻辑
+    const getCurrentViewBox = (): ViewBox => {
+        return {
+            ...getDefaultViewBox(),
+            ...parseViewBoxValue(selectedComponent?.viewBox)
+        };
+    };
+
+    // 新增viewBox字符串解析方法
+    const parseViewBoxValue = (value: any): ViewBox => {
+        if (typeof value === 'string') {
+            const values = value.split(/[^\d.-]+/).filter(Boolean).map(Number);
+            return {
+                x: values[0],
+                y: values[1],
+                width: values[2],
+                height: values[3]
+            };
+        }
+        return value || {};
     };
 
     // 渲染图片选择器
@@ -144,32 +220,32 @@ export function Parameters({ selectedComponent }: ParametersProps) {
 
         // 特殊处理viewBox属性
         if (control.property === 'viewBox') {
-            const viewBox = selectedComponent.viewBox || {};
+            const viewBox = getCurrentViewBox();
             return (
                 <div className="space-y-2" key={control.property}>
                     <Label>{control.label}</Label>
                     <div className="grid grid-cols-4 gap-2">
                         <Input
                             type="number"
-                            value={viewBox.x?.toString() || ''}
+                            value={viewBox.x?.toString() ?? ''}
                             onChange={(e) => handleViewBoxChange('x', e.target.value)}
                             placeholder="x"
                         />
                         <Input
                             type="number"
-                            value={viewBox.y?.toString() || ''}
+                            value={viewBox.y?.toString() ?? ''}
                             onChange={(e) => handleViewBoxChange('y', e.target.value)}
                             placeholder="y"
                         />
                         <Input
                             type="number"
-                            value={viewBox.width?.toString() || ''}
+                            value={viewBox.width?.toString() ?? ''}
                             onChange={(e) => handleViewBoxChange('width', e.target.value)}
                             placeholder="宽度"
                         />
                         <Input
                             type="number"
-                            value={viewBox.height?.toString() || ''}
+                            value={viewBox.height?.toString() ?? ''}
                             onChange={(e) => handleViewBoxChange('height', e.target.value)}
                             placeholder="高度"
                         />
@@ -180,35 +256,23 @@ export function Parameters({ selectedComponent }: ParametersProps) {
 
         // 特殊处理margin属性
         if (control.property === 'style.margin') {
-            const margin = get(selectedComponent, 'style.margin') || {};
+            const margin = getCurrentMargin();
             return (
                 <div className="space-y-2" key={control.property}>
                     <Label>{control.label}</Label>
                     <div className="grid grid-cols-4 gap-2">
-                        <Input
-                            type="number"
-                            value={margin.top?.toString() || ''}
-                            onChange={(e) => handleMarginChange('top', e.target.value)}
-                            placeholder="top"
-                        />
-                        <Input
-                            type="number"
-                            value={margin.right?.toString() || ''}
-                            onChange={(e) => handleMarginChange('right', e.target.value)}
-                            placeholder="right"
-                        />
-                        <Input
-                            type="number"
-                            value={margin.bottom?.toString() || ''}
-                            onChange={(e) => handleMarginChange('bottom', e.target.value)}
-                            placeholder="bottom"
-                        />
-                        <Input
-                            type="number"
-                            value={margin.left?.toString() || ''}
-                            onChange={(e) => handleMarginChange('left', e.target.value)}
-                            placeholder="left"
-                        />
+                        {['top', 'right', 'bottom', 'left'].map((dir) => (
+                            <div key={dir}>
+                                <Label className="text-xs">{dir}</Label>
+                                <Input
+                                    type="number"
+                                    value={margin[dir as keyof Margin]?.toString() ?? ''}
+                                    placeholder={dir}
+                                    onChange={(e) => handleMarginChange(dir as keyof Margin, e.target.value)}
+                                    className="h-8 text-xs"
+                                />
+                            </div>
+                        ))}
                     </div>
                 </div>
             );
@@ -311,8 +375,28 @@ export function Parameters({ selectedComponent }: ParametersProps) {
     // 获取当前选中组件类型的属性控制器
     const getPropertyControls = () => {
         if (!selectedComponent) return [];
-        const template = COMPONENT_TEMPLATES[selectedComponent.type];
+        const template = COMPONENT_TEMPLATES[selectedComponent.type as keyof typeof COMPONENT_TEMPLATES];
         return template?.propertyControls || [];
+    };
+
+    // 根据组件类型显示不同控制器
+    const renderPropertyControlsForType = () => {
+        switch (selectedComponent?.type) {
+            case 'svgPic':
+                return renderSVGPicControls();
+            default:
+                return null;
+        }
+    };
+
+    // 添加这些特定组件控制函数
+    const renderSVGPicControls = () => {
+        const controls = getPropertyControls();
+        return (
+            <div className="space-y-4">
+                {controls.map(control => renderPropertyControl(control))}
+            </div>
+        );
     };
 
     return (
@@ -349,7 +433,7 @@ export function Parameters({ selectedComponent }: ParametersProps) {
                                 <div className="border-t pt-4 mt-4">
                                     <h4 className="font-medium text-sm mb-3">属性</h4>
                                     <div className="space-y-4">
-                                        {getPropertyControls().map(control => renderPropertyControl(control))}
+                                        {renderPropertyControlsForType()}
                                     </div>
                                 </div>
                             </div>
