@@ -3,13 +3,13 @@
  * 管理SVG编辑器的核心状态和操作
  */
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
-import { COMPONENT_TEMPLATES } from '@/components/templates';
+import { COMPONENT_TEMPLATES } from '@/components/SVGEditor/atomicComponent';
 import { useComponentTree } from './useComponentTree';
 import { useComponentDragDrop } from './useComponentDragDrop';
-import type { 
-  BaseComponent, 
-  ComponentType, 
-  DragItem 
+import type {
+  BaseComponent,
+  ComponentType,
+  DragItem
 } from '@/types/core';
 
 // 编辑器上下文类型
@@ -47,10 +47,10 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
   const [showCodePreview, setShowCodePreview] = useState(false);
 
   // 引入组件树操作钩子
-  const { 
-    findComponentById, 
-    updateComponent, 
-    deleteComponent, 
+  const {
+    findComponentById,
+    updateComponent,
+    deleteComponent,
     generateUniqueId,
     removeComponentById
   } = useComponentTree(setComponents);
@@ -61,8 +61,8 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     moveComponent,
     updateComponentTree
   } = useComponentDragDrop(
-    setComponents, 
-    findComponentById, 
+    setComponents,
+    findComponentById,
     generateUniqueId,
     removeComponentById
   );
@@ -83,14 +83,14 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
   const addComponent = useCallback((type: ComponentType) => {
     setComponents(prev => {
       const template = COMPONENT_TEMPLATES[type as keyof typeof COMPONENT_TEMPLATES];
-      
+
       const newComponent: BaseComponent = {
         id: generateUniqueId(type),
         type,
         children: [],
         ...(template.defaultProperties || {})
       } as BaseComponent;
-      
+
       return [...prev, newComponent];
     });
   }, [generateUniqueId]);

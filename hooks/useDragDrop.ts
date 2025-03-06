@@ -35,17 +35,17 @@ export function useDragDrop({
 
     const hoverBoundingRect = ref.current.getBoundingClientRect();
     const clientOffset = monitor.getClientOffset()!;
-    
+
     // 计算相对位置
     const hoverClientY = clientOffset.y - hoverBoundingRect.top;
     const hoverHeight = hoverBoundingRect.bottom - hoverBoundingRect.top;
-    
+
     // 在上部25%区域时放置在前面
     if (hoverClientY < hoverHeight * 0.25) return 'before';
-    
+
     // 在下部25%区域时放置在后面
     if (hoverClientY > hoverHeight * 0.75) return 'after';
-    
+
     // 中间区域放置在内部
     return 'nested';
   }, []);
@@ -70,7 +70,7 @@ export function useDragDrop({
     drop: (item: DragItem, monitor) => {
       if (monitor.didDrop()) return;
       if (item.id === component.id) return;
-      
+
       // 处理放置
       onDrop(item, component.id);
     },
@@ -80,7 +80,7 @@ export function useDragDrop({
 
       // 确定放置位置
       const position = getDropPosition(monitor);
-      
+
       // 禁止将组件嵌套到自己或自己的子组件中
       if (position === 'nested' && !item.isToolItem && isDescendant(component, item.id)) {
         item.dropPosition = 'after';

@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { ComponentType } from '@/types/core'
-import { COMPONENT_TEMPLATES } from '@/components/templates'
-import { Paintbrush, Component, Box } from "lucide-react"
+import { COMPONENT_TEMPLATES } from '@/components/SVGEditor/atomicComponent'
+import { Paintbrush, Component, Box, GripHorizontal } from "lucide-react"
 import { useDrag } from "react-dnd"
 import type { DragItem } from '@/types/core'
+import { cn } from "@/lib/utils"
 
 interface ComponentsTabProps {
     onAddComponent: (type: ComponentType) => void
@@ -23,7 +24,7 @@ export function ComponentsTab({ onAddComponent }: ComponentsTabProps) {
                 </div>
 
                 <ScrollArea className="h-[calc(100vh-240px)]">
-                    <div className="grid grid-cols-1 gap-4 pr-4">
+                    <div className="grid grid-cols-1 gap-3 pr-4">
                         {/* 显示所有组件 */}
                         {Object.entries(COMPONENT_TEMPLATES).map(([type, template]) => (
                             <ComponentCard
@@ -64,23 +65,37 @@ function ComponentCard({ type, title, description, icon, onAdd }: ComponentCardP
     }))
 
     return (
-        <Card className={`overflow-hidden ${isDragging ? 'opacity-50' : ''}`}>
+        <Card
+            className={cn(
+                "overflow-hidden border border-gray-200 transition-all duration-200",
+                isDragging ? "opacity-50 scale-95 border-blue-300 shadow-md" : "hover:border-blue-200 hover:shadow-sm"
+            )}
+        >
             <div
                 ref={drag as React.RefObject<HTMLDivElement>}
-                className="cursor-grab"
+                className="cursor-grab active:cursor-grabbing"
+                onClick={() => onAdd(type)}
             >
-                <CardHeader className="p-3">
-                    <CardTitle className="text-md flex items-center">
-                        <span className="mr-2">{typeof icon === 'string' ? icon : <Component className="h-4 w-4" />}</span>
-                        {title}
-                    </CardTitle>
-                    <CardDescription className="text-xs">{description}</CardDescription>
-                </CardHeader>
-                <CardContent className="p-3 pt-0">
-                    <div className="bg-slate-100 rounded-md p-2 text-center min-h-[60px] flex items-center justify-center">
-                        <Box className="h-8 w-8 text-slate-400" />
+                <div className="flex items-center p-3 group">
+                    {/* 组件图标 */}
+                    <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md bg-blue-50 text-blue-600 mr-3">
+                        {typeof icon === 'string' ?
+                            <span className="text-lg">{icon}</span> :
+                            <Component className="h-4 w-4" />
+                        }
                     </div>
-                </CardContent>
+
+                    {/* 标题和描述 */}
+                    <div className="flex-grow min-w-0">
+                        <h4 className="text-sm font-medium text-gray-900 truncate">{title}</h4>
+                        <p className="text-xs text-gray-500 truncate">{description}</p>
+                    </div>
+
+                    {/* 拖拽指示器 */}
+                    <div className="flex-shrink-0 ml-2 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <GripHorizontal className="h-4 w-4" />
+                    </div>
+                </div>
             </div>
         </Card>
     )

@@ -29,8 +29,6 @@ export function SideBarMenu({ onAddComponent, selectedComponent, onUpdateCompone
                 {/* Tab内容区 */}
                 <MenuTab
                     onAddComponent={onAddComponent}
-                    selectedComponent={selectedComponent}
-                    onUpdateComponent={onUpdateComponent}
                 />
             </div>
         </div>

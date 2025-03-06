@@ -5,9 +5,11 @@
 import { useMemo, useState } from 'react';
 import { Image, LucideCode, LucideRefreshCw, Trash, ImagePlus, PlusIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
-         AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { getComponentTemplate } from '@/components/templates';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import { getComponentTemplate } from '@/components/SVGEditor/atomicComponent';
 import { useDragDrop } from '@/hooks/useDragDrop';
 import { isDescendantOf } from '@/utils/component';
 import type { BaseComponent, DragItem } from '@/types/core';
@@ -44,7 +46,7 @@ export function ComponentTreeItem({
 }: ComponentTreeItemProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  
+
   // 获取组件模板信息
   const template = getComponentTemplate(component.type);
 
@@ -146,42 +148,45 @@ export function ComponentTreeItem({
         <span className="mr-2">{template.icon}</span>
         <span className="font-medium">{template.label}</span>
 
-        {/* 扩展/收缩按钮 - 只在有子组件时显示 */}
-        {(component.children && component.children.length > 0) && (
+        {/* 将所有操作按钮放在一个容器中，并应用ml-auto确保它们始终在右侧 */}
+        <div className="ml-auto flex items-center">
+          {/* 扩展/收缩按钮 - 只在有子组件时显示 */}
+          {(component.children && component.children.length > 0) && (
+            <button
+              className="p-1 hover:bg-gray-100 rounded"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
+              }}
+            >
+              {isExpanded ? '−' : '+'}
+            </button>
+          )}
+
+          {/* 删除按钮 */}
           <button
-            className="ml-auto p-1 hover:bg-gray-100 rounded"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsExpanded(!isExpanded);
-            }}
+            className="p-1 hover:text-red-600 transition-colors duration-200"
+            onClick={handleDelete}
+            title="删除组件"
           >
-            {isExpanded ? '−' : '+'}
+            <Trash className="h-4 w-4" />
           </button>
-        )}
 
-        {/* 删除按钮 */}
-        <button
-          className="p-1 hover:text-red-600 transition-colors duration-200"
-          onClick={handleDelete}
-          title="删除组件"
-        >
-          <Trash className="h-4 w-4" />
-        </button>
-
-        {/* 只在 SVG 容器上显示添加图片按钮 */}
-        {component.type === 'svgPic' && onAddImages && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddImages(component.id);
-            }}
-            className="h-7 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-          >
-            <ImagePlus className="h-4 w-4 mr-1" />
-          </Button>
-        )}
+          {/* 只在 SVG 容器上显示添加图片按钮 */}
+          {component.type === 'svgPic' && onAddImages && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddImages(component.id);
+              }}
+              className="h-7 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            >
+              <ImagePlus className="h-4 w-4 mr-1" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* 组件内容区 */}

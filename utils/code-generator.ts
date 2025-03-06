@@ -1,5 +1,16 @@
 import type { BaseComponent } from '@/types/core'
-import type { CSSProperties } from 'react'
+
+/**
+ * @description 组件类型到代码生成函数的映射
+ * 可以让多个类似的组件类型共享相同的代码生成逻辑
+ */
+const TYPE_MAPPING: Record<string, string> = {
+  'svgPic': 'svg',
+  'svgSeamlessPic': 'svg',
+  'g': 'group',
+  'rect': 'rect',
+  'set': 'set'
+}
 
 // 将组件对象转换为HTML代码字符串
 export function generateCode(components: BaseComponent | BaseComponent[]): string {
@@ -9,13 +20,19 @@ export function generateCode(components: BaseComponent | BaseComponent[]): strin
 }
 
 function generateComponentCode(component: BaseComponent): string {
-  switch (component.type) {
-    case 'svgPic':
+  // 使用映射表获取组件类型对应的生成函数类型
+  const generatorType = TYPE_MAPPING[component.type] || component.type
+
+  // 根据映射后的类型调用相应的生成函数
+  switch (generatorType) {
+    case 'svg':
       return generateSvgCode(component)
-    case 'g':
+    case 'group':
       return generateGroupCode(component)
     case 'rect':
       return generateRectCode(component)
+    case 'set':
+      return generateSetCode(component)
     default:
       return `<!-- 不支持的组件类型: ${component.type} -->`
   }
@@ -65,7 +82,35 @@ function generateRectCode(component: BaseComponent): string {
       .map(([key, value]) => `${key}="${value}"`)
       .join(' ') : '';
 
-  return `<rect style="${style}" ${attributes} />`
+  const children = component.children?.map(child => generateComponentCode(child)).join('\n') || ''
+
+  if (children) {
+    return `<rect style="${style}" ${attributes}>
+  ${children}
+</rect>`
+  } else {
+    return `<rect style="${style}" ${attributes} />`
+  }
+}
+
+/**
+ * @description 生成set动画元素的代码
+ */
+function generateSetCode(component: BaseComponent): string {
+  const attributes = component.attributes ?
+    Object.entries(component.attributes)
+      .map(([key, value]) => `${key}="${value}"`)
+      .join(' ') : '';
+
+  const children = component.children?.map(child => generateComponentCode(child)).join('\n') || ''
+
+  if (children) {
+    return `<set ${attributes}>
+  ${children}
+</set>`
+  } else {
+    return `<set ${attributes} />`
+  }
 }
 
 // 处理margin对象为字符串

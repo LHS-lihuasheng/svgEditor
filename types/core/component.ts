@@ -4,7 +4,7 @@
 import { PropertyControl } from './property';
 
 // 基础组件类型定义
-export type ComponentType = 'svgPic' | 'g' | 'rect' | 'set';
+export type ComponentType = 'svgPic' | 'svgSeamlessPic' | 'g' | 'rect' | 'set';
 
 // 基础组件接口
 export interface BaseComponent {

@@ -2,6 +2,7 @@
  * @description 组模板
  */
 import { BaseComponentTemplate } from '@/types/core/template';
+import { ComponentType } from '@/types/core';
 
 export const GROUP_TEMPLATE: BaseComponentTemplate = {
   label: '组',
@@ -69,5 +70,5 @@ export const GROUP_TEMPLATE: BaseComponentTemplate = {
     }
   ],
   tags: ['Group', 'Container'],
-  allowedChildren: ['g', 'rect']
+  allowedChildren: [] as ComponentType[] // 将在index.ts中设置
 }; 

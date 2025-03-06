@@ -1,7 +1,7 @@
 /**
  * @description 组件树工具函数
  */
-import { getComponentTemplate } from '@/components/templates';
+import { getComponentTemplate } from '@/components/SVGEditor/atomicComponent';
 import type { BaseComponent, ComponentType } from '@/types/core';
 
 /**

@@ -2,6 +2,7 @@
  * @description 矩形组件模板
  */
 import { BaseComponentTemplate } from '@/types/core/template';
+import { ComponentType } from '@/types/core';
 
 export const RECT_TEMPLATE: BaseComponentTemplate = {
   label: '矩形',
@@ -89,5 +90,5 @@ export const RECT_TEMPLATE: BaseComponentTemplate = {
     }
   ],
   tags: ['Shape', 'Rectangle'],
-  allowedChildren: ['set']
+  allowedChildren: [] as ComponentType[] // 将在index.ts中设置
 }; 

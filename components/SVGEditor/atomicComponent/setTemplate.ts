@@ -2,6 +2,7 @@
  * @description 动画集模板
  */
 import { BaseComponentTemplate } from '@/types/core/template';
+import { ComponentType } from '@/types/core';
 
 export const SET_TEMPLATE: BaseComponentTemplate = {
   label: '动画',
@@ -63,5 +64,5 @@ export const SET_TEMPLATE: BaseComponentTemplate = {
     }
   ],
   tags: ['Animation'],
-  allowedChildren: []
+  allowedChildren: [] as ComponentType[] // 将在index.ts中设置
 }; 

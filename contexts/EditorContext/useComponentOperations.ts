@@ -4,14 +4,14 @@
  */
 import { useCallback } from 'react';
 import { useEditor } from './index';
-import { getComponentTemplate } from '@/components/templates';
+import { getComponentTemplate } from '@/components/SVGEditor/atomicComponent';
 import type { BaseComponent, ComponentType } from '@/types/core';
 
 export function useComponentOperations() {
-  const { 
+  const {
     components,
-    findComponentById, 
-    updateComponent, 
+    findComponentById,
+    updateComponent,
     addComponent,
     deleteComponent
   } = useEditor();
@@ -26,7 +26,7 @@ export function useComponentOperations() {
     // 验证是否允许添加子组件
     const template = getComponentTemplate(parent.type);
     const allowedChildren = template?.allowedChildren || [];
-    
+
     if (!allowedChildren.includes(childType)) {
       console.warn(`Cannot add ${childType} to ${parent.type}`);
       return;
@@ -44,7 +44,7 @@ export function useComponentOperations() {
     };
 
     // 更新父组件
-    const updatedParent = { 
+    const updatedParent = {
       ...parent,
       children: [...(parent.children || []), childComponent]
     };
@@ -56,15 +56,15 @@ export function useComponentOperations() {
    * @description 更新组件样式
    */
   const updateComponentStyle = useCallback((
-    componentId: string, 
-    styleProp: string, 
+    componentId: string,
+    styleProp: string,
     value: any
   ) => {
     const [component] = findComponentById(components, componentId);
     if (!component) return;
 
     const updatedComponent = { ...component };
-    
+
     if (!updatedComponent.style) {
       updatedComponent.style = {};
     }
@@ -81,15 +81,15 @@ export function useComponentOperations() {
    * @description 更新组件属性
    */
   const updateComponentAttribute = useCallback((
-    componentId: string, 
-    attrKey: string, 
+    componentId: string,
+    attrKey: string,
     value: any
   ) => {
     const [component] = findComponentById(components, componentId);
     if (!component) return;
 
     const updatedComponent = { ...component };
-    
+
     if (!updatedComponent.attributes) {
       updatedComponent.attributes = {};
     }
@@ -108,35 +108,35 @@ export function useComponentOperations() {
   const duplicateComponent = useCallback((componentId: string) => {
     const [component] = findComponentById(components, componentId);
     if (!component) return;
-    
+
     // 创建深拷贝
     const clone = JSON.parse(JSON.stringify(component));
-    
+
     // 为克隆的组件及其所有子组件分配新ID
     const assignNewIds = (comp: BaseComponent): BaseComponent => {
-      const newComp = { 
+      const newComp = {
         ...comp,
         id: `${comp.type}_${Date.now()}_${Math.floor(Math.random() * 1000)}`
       };
-      
+
       if (newComp.children && newComp.children.length > 0) {
         newComp.children = newComp.children.map(assignNewIds);
       }
-      
+
       return newComp;
     };
-    
+
     const duplicated = assignNewIds(clone);
-    
+
     // 找出父数组并添加复制的组件
     const [, parentArray] = findComponentById(components, componentId);
-    
+
     if (parentArray) {
       const index = parentArray.findIndex(c => c.id === componentId);
       if (index !== -1) {
         const updatedArray = [...parentArray];
         updatedArray.splice(index + 1, 0, duplicated);
-        
+
         // 更新父组件
         const parentId = parentArray.find(c => c.id === componentId)?.id;
         if (parentId) {
