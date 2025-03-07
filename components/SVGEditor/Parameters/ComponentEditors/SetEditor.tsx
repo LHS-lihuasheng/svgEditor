@@ -5,16 +5,16 @@ import type { BaseComponent } from "@/types/core";
 import { PropertyManager } from '../PropertyManager';
 import get from "lodash/get";
 import set from "lodash/set";
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import type { PropertyControl } from "@/types/core/property";
 import { COMPONENT_TEMPLATES } from '@/components/SVGEditor/atomicComponent';
 import { DynamicPropertyControl } from '../PropertyControls/DynamicPropertyControl';
-import type { PropertyControl } from "@/types/core/property";
 
-interface GroupEditorProps {
+interface SetEditorProps {
   component: BaseComponent;
 }
 
-export function GroupEditor({ component }: GroupEditorProps) {
+export function SetEditor({ component }: SetEditorProps) {
   // 使用本地状态并确保随组件更新
   const [localComponent, setLocalComponent] = useState<BaseComponent>(component);
   const { updateComponent } = useEditor();
@@ -31,7 +31,7 @@ export function GroupEditor({ component }: GroupEditorProps) {
     setLocalComponent(updatedComponent);
     updateComponent(updatedComponent);
   };
-  
+
   const handleAddProperty = (property: PropertyControl) => {
     const path = property.property.split('.');
     const category = path[0];

@@ -3,6 +3,12 @@
  */
 import { BaseComponentTemplate } from '@/types/core/template';
 import { ComponentType } from '@/types/core';
+import { SVG_CONTROLS } from '@/types/core/property';
+
+// 克隆并修改属性
+function createProperty(baseProperty: any, overrides: Partial<any> = {}) {
+  return { ...baseProperty, ...overrides };
+}
 
 export const GROUP_TEMPLATE: BaseComponentTemplate = {
   label: '组',
@@ -11,64 +17,29 @@ export const GROUP_TEMPLATE: BaseComponentTemplate = {
   category: '容器',
   defaultProperties: {
     style: {
-      position: 'relative',
-      width: 'auto',
-      height: 'auto',
-      backgroundColor: 'transparent',
       opacity: 1
+    },
+    transform: {
+      translate: { x: 0, y: 0 },
+      scale: 1,
+      rotate: 0
     }
   },
   propertyControls: [
-    {
-      type: 'select',
-      label: '定位方式',
-      property: 'style.position',
-      options: [
-        { label: '相对定位', value: 'relative' },
-        { label: '绝对定位', value: 'absolute' }
-      ],
-      defaultValue: 'relative'
-    },
-    {
-      type: 'number',
-      label: 'X坐标',
-      property: 'style.left',
-      defaultValue: 0
-    },
-    {
-      type: 'number',
-      label: 'Y坐标',
-      property: 'style.top',
-      defaultValue: 0
-    },
-    {
-      type: 'number',
-      label: '宽度',
-      property: 'style.width',
-      defaultValue: 'auto'
-    },
-    {
-      type: 'number',
-      label: '高度',
-      property: 'style.height',
-      defaultValue: 'auto'
-    },
-    {
-      type: 'color',
-      label: '背景颜色',
-      property: 'style.backgroundColor',
-      defaultValue: 'transparent'
-    },
-    {
-      type: 'number',
-      label: '不透明度',
-      property: 'style.opacity',
-      min: 0,
-      max: 1,
-      step: 0.1,
-      defaultValue: 1
-    }
+    // 预定属性(可被删除)
+    createProperty(SVG_CONTROLS.opacity, { isDefault: true }),
+
+    // 固定属性(不可删除)
+    createProperty(SVG_CONTROLS.translateX, { isDefault: true, isFixed: true }),
+    createProperty(SVG_CONTROLS.translateY, { isDefault: true, isFixed: true }),
+    createProperty(SVG_CONTROLS.scale, { isDefault: true, isFixed: true }),
+    createProperty(SVG_CONTROLS.rotate, { isDefault: true, isFixed: true }),
+
+    // 可选属性
+    SVG_CONTROLS.fill,
+    SVG_CONTROLS.stroke,
+    SVG_CONTROLS.strokeWidth
   ],
   tags: ['Group', 'Container'],
-  allowedChildren: [] as ComponentType[] // 将在index.ts中设置
+  allowedChildren: [] as ComponentType[]
 }; 

@@ -4,4 +4,6 @@ export * from './SelectControl';
 export * from './ColorControl';
 export * from './ImageControl';
 export * from './ViewBoxControl';
-export * from './MarginControl'; 
+export * from './MarginControl';
+export * from './OpacityControl';
+export * from './TransformControl';

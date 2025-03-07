@@ -130,13 +130,13 @@ export async function deleteDraft(mediaId: string): Promise<{ errcode: number; e
 
 // 上传永久素材
 export async function uploadMaterial(
-  file: File, 
+  file: File,
   type: "image" | "thumb" | "video" | "voice",
   description?: string
 ): Promise<{ media_id: string; url?: string }> {
   const formData = new FormData()
   formData.append("media", file)
-  
+
   if (type === "video" && description) {
     formData.append("description", description)
   }

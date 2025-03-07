@@ -59,8 +59,8 @@ export function canNestComponentType(parentType: ComponentType, childType: Compo
 
 // 添加到现有文件中
 export interface Margin {
-    top?: number;
-    right?: number;
-    bottom?: number;
-    left?: number;
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
 } 

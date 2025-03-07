@@ -10,10 +10,13 @@ import { useEditor } from '@/contexts/EditorContext/index'
 import type { BaseComponent } from "@/types/core"
 
 // 导入组件编辑器
-import { 
-  SVGPicEditor, 
-  GroupEditor, 
-  RectEditor
+import {
+  SVGPicEditor,
+  GroupEditor,
+  RectEditor,
+  SetEditor,
+  AnimateEditor,
+  AnimateTransformEditor
 } from './ComponentEditors'
 
 interface ParametersProps {
@@ -23,7 +26,7 @@ interface ParametersProps {
 export function Parameters({ selectedComponent }: ParametersProps) {
   const { isParametersPanelOpen, toggleParametersPanel } = usePanel();
   const { updateComponent } = useEditor();
-  
+
   // 添加调试日志，观察组件变化
   useEffect(() => {
     console.log("Selected component updated:", selectedComponent);
@@ -44,11 +47,18 @@ export function Parameters({ selectedComponent }: ParametersProps) {
     // 根据组件类型选择合适的编辑器
     switch (selectedComponent.type) {
       case 'svgPic':
+      case 'svgSeamlessPic':
         return <SVGPicEditor component={selectedComponent} />;
       case 'g':
         return <GroupEditor component={selectedComponent} />;
       case 'rect':
         return <RectEditor component={selectedComponent} />;
+      case 'set':
+        return <SetEditor component={selectedComponent} />;
+      case 'animate':
+        return <AnimateEditor component={selectedComponent} />;
+      case 'animateTransform':
+        return <AnimateTransformEditor component={selectedComponent} />;
       default:
         return (
           <div className="text-sm text-yellow-600">

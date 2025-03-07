@@ -21,7 +21,7 @@ export function MarginControl({ value, onChange, label = "边距" }: MarginContr
     // 处理字段变更
     const handleFieldChange = (field: keyof Margin, value: string) => {
         const numericValue = value === '' ? undefined : Number(value);
-        
+
         onChange({
             ...margin,
             [field]: numericValue

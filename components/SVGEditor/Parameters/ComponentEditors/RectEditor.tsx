@@ -3,11 +3,14 @@
 import { useEditor } from '@/contexts/EditorContext/index';
 import type { BaseComponent } from "@/types/core";
 import { NumberControl } from '../PropertyControls/NumberControl';
-import { SelectControl } from '../PropertyControls/SelectControl';
+import { StringControl } from '../PropertyControls/StringControl';
 import { ColorControl } from '../PropertyControls/ColorControl';
+import { OpacityControl } from '../PropertyControls/OpacityControl';
 import get from "lodash/get";
 import set from "lodash/set";
 import { useEffect, useState } from 'react';
+import { PropertyManager } from '../PropertyManager';
+import { DynamicPropertyControl } from '../PropertyControls/DynamicPropertyControl';
 
 interface RectEditorProps {
     component: BaseComponent;
@@ -24,94 +27,72 @@ export function RectEditor({ component }: RectEditorProps) {
     }, [component]);
 
     // 处理属性变更
-    const handlePropertyChange = (property: string, value: any) => {
+    const handleUpdateProperty = (path: string, value: any) => {
+        const updatedComponent = JSON.parse(JSON.stringify(localComponent));
+        set(updatedComponent, path, value);
+        setLocalComponent(updatedComponent);
+        updateComponent(updatedComponent);
+    };
+
+    const handleAddProperty = (property: PropertyControl) => {
+        const path = property.property.split('.');
+        const category = path[0]; // style 或 attributes
+        const key = path[1];
+
         // 创建本地组件的副本并更新属性
         const updatedComponent = JSON.parse(JSON.stringify(localComponent));
-        set(updatedComponent, property, value);
+
+        // 确保对应类别存在
+        if (!updatedComponent[category]) {
+            updatedComponent[category] = {};
+        }
+
+        // 设置属性值为默认值
+        updatedComponent[category][key] = property.defaultValue;
 
         // 更新本地状态和父组件
         setLocalComponent(updatedComponent);
         updateComponent(updatedComponent);
     };
 
+    const handleRemoveProperty = (propertyPath: string) => {
+        const updatedComponent = JSON.parse(JSON.stringify(localComponent));
+        const [category, key] = propertyPath.split('.');
+
+        if (updatedComponent[category] && key in updatedComponent[category]) {
+            delete updatedComponent[category][key];
+        }
+
+        setLocalComponent(updatedComponent);
+        updateComponent(updatedComponent);
+    };
+
+    // 获取该组件类型的模板
+    const template = COMPONENT_TEMPLATES[component.type];
+
+    // 获取固定属性（只渲染这些）
+    const fixedPropertyControls = template.propertyControls.filter(prop => prop.isFixed);
+
     return (
         <div className="space-y-4">
-            {/* 位置属性 */}
-            <SelectControl
-                label="定位方式"
-                value={get(localComponent, 'style.position') || 'relative'}
-                onChange={(value) => handlePropertyChange('style.position', value)}
-                options={[
-                    { label: '相对定位', value: 'relative' },
-                    { label: '绝对定位', value: 'absolute' }
-                ]}
-            />
+            {/* 只渲染固定属性 */}
+            {fixedPropertyControls.map(prop => {
+                return (
+                    <DynamicPropertyControl
+                        key={prop.property}
+                        property={prop}
+                        value={get(localComponent, prop.property)}
+                        onChange={(value) => handleUpdateProperty(prop.property, value)}
+                    />
+                );
+            })}
 
-            {/* 坐标属性 */}
-            <div className="grid grid-cols-2 gap-3">
-                <NumberControl
-                    label="X坐标"
-                    value={get(localComponent, 'style.left') || 0}
-                    onChange={(value) => handlePropertyChange('style.left', value)}
-                    placeholder="X坐标"
-                />
-                <NumberControl
-                    label="Y坐标"
-                    value={get(localComponent, 'style.top') || 0}
-                    onChange={(value) => handlePropertyChange('style.top', value)}
-                    placeholder="Y坐标"
-                />
-            </div>
-
-            {/* 尺寸属性 */}
-            <div className="grid grid-cols-2 gap-3">
-                <NumberControl
-                    label="宽度"
-                    value={get(localComponent, 'style.width') || 100}
-                    onChange={(value) => handlePropertyChange('style.width', value)}
-                />
-                <NumberControl
-                    label="高度"
-                    value={get(localComponent, 'style.height') || 100}
-                    onChange={(value) => handlePropertyChange('style.height', value)}
-                />
-            </div>
-
-            {/* 背景颜色 */}
-            <ColorControl
-                label="背景颜色"
-                value={get(localComponent, 'style.backgroundColor') || '#3b82f6'}
-                onChange={(value) => handlePropertyChange('style.backgroundColor', value)}
-            />
-
-            {/* 圆角属性 */}
-            <div className="grid grid-cols-2 gap-3">
-                <NumberControl
-                    label="圆角X"
-                    value={get(localComponent, 'attributes.rx') || 0}
-                    onChange={(value) => handlePropertyChange('attributes.rx', value)}
-                    min={0}
-                />
-                <NumberControl
-                    label="圆角Y"
-                    value={get(localComponent, 'attributes.ry') || 0}
-                    onChange={(value) => handlePropertyChange('attributes.ry', value)}
-                    min={0}
-                />
-            </div>
-
-            {/* 边框属性 */}
-            <ColorControl
-                label="边框颜色"
-                value={get(localComponent, 'style.borderColor') || ''}
-                onChange={(value) => handlePropertyChange('style.borderColor', value)}
-            />
-
-            <NumberControl
-                label="边框宽度"
-                value={get(localComponent, 'style.borderWidth') || 0}
-                onChange={(value) => handlePropertyChange('style.borderWidth', value)}
-                min={0}
+            {/* PropertyManager处理所有非固定属性 */}
+            <PropertyManager
+                component={localComponent}
+                onAddProperty={handleAddProperty}
+                onRemoveProperty={handleRemoveProperty}
+                onUpdateProperty={handleUpdateProperty}
             />
         </div>
     );

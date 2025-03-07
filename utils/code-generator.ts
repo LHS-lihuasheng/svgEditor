@@ -9,7 +9,9 @@ const TYPE_MAPPING: Record<string, string> = {
   'svgSeamlessPic': 'svg',
   'g': 'group',
   'rect': 'rect',
-  'set': 'set'
+  'set': 'set',
+  'animate': 'animate',
+  'animateTransform': 'animateTransform'
 }
 
 // 将组件对象转换为HTML代码字符串
@@ -33,6 +35,10 @@ function generateComponentCode(component: BaseComponent): string {
       return generateRectCode(component)
     case 'set':
       return generateSetCode(component)
+    case 'animate':
+      return generateAnimateCode(component)
+    case 'animateTransform':
+      return generateAnimateTransformCode(component)
     default:
       return `<!-- 不支持的组件类型: ${component.type} -->`
   }
@@ -47,49 +53,100 @@ function generateSvgCode(component: BaseComponent): string {
     viewBox.height ?? 0
   ].join(' ');
 
-  // 转换样式时处理特殊格式
-  const style = generateStyle(component.style || {})
-  const children = component.children?.map(child => generateComponentCode(child)).join('\n') || ''
+  // 转换样式时排除定位相关属性
+  const filteredStyle = { ...component.style };
+  delete filteredStyle.position;
+  delete filteredStyle.left;
+  delete filteredStyle.top;
+  const { styleString, attributesString } = generateStyle(filteredStyle || {});
 
-  if (children) {
-    return `<svg style="${style}" viewBox="${vbArray}" >
+  // 生成子组件代码
+  const children = component.children?.map(child => generateComponentCode(child)).join('\n  ') || '';
+
+  if (vbArray.trim() === '0 0 0 0' || !vbArray.trim()) {
+    if (children) {
+      return `<svg xmlns="http://www.w3.org/2000/svg" style="${styleString}">
   ${children}
-</svg>`
+</svg>`;
+    } else {
+      return `<svg xmlns="http://www.w3.org/2000/svg" style="${styleString}" />`;
+    }
   } else {
-    return `<svg style="${style}" viewBox="${vbArray}" >
-</svg>`
+    if (children) {
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vbArray}" style="${styleString}">
+  ${children}
+</svg>`;
+    } else {
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vbArray}" style="${styleString}" />`;
+    }
   }
 }
 
 function generateGroupCode(component: BaseComponent): string {
-  const style = generateStyle(component.style || {})
-  const attributes = component.attributes ?
-    Object.entries(component.attributes)
-      .map(([key, value]) => `${key}="${value}"`)
-      .join(' ') : '';
+  // 处理transform属性
+  const transform = component.transform || {};
+  const transformParts = [];
 
-  const children = component.children?.map(child => generateComponentCode(child)).join('\n') || ''
+  if (transform.translate) {
+    transformParts.push(`translate(${transform.translate.x || 0}px, ${transform.translate.y || 0}px)`);
+  }
 
-  return `<g style="${style}" ${attributes}>
+  if (transform.scale) {
+    transformParts.push(`scale(${transform.scale})`);
+  }
+
+  if (transform.rotate) {
+    transformParts.push(`rotate(${transform.rotate}deg)`);
+  }
+
+  // 转换样式时排除定位相关属性并添加transform
+  const filteredStyle = { ...component.style };
+  delete filteredStyle.position;
+  delete filteredStyle.left;
+  delete filteredStyle.top;
+
+  if (transformParts.length > 0) {
+    filteredStyle.transform = transformParts.join(' ');
+  }
+
+  const { styleString, attributesString } = generateStyle(filteredStyle || {});
+  const styleAttr = styleString ? ` style="${styleString}"` : '';
+
+  // 生成子组件代码
+  const children = component.children?.map(child => generateComponentCode(child)).join('\n  ') || '';
+
+  if (children) {
+    return `<g${styleAttr}>
   ${children}
-</g>`
+</g>`;
+  } else {
+    return `<g${styleAttr} />`;
+  }
 }
 
 function generateRectCode(component: BaseComponent): string {
-  const style = generateStyle(component.style || {})
-  const attributes = component.attributes ?
-    Object.entries(component.attributes)
-      .map(([key, value]) => `${key}="${value}"`)
-      .join(' ') : '';
+  const attrs = component.attributes || {};
+  const { styleString, attributesString } = generateStyle(component.style || {});
 
-  const children = component.children?.map(child => generateComponentCode(child)).join('\n') || ''
+  // 合并固有属性和样式属性
+  const attrsString = [
+    Object.entries(attrs)
+      .map(([key, value]) => `${key}="${value}"`)
+      .join(' '),
+    attributesString
+  ].filter(Boolean).join(' ');
+
+  const styleAttr = styleString ? ` style="${styleString}"` : '';
+
+  // 处理子组件
+  const children = component.children?.map(child => generateComponentCode(child)).join('\n  ') || '';
 
   if (children) {
-    return `<rect style="${style}" ${attributes}>
+    return `<rect ${attrsString}${styleAttr}>
   ${children}
-</rect>`
+</rect>`;
   } else {
-    return `<rect style="${style}" ${attributes} />`
+    return `<rect ${attrsString}${styleAttr} />`;
   }
 }
 
@@ -113,6 +170,25 @@ function generateSetCode(component: BaseComponent): string {
   }
 }
 
+// 添加动画元素的代码生成函数
+function generateAnimateCode(component: BaseComponent): string {
+  const attrs = component.attributes || {};
+  const attrsString = Object.entries(attrs)
+    .map(([key, value]) => `${key}="${value}"`)
+    .join(' ');
+
+  return `<animate ${attrsString} />`;
+}
+
+function generateAnimateTransformCode(component: BaseComponent): string {
+  const attrs = component.attributes || {};
+  const attrsString = Object.entries(attrs)
+    .map(([key, value]) => `${key}="${value}"`)
+    .join(' ');
+
+  return `<animateTransform ${attrsString} />`;
+}
+
 // 处理margin对象为字符串
 function processMargin(margin: any): string {
   if (typeof margin === 'object') {
@@ -125,7 +201,7 @@ function processMargin(margin: any): string {
   return margin;
 }
 
-function generateStyle(style: Record<string, any>): string {
+function generateStyle(style: Record<string, any>): { styleString: string; attributesString: string } {
   // 创建一个新对象来避免修改原始对象
   const processedStyle: Record<string, any> = { ...style };
 
@@ -134,12 +210,36 @@ function generateStyle(style: Record<string, any>): string {
     processedStyle.margin = processMargin(style.margin);
   }
 
-  return Object.entries(processedStyle)
+  // 移除定位相关属性
+  delete processedStyle.position;
+  delete processedStyle.left;
+  delete processedStyle.top;
+
+  // 特殊处理SVG相关样式属性，将它们从style移到attributes
+  const svgStyleProps = ['fill', 'stroke', 'strokeWidth', 'fillOpacity', 'strokeOpacity'];
+  const svgAttributes: Record<string, any> = {};
+
+  svgStyleProps.forEach(prop => {
+    if (processedStyle[prop] !== undefined) {
+      // 将驼峰式转为连字符式
+      const attributeName = prop.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
+      svgAttributes[attributeName] = processedStyle[prop];
+      delete processedStyle[prop];
+    }
+  });
+
+  const styleString = Object.entries(processedStyle)
     .map(([key, value]) => `${hyphenate(key)}: ${value};`)
-    .join(' ')
+    .join(' ');
+
+  const attributesString = Object.entries(svgAttributes)
+    .map(([key, value]) => `${key}="${value}"`)
+    .join(' ');
+
+  return { styleString, attributesString };
 }
 
 // 将驼峰式属性名转换为连字符式
 function hyphenate(str: string): string {
-  return str.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)
+  return str.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
 } 

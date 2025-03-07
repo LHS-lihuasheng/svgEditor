@@ -3,6 +3,12 @@
  */
 import { BaseComponentTemplate } from '@/types/core/template';
 import { ComponentType } from '@/types/core';
+import { SVG_CONTROLS } from '@/types/core/property';
+
+// 克隆并修改属性
+function createProperty(baseProperty: any, overrides: Partial<any> = {}) {
+  return { ...baseProperty, ...overrides };
+}
 
 export const RECT_TEMPLATE: BaseComponentTemplate = {
   label: '矩形',
@@ -11,84 +17,33 @@ export const RECT_TEMPLATE: BaseComponentTemplate = {
   category: '基础形状',
   defaultProperties: {
     style: {
-      width: '100px',
-      height: '100px',
-      backgroundColor: '#3b82f6',
-      position: 'relative',
-      borderColor: 'transparent',
-      borderWidth: 0
+      backgroundColor: '#000000',
+      opacity: 1,
+      pointerEvents: 'visible'
     },
     attributes: {
-      rx: 0,
-      ry: 0
+      x: 0,
+      y: 0,
+      width: '100%',
+      height: '100%'
     }
   },
   propertyControls: [
-    {
-      type: 'select',
-      label: '定位方式',
-      property: 'style.position',
-      options: [
-        { label: '相对定位', value: 'relative' },
-        { label: '绝对定位', value: 'absolute' }
-      ],
-      defaultValue: 'relative'
-    },
-    {
-      type: 'number',
-      label: 'X坐标',
-      property: 'style.left',
-      defaultValue: 0
-    },
-    {
-      type: 'number',
-      label: 'Y坐标',
-      property: 'style.top',
-      defaultValue: 0
-    },
-    {
-      type: 'number',
-      label: '宽度',
-      property: 'style.width',
-      defaultValue: 100
-    },
-    {
-      type: 'number',
-      label: '高度',
-      property: 'style.height',
-      defaultValue: 100
-    },
-    {
-      type: 'color',
-      label: '背景颜色',
-      property: 'style.backgroundColor',
-      defaultValue: '#3b82f6'
-    },
-    {
-      type: 'number',
-      label: '圆角X',
-      property: 'attributes.rx',
-      defaultValue: 0
-    },
-    {
-      type: 'number',
-      label: '圆角Y',
-      property: 'attributes.ry',
-      defaultValue: 0
-    },
-    {
-      type: 'color',
-      label: '边框颜色',
-      property: 'style.borderColor',
-      defaultValue: 'transparent'
-    },
-    {
-      type: 'number',
-      label: '边框宽度',
-      property: 'style.borderWidth',
-      defaultValue: 0
-    }
+    // 固定属性(不可删除)
+    createProperty(SVG_CONTROLS.x, { isDefault: true, isFixed: true }),
+    createProperty(SVG_CONTROLS.y, { isDefault: true, isFixed: true }),
+    createProperty(SVG_CONTROLS.width, { isDefault: true, isFixed: true }),
+    createProperty(SVG_CONTROLS.height, { isDefault: true, isFixed: true }),
+
+    // 预定属性(可被删除)
+    createProperty(SVG_CONTROLS.backgroundColor, { isDefault: true }),
+    createProperty(SVG_CONTROLS.opacity, { isDefault: true }),
+
+    // 可选属性(默认不存在，可添加)
+    SVG_CONTROLS.fill,
+    SVG_CONTROLS.stroke,
+    SVG_CONTROLS.strokeWidth
   ],
   tags: ['Shape', 'Rectangle'],
-  allowedChildren: [] as ComponentType[] // 将在index.ts中设置
+  allowedChildren: [] as ComponentType[]
 }; 

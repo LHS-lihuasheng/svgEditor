@@ -36,7 +36,7 @@ export function ComponentTreeView({
    */
   const handleAddImages = useCallback((componentId: string) => {
     if (!onAddImages) return;
-    
+
     const selectedImage = shiftFirstSelectedImage();
     if (!selectedImage) return;
 

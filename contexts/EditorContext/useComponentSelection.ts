@@ -7,9 +7,9 @@ import { useEditor } from './index';
 import type { BaseComponent } from '@/types/core';
 
 export function useComponentSelection() {
-  const { 
-    components, 
-    selectedComponent, 
+  const {
+    components,
+    selectedComponent,
     setSelectedComponent,
     findComponentById
   } = useEditor();
@@ -29,7 +29,7 @@ export function useComponentSelection() {
    */
   const selectNextComponent = useCallback(() => {
     if (!selectedComponent || !components.length) return;
-    
+
     // 展平组件树以获取所有组件
     const flattenComponents = (comps: BaseComponent[]): BaseComponent[] => {
       return comps.reduce<BaseComponent[]>((acc, comp) => {
@@ -43,7 +43,7 @@ export function useComponentSelection() {
 
     const allComponents = flattenComponents(components);
     const currentIndex = allComponents.findIndex(c => c.id === selectedComponent.id);
-    
+
     if (currentIndex !== -1 && currentIndex < allComponents.length - 1) {
       setSelectedComponent(allComponents[currentIndex + 1]);
     }
@@ -54,7 +54,7 @@ export function useComponentSelection() {
    */
   const selectPrevComponent = useCallback(() => {
     if (!selectedComponent || !components.length) return;
-    
+
     // 展平组件树以获取所有组件
     const flattenComponents = (comps: BaseComponent[]): BaseComponent[] => {
       return comps.reduce<BaseComponent[]>((acc, comp) => {
@@ -68,7 +68,7 @@ export function useComponentSelection() {
 
     const allComponents = flattenComponents(components);
     const currentIndex = allComponents.findIndex(c => c.id === selectedComponent.id);
-    
+
     if (currentIndex > 0) {
       setSelectedComponent(allComponents[currentIndex - 1]);
     }

@@ -32,8 +32,8 @@ export type ComponentTemplateMap = {
  * @returns {ComponentTemplateMap} 更新后的模板映射
  */
 export function registerTemplate(
-  templates: Partial<ComponentTemplateMap>, 
-  type: ComponentType, 
+  templates: Partial<ComponentTemplateMap>,
+  type: ComponentType,
   template: BaseComponentTemplate
 ): Partial<ComponentTemplateMap> {
   return {

@@ -2,36 +2,36 @@
 
 import { useEditor } from '@/contexts/EditorContext/index';
 import type { BaseComponent } from "@/types/core";
+import { SelectControl } from '../PropertyControls/SelectControl';
+import { StringControl } from '../PropertyControls/StringControl';
 import { PropertyManager } from '../PropertyManager';
 import get from "lodash/get";
 import set from "lodash/set";
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import type { PropertyControl } from "@/types/core/property";
 import { COMPONENT_TEMPLATES } from '@/components/SVGEditor/atomicComponent';
 import { DynamicPropertyControl } from '../PropertyControls/DynamicPropertyControl';
-import type { PropertyControl } from "@/types/core/property";
 
-interface GroupEditorProps {
+interface AnimateEditorProps {
   component: BaseComponent;
 }
 
-export function GroupEditor({ component }: GroupEditorProps) {
-  // 使用本地状态并确保随组件更新
+export function AnimateEditor({ component }: AnimateEditorProps) {
+  // 使用本地状态
   const [localComponent, setLocalComponent] = useState<BaseComponent>(component);
   const { updateComponent } = useEditor();
 
-  // 当外部组件变化时，更新本地状态
   useEffect(() => {
     setLocalComponent(component);
   }, [component]);
 
-  // 处理属性变更
-  const handleUpdateProperty = (path: string, value: any) => {
+  const handlePropertyChange = (property: string, value: any) => {
     const updatedComponent = JSON.parse(JSON.stringify(localComponent));
-    set(updatedComponent, path, value);
+    set(updatedComponent, property, value);
     setLocalComponent(updatedComponent);
     updateComponent(updatedComponent);
   };
-  
+
   const handleAddProperty = (property: PropertyControl) => {
     const path = property.property.split('.');
     const category = path[0];
@@ -74,7 +74,7 @@ export function GroupEditor({ component }: GroupEditorProps) {
           key={prop.property}
           property={prop}
           value={get(localComponent, prop.property)}
-          onChange={(value) => handleUpdateProperty(prop.property, value)}
+          onChange={(value) => handlePropertyChange(prop.property, value)}
         />
       ))}
 
@@ -83,7 +83,7 @@ export function GroupEditor({ component }: GroupEditorProps) {
         component={localComponent}
         onAddProperty={handleAddProperty}
         onRemoveProperty={handleRemoveProperty}
-        onUpdateProperty={handleUpdateProperty}
+        onUpdateProperty={handlePropertyChange}
       />
     </div>
   );
