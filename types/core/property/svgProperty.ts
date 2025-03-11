@@ -18,12 +18,10 @@ export const SVG_PROPERTY = {
     }),
 
     width: createPropertyControl('style.width', 'string', 'Width', {
-        isDefault: true,
         defaultValue: '100%'
     }),
 
     height: createPropertyControl('style.height', 'string', 'Height', {
-        isDefault: true,
         defaultValue: '100%'
     }),
 
@@ -59,7 +57,6 @@ export const SVG_PROPERTY = {
     }),
 
     backgroundImage: createPropertyControl('style.backgroundImage', 'image', 'Background Image', {
-        isDefault: true,
         defaultValue: ''
     }),
 

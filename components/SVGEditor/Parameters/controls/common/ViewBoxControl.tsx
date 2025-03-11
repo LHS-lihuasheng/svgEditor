@@ -1,6 +1,12 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { ViewBox } from "@/types/core";
+
+interface ViewBox {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
 
 interface ViewBoxControlProps {
     value: ViewBox;

@@ -21,17 +21,6 @@ export function useComponentOperations() {
     const [parent] = findComponentById(components, parentId);
     if (!parent) return;
 
-    // 验证是否允许添加子组件
-    const parentTemplate = getComponentTemplate(parent.type);
-    if (!parentTemplate) return;
-
-    const allowedChildren = parentTemplate.allowedChildren || [];
-    if (!allowedChildren.includes(childType)) {
-      console.warn(`无法添加 ${childType} 到 ${parent.type}`);
-      return;
-    }
-
-    // 创建子组件
     const childTemplate = getComponentTemplate(childType);
     const childId = `${childType}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 

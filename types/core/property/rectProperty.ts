@@ -28,7 +28,6 @@ export const RECT_PROPERTY = {
   
   // 样式属性
   fill: createPropertyControl('style.fill', 'color', 'Fill Color', {
-    isDefault: true,
     defaultValue: '#000000'
   }),
   
@@ -41,7 +40,6 @@ export const RECT_PROPERTY = {
   }),
   
   opacity: createPropertyControl('style.opacity', 'number', 'Opacity', {
-    
     defaultValue: 1,
     min: 0,
     max: 1,

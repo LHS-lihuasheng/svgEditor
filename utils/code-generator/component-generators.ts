@@ -1,12 +1,12 @@
 import type { BaseComponent } from '@/types/core';
 import { generateSVGPicCode } from './generators/svg';
 import { generateRectCode } from './generators/shapes';
-import { generateGroupCode } from './generators/containers';
-import { 
-  generateSetCode, 
-  generateAnimateCode, 
+import { generateGroupCode, generateForeignObjectCode } from './generators/containers';
+import {
+  generateSetCode,
+  generateAnimateCode,
   generateAnimateTransformCode,
-  generateAnimateMotionCode 
+  generateAnimateMotionCode
 } from './generators/animation';
 
 /**
@@ -27,7 +27,8 @@ export const COMPONENT_GENERATORS: CodeGeneratorMap = {
   'set': generateSetCode,
   'animate': generateAnimateCode,
   'animateTransform': generateAnimateTransformCode,
-  'animateMotion': generateAnimateMotionCode
+  'animateMotion': generateAnimateMotionCode,
+  'foreignObject': generateForeignObjectCode
 };
 
 /**

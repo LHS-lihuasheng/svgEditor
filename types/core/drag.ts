@@ -17,17 +17,3 @@ export interface DragItem {
   x?: number;
   y?: number;
 }
-
-/**
- * @description 获取放置位置显示名称
- * @param {DropPosition} position - 放置位置
- * @returns {string} 位置显示名称
- */
-export function getDropPositionName(position: DropPosition): string {
-  const names = {
-    'before': '前面',
-    'after': '后面',
-    'nested': '内部'
-  };
-  return names[position];
-} 

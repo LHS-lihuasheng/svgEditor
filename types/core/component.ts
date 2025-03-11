@@ -6,7 +6,6 @@ export interface BaseComponent {
   children?: BaseComponent[];
   attributes?: Record<string, any>;
   style?: Record<string, any>;
-  viewBox?: ViewBox;
   description?: string;
   parent?: string | null;
   animationMode?: 'values' | 'fromTo' | 'fromBy' | 'to' | 'by';
@@ -22,11 +21,3 @@ export type ComponentType =
   | 'set'
   | 'animate'
   | 'animateTransform';
-
-// 视口定义
-export interface ViewBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}

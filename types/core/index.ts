@@ -7,3 +7,4 @@ export * from './component';
 export * from './template';
 export * from './drag';
 export * from './property/index';
+export * from './component';
