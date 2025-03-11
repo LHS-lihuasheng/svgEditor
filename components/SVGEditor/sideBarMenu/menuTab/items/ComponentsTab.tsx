@@ -1,11 +1,10 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { ComponentType } from '@/types/core'
 import { COMPONENT_TEMPLATES } from '@/components/SVGEditor/atomicComponent'
-import { Paintbrush, Component, Box, GripHorizontal } from "lucide-react"
+import { Component, GripHorizontal } from "lucide-react"
 import { useDrag } from "react-dnd"
 import type { DragItem } from '@/types/core'
 import { cn } from "@/lib/utils"

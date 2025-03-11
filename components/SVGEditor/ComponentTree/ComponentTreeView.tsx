@@ -7,26 +7,13 @@ import { ComponentTreeItem } from './ComponentTreeItem';
 import { useAssets } from '@/contexts/AssetContext';
 import type { ComponentTreeProps } from './index';
 import type { BaseComponent } from '@/types/core';
+import { useEditor } from '@/contexts/EditorContext/index';
 
 export function ComponentTreeView({
-  components,
-  selectedId,
-  level = 0,
-  onSelect,
-  onDrop,
-  onMove,
-  onUpdate,
-  onDelete,
-  onAddImages
+  level = 0
 }: ComponentTreeProps) {
-  // 添加类型检查，过滤掉无效的组件
-  const validComponents = components.filter((component): component is BaseComponent => {
-    if (!component || typeof component !== 'object') {
-      console.warn('Invalid component found:', component);
-      return false;
-    }
-    return true;
-  });
+
+  const { components, selectedComponent, updateComponent } = useEditor();
 
   const { shiftFirstSelectedImage } = useAssets();
 
@@ -35,8 +22,6 @@ export function ComponentTreeView({
    * @param {string} componentId - 目标组件的ID
    */
   const handleAddImages = useCallback((componentId: string) => {
-    if (!onAddImages) return;
-
     const selectedImage = shiftFirstSelectedImage();
     if (!selectedImage) return;
 
@@ -63,25 +48,20 @@ export function ComponentTreeView({
     };
 
     // 更新组件
-    onUpdate(updatedComponent);
-  }, [components, onUpdate, shiftFirstSelectedImage, onAddImages]);
+    updateComponent(updatedComponent);
+  }, [components, updateComponent, shiftFirstSelectedImage]);
 
   return (
     <div className="space-y-2">
-      {validComponents.map((component, index) => (
+      {components.map((component, index) => (
         <ComponentTreeItem
           key={component.id}
           component={component}
-          isSelected={component.id === selectedId}
+          isSelected={component.id === selectedComponent?.id}
           level={level}
           index={index}
           parentId={null}
-          selectedId={selectedId}
-          onSelect={onSelect}
-          onDrop={onDrop}
-          onMove={onMove}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
+          selectedId={selectedComponent?.id}
           onAddImages={handleAddImages}
         />
       ))}

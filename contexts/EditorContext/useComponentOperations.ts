@@ -12,8 +12,6 @@ export function useComponentOperations() {
     components,
     findComponentById,
     updateComponent,
-    addComponent,
-    deleteComponent
   } = useEditor();
 
   /**
@@ -24,11 +22,12 @@ export function useComponentOperations() {
     if (!parent) return;
 
     // 验证是否允许添加子组件
-    const template = getComponentTemplate(parent.type);
-    const allowedChildren = template?.allowedChildren || [];
+    const parentTemplate = getComponentTemplate(parent.type);
+    if (!parentTemplate) return;
 
+    const allowedChildren = parentTemplate.allowedChildren || [];
     if (!allowedChildren.includes(childType)) {
-      console.warn(`Cannot add ${childType} to ${parent.type}`);
+      console.warn(`无法添加 ${childType} 到 ${parent.type}`);
       return;
     }
 
@@ -40,13 +39,13 @@ export function useComponentOperations() {
       id: childId,
       type: childType,
       children: [],
-      ...(childTemplate.defaultProperties || {})
+      ...(childTemplate?.defaultProperties || {})
     };
 
     // 更新父组件
     const updatedParent = {
       ...parent,
-      children: [...(parent.children || []), childComponent]
+      children: [...(Array.isArray(parent.children) ? parent.children : []), childComponent]
     };
 
     updateComponent(updatedParent);

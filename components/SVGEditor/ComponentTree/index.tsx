@@ -4,24 +4,16 @@
  */
 import { ComponentTreeView } from './ComponentTreeView';
 import { ComponentTreeProvider } from './ComponentTreeContext';
-import type { BaseComponent, DragItem } from '@/types/core';
 
+// 定义组件树组件的props类型
 export interface ComponentTreeProps {
-    components: BaseComponent[];
-    selectedId?: string;
     level?: number;
-    onSelect: (component: BaseComponent) => void;
-    onDrop: (item: DragItem, targetId: string | null) => void;
-    onMove: (dragIndex: number, hoverIndex: number, parentId: string | null) => void;
-    onUpdate: (updated: BaseComponent) => void;
-    onDelete: (id: string) => void;
-    onAddImages?: (targetId: string) => void;
 }
 
-export function ComponentTree(props: ComponentTreeProps) {
+export function ComponentTree({ level = 0 }: ComponentTreeProps = {}) {
     return (
         <ComponentTreeProvider>
-            <ComponentTreeView {...props} />
+            <ComponentTreeView level={level} />
         </ComponentTreeProvider>
     );
 }
@@ -30,4 +22,3 @@ export function ComponentTree(props: ComponentTreeProps) {
 export { ComponentTreeItem } from './ComponentTreeItem';
 export { useComponentTree } from './ComponentTreeContext';
 export { DragIndicator } from './DragIndicator';
-export * from './utils'; 

@@ -9,15 +9,8 @@ import { usePanel } from "@/contexts/PanelContext"
 import { useEditor } from '@/contexts/EditorContext/index'
 import type { BaseComponent } from "@/types/core"
 
-// 导入组件编辑器
-import {
-  SVGPicEditor,
-  GroupEditor,
-  RectEditor,
-  SetEditor,
-  AnimateEditor,
-  AnimateTransformEditor
-} from './ComponentEditors'
+// 导入通用组件编辑器
+import { UniversalComponentEditor } from './editors/UniversalComponentEditor'
 
 interface ParametersProps {
   selectedComponent: BaseComponent | null;
@@ -31,42 +24,6 @@ export function Parameters({ selectedComponent }: ParametersProps) {
   useEffect(() => {
     console.log("Selected component updated:", selectedComponent);
   }, [selectedComponent]);
-
-  /**
-   * 根据组件类型渲染对应的编辑器
-   */
-  const renderEditor = () => {
-    if (!selectedComponent) {
-      return (
-        <div className="text-sm text-gray-500">
-          请选择一个组件来编辑其属性
-        </div>
-      );
-    }
-
-    // 根据组件类型选择合适的编辑器
-    switch (selectedComponent.type) {
-      case 'svgPic':
-      case 'svgSeamlessPic':
-        return <SVGPicEditor component={selectedComponent} />;
-      case 'g':
-        return <GroupEditor component={selectedComponent} />;
-      case 'rect':
-        return <RectEditor component={selectedComponent} />;
-      case 'set':
-        return <SetEditor component={selectedComponent} />;
-      case 'animate':
-        return <AnimateEditor component={selectedComponent} />;
-      case 'animateTransform':
-        return <AnimateTransformEditor component={selectedComponent} />;
-      default:
-        return (
-          <div className="text-sm text-yellow-600">
-            暂不支持编辑此类型组件: {selectedComponent.type}
-          </div>
-        );
-    }
-  };
 
   return (
     <div
@@ -87,7 +44,7 @@ export function Parameters({ selectedComponent }: ParametersProps) {
       {isParametersPanelOpen && (
         <div className="p-4 pt-12">
           <h3 className="font-medium text-sm mb-2">参数设置</h3>
-          <ScrollArea className="h-[calc(100vh-120px)]">
+          <ScrollArea className="h-[calc(100vh-120px)] pr-3">
             {selectedComponent && (
               <div className="space-y-4">
                 <div className="text-sm">
@@ -102,7 +59,8 @@ export function Parameters({ selectedComponent }: ParametersProps) {
                 <div className="border-t pt-4 mt-4">
                   <h4 className="font-medium text-sm mb-3">属性</h4>
                   <div className="space-y-4">
-                    {renderEditor()}
+                    {/* 使用通用组件编辑器处理所有组件类型 */}
+                    <UniversalComponentEditor component={selectedComponent} />
                   </div>
                 </div>
               </div>

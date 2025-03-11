@@ -1,6 +1,9 @@
 /**
  * @description 编辑器上下文提供者
- * 管理SVG编辑器的核心状态和操作
+ * 管理SVG编辑器的核心状态和操作，负责：
+ * 1. 组件树的管理（添加、删除、更新、选择组件）
+ * 2. 拖拽功能的支持
+ * 3. 代码预览的切换
  */
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import { COMPONENT_TEMPLATES } from '@/components/SVGEditor/atomicComponent';
@@ -12,54 +15,57 @@ import type {
   DragItem
 } from '@/types/core';
 
-// 编辑器上下文类型
+/**
+ * 编辑器上下文类型定义
+ * 包含编辑器的所有状态和操作方法
+ */
 interface EditorContextType {
-  // 状态
-  components: BaseComponent[];
-  selectedComponent: BaseComponent | null;
-  showCodePreview: boolean;
+  // 核心状态
+  components: BaseComponent[];          // 当前编辑器中的所有组件
+  selectedComponent: BaseComponent | null;  // 当前选中的组件
 
-  // 操作
-  setComponents: React.Dispatch<React.SetStateAction<BaseComponent[]>>;
-  setSelectedComponent: (component: BaseComponent | null) => void;
-  updateComponent: (updated: BaseComponent) => void;
-  addComponent: (type: ComponentType) => void;
-  deleteComponent: (id: string) => void;
-  moveComponent: (dragIndex: number, hoverIndex: number, parentId: string | null) => void;
-  setShowCodePreview: (show: boolean) => void;
-  handleDrop: (item: DragItem, targetId: string | null) => void;
+  // 状态操作方法
+  setComponents: React.Dispatch<React.SetStateAction<BaseComponent[]>>;  // 设置组件列表
+  setSelectedComponent: (component: BaseComponent | null) => void;      // 设置选中组件
+  updateComponent: (updated: BaseComponent) => void;                   // 更新特定组件
+  addComponent: (type: ComponentType) => void;                        // 添加新组件
+  deleteComponent: (id: string) => void;                             // 删除特定组件
+  moveComponent: (dragIndex: number, hoverIndex: number, parentId: string | null) => void;  // 移动组件位置
+  handleDrop: (item: DragItem, targetId: string | null) => void;     // 处理拖放完成事件
 
-  // 辅助方法
-  findComponentById: (components: BaseComponent[], id: string) => [BaseComponent | null, BaseComponent[] | null];
-  generateUniqueId: (type: ComponentType) => string;
+  // 工具方法
+  findComponentById: (components: BaseComponent[], id: string) => [BaseComponent | null, BaseComponent[] | null];  // 通过ID查找组件
+  generateUniqueId: (type: ComponentType) => string;                 // 生成唯一组件ID
 }
 
-// 创建上下文
+// 创建上下文实例
 const EditorContext = createContext<EditorContextType | null>(null);
 
 /**
  * @description 编辑器上下文提供者组件
+ * @param {Object} props - 组件属性
+ * @param {React.ReactNode} props.children - 子组件
+ * @returns {JSX.Element} 上下文提供者组件
  */
 export function EditorProvider({ children }: { children: React.ReactNode }) {
-  // 基础状态
-  const [components, setComponents] = useState<BaseComponent[]>([]);
-  const [selectedComponent, setSelectedComponent] = useState<BaseComponent | null>(null);
-  const [showCodePreview, setShowCodePreview] = useState(false);
+  // 基础状态定义
+  const [components, setComponents] = useState<BaseComponent[]>([]); // 存储所有SVG组件
+  const [selectedComponent, setSelectedComponent] = useState<BaseComponent | null>(null); // 当前选中的组件
 
-  // 引入组件树操作钩子
+  // 引入组件树操作钩子，提供组件树的基本操作功能
   const {
-    findComponentById,
-    updateComponent,
-    deleteComponent,
-    generateUniqueId,
-    removeComponentById
+    findComponentById,     // 通过ID查找组件
+    updateComponent,       // 更新组件属性
+    deleteComponent,       // 删除组件
+    generateUniqueId,      // 生成唯一ID
+    removeComponentById    // 通过ID移除组件
   } = useComponentTree(setComponents);
 
-  // 引入拖放操作钩子
+  // 引入拖放操作钩子，提供拖拽相关功能
   const {
-    handleDrop,
-    moveComponent,
-    updateComponentTree
+    handleDrop,           // 处理拖放完成事件
+    moveComponent,        // 移动组件在列表中的位置
+    updateComponentTree   // 更新整个组件树
   } = useComponentDragDrop(
     setComponents,
     findComponentById,
@@ -67,7 +73,10 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     removeComponentById
   );
 
-  // 当组件列表更新时，更新选中组件
+  /**
+   * 当组件列表更新时，同步更新选中组件的最新状态
+   * 确保UI显示的是组件的最新状态
+   */
   useEffect(() => {
     if (selectedComponent) {
       const [updated] = findComponentById(components, selectedComponent.id);
@@ -78,29 +87,32 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
   }, [components, selectedComponent?.id, findComponentById]);
 
   /**
-   * @description 添加新组件
+   * @description 添加新组件到编辑器
+   * @param {ComponentType} type - 要添加的组件类型
+   * 会根据组件类型获取默认模板，并生成一个带有唯一ID的新组件
    */
   const addComponent = useCallback((type: ComponentType) => {
     setComponents(prev => {
+      // 获取对应类型的组件模板
       const template = COMPONENT_TEMPLATES[type as keyof typeof COMPONENT_TEMPLATES];
 
+      // 创建新组件，包含基本属性和默认值
       const newComponent: BaseComponent = {
-        id: generateUniqueId(type),
-        type,
-        children: [],
-        ...(template.defaultProperties || {})
+        id: generateUniqueId(type),  // 生成唯一ID
+        type,                       // 组件类型
+        children: [],               // 子组件列表（初始为空）
+        ...(template.defaultProperties || {})  // 合并默认属性
       } as BaseComponent;
 
-      return [...prev, newComponent];
+      return [...prev, newComponent];  // 添加到组件列表末尾
     });
   }, [generateUniqueId]);
 
-  // 构建上下文值
+  // 构建上下文值，使用useMemo优化性能，避免不必要的重渲染
   const contextValue = useMemo<EditorContextType>(() => ({
     // 状态
     components,
     selectedComponent,
-    showCodePreview,
 
     // 操作方法
     setComponents,
@@ -109,16 +121,14 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     addComponent,
     deleteComponent,
     moveComponent,
-    setShowCodePreview,
     handleDrop,
 
-    // 辅助方法
+    // 工具方法
     findComponentById,
     generateUniqueId
   }), [
     components,
     selectedComponent,
-    showCodePreview,
     updateComponent,
     addComponent,
     deleteComponent,
@@ -136,7 +146,9 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * @description 使用编辑器上下文的钩子
+ * @description 使用编辑器上下文的自定义Hook
+ * @returns {EditorContextType} 编辑器上下文内容
+ * @throws {Error} 如果在EditorProvider外部使用则抛出错误
  */
 export function useEditor(): EditorContextType {
   const context = useContext(EditorContext);

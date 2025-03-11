@@ -3,7 +3,7 @@
  * 提供组件树的状态管理和操作
  */
 import React, { createContext, useContext, useState } from 'react';
-import type { BaseComponent, DragItem } from '@/types/core';
+import type { DragItem } from '@/types/core';
 
 interface ComponentTreeContextType {
   dragItem: DragItem | null;

@@ -1,9 +1,8 @@
 /**
- * @description 动画集模板
+ * @description Set动画组件模板
  */
 import { BaseComponentTemplate } from '@/types/core/template';
-import { ComponentType } from '@/types/core';
-import { SVG_CONTROLS } from '@/types/core/property';
+import { SET_PROPERTY } from '@/types/core/property/setProperty';
 
 // 克隆并修改属性
 function createProperty(baseProperty: any, overrides: Partial<any> = {}) {
@@ -11,32 +10,24 @@ function createProperty(baseProperty: any, overrides: Partial<any> = {}) {
 }
 
 export const SET_TEMPLATE: BaseComponentTemplate = {
-  label: '动画',
-  icon: '✨',
-  description: 'SVG动画效果',
-  category: '动画',
+  label: 'Set动画',
+  icon: '⚡',
+  description: 'SVG Set元素，用于设置属性值变化',
   defaultProperties: {
     attributes: {
-      attributeName: 'opacity',
-      from: 1,
-      to: 0,
-      dur: '1s',
-      repeatCount: 1,
-      begin: 'click'
+      attributeName: 'visibility',
+      to: 'hidden',
+      begin: 'click',
+      dur: '1ms',
+      fill: 'freeze'
     }
   },
   propertyControls: [
-    // 固定属性(不可删除)
-    createProperty(SVG_CONTROLS.animateAttribute, { isDefault: true, isFixed: true }),
-    createProperty(SVG_CONTROLS.to, { isDefault: true, isFixed: true }),
-
-    // 预定属性(可删除)
-    createProperty(SVG_CONTROLS.begin, { isDefault: true }),
-
-    // 可选属性(默认不存在，可添加)
-    SVG_CONTROLS.dur,
-    SVG_CONTROLS.repeatCount
+    createProperty(SET_PROPERTY.attributeName, { isFixed: true }),
+    createProperty(SET_PROPERTY.to, { isFixed: true }),
+    createProperty(SET_PROPERTY.begin, { isDefault: true }),
+    createProperty(SET_PROPERTY.dur, { isDefault: true }),
+    createProperty(SET_PROPERTY.fill, { isDefault: true })
   ],
-  tags: ['Animation'],
-  allowedChildren: [] as ComponentType[] // 将在index.ts中设置
+  tags: ['SVG', 'Animation', 'Set']
 }; 

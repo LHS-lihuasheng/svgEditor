@@ -47,6 +47,7 @@
     "embla-carousel-react": "8.5.1",
     "fs": "latest",
     "idb": "^8.0.2",
+    "immer": "^10.1.1",
     "input-otp": "1.4.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.454.0",

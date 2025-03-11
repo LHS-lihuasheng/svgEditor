@@ -1,7 +1,7 @@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { usePanel } from "@/contexts/PanelContext"
 import { ComponentsTab } from "./items/ComponentsTab"
-import { AssetsTab } from "./items/AssetsTab/AssetsTab"
+import { AssetsTab } from "./items/AssetsTab"
 import type { ComponentType } from "@/types/core"
 
 interface MenuTabProps {

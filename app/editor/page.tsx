@@ -1,5 +1,5 @@
 import { PanelProvider } from '@/contexts/PanelContext';
-import { SVGEditor } from '@/components/SVGEditor/SVGEditor';
+import { SVGEditor } from '@/components/SVGEditor';
 
 export default function EditorPage() {
   return (

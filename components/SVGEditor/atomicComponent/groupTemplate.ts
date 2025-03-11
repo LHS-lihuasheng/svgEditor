@@ -1,9 +1,8 @@
 /**
- * @description 组模板
+ * @description 组合组件模板
  */
 import { BaseComponentTemplate } from '@/types/core/template';
-import { ComponentType } from '@/types/core';
-import { SVG_CONTROLS } from '@/types/core/property';
+import { GROUP_PROPERTY } from '@/types/core/property/groupProperty';
 
 // 克隆并修改属性
 function createProperty(baseProperty: any, overrides: Partial<any> = {}) {
@@ -11,13 +10,12 @@ function createProperty(baseProperty: any, overrides: Partial<any> = {}) {
 }
 
 export const GROUP_TEMPLATE: BaseComponentTemplate = {
-  label: '组',
+  label: 'g分组',
   icon: '🔄',
-  description: '用于组合多个组件的容器',
-  category: '容器',
+  description: 'SVG组合元素，可以包含多个子元素',
   defaultProperties: {
+    attributes: {},
     style: {
-      opacity: 1
     },
     transform: {
       translate: { x: 0, y: 0 },
@@ -26,20 +24,7 @@ export const GROUP_TEMPLATE: BaseComponentTemplate = {
     }
   },
   propertyControls: [
-    // 预定属性(可被删除)
-    createProperty(SVG_CONTROLS.opacity, { isDefault: true }),
-
-    // 固定属性(不可删除)
-    createProperty(SVG_CONTROLS.translateX, { isDefault: true, isFixed: true }),
-    createProperty(SVG_CONTROLS.translateY, { isDefault: true, isFixed: true }),
-    createProperty(SVG_CONTROLS.scale, { isDefault: true, isFixed: true }),
-    createProperty(SVG_CONTROLS.rotate, { isDefault: true, isFixed: true }),
-
-    // 可选属性
-    SVG_CONTROLS.fill,
-    SVG_CONTROLS.stroke,
-    SVG_CONTROLS.strokeWidth
+    createProperty(GROUP_PROPERTY.opacity, { isDefault: true }),
   ],
-  tags: ['Group', 'Container'],
-  allowedChildren: [] as ComponentType[]
+  tags: ['SVG', 'Container', 'Group']
 }; 

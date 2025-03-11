@@ -15,12 +15,18 @@ interface MenuBarContextType {
     setActiveTab: (tab: 'components' | 'assets') => void
 }
 
-const PanelContext = createContext<PanelContextType & MenuBarContextType | undefined>(undefined)
+interface CodePreviewContextType {
+    showCodePreview: boolean
+    setShowCodePreview: (value: boolean) => void
+}
+
+const PanelContext = createContext<PanelContextType & MenuBarContextType & CodePreviewContextType | undefined>(undefined)
 
 export function PanelProvider({ children }: { children: ReactNode }) {
     const [isParametersPanelOpen, setIsParametersPanelOpen] = useState(true)
-    const [isMenuBarOpen, setIsMenuBarOpen] = useState(false)
+    const [isMenuBarOpen, setIsMenuBarOpen] = useState(true)
     const [activeTab, setActiveTab] = useState<'components' | 'assets'>('components')
+    const [showCodePreview, setShowCodePreview] = useState(false)
 
     const toggleParametersPanel = () => {
         setIsParametersPanelOpen(prev => !prev)
@@ -31,7 +37,7 @@ export function PanelProvider({ children }: { children: ReactNode }) {
     }
 
     return (
-        <PanelContext.Provider value={{ isParametersPanelOpen, setIsParametersPanelOpen, toggleParametersPanel, isMenuBarOpen, toggleMenuBar, activeTab, setActiveTab }}>
+        <PanelContext.Provider value={{ isParametersPanelOpen, setIsParametersPanelOpen, toggleParametersPanel, isMenuBarOpen, toggleMenuBar, activeTab, setActiveTab, showCodePreview, setShowCodePreview }}>
             {children}
         </PanelContext.Provider>
     )

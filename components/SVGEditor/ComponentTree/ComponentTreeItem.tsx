@@ -2,8 +2,8 @@
  * @description 组件树项
  * 渲染单个组件和其子组件
  */
-import { useMemo, useState } from 'react';
-import { Image, LucideCode, LucideRefreshCw, Trash, ImagePlus, PlusIcon } from 'lucide-react';
+import { useState } from 'react';
+import { Trash, ImagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -12,8 +12,10 @@ import {
 import { getComponentTemplate } from '@/components/SVGEditor/atomicComponent';
 import { useDragDrop } from '@/hooks/useDragDrop';
 import { isDescendantOf } from '@/utils/component';
-import type { BaseComponent, DragItem } from '@/types/core';
+import type { BaseComponent } from '@/types/core';
 import { DragIndicator } from './DragIndicator';
+import { useEditor } from '@/contexts/EditorContext/index';
+
 
 interface ComponentTreeItemProps {
   component: BaseComponent;
@@ -22,12 +24,7 @@ interface ComponentTreeItemProps {
   index: number;
   parentId: string | null;
   selectedId?: string;
-  onSelect: (component: BaseComponent) => void;
-  onDrop: (item: DragItem, targetId: string | null) => void;
-  onMove: (dragIndex: number, hoverIndex: number, parentId: string | null) => void;
-  onUpdate: (updated: BaseComponent) => void;
-  onDelete: (id: string) => void;
-  onAddImages?: (targetId: string) => void;
+  onAddImages?: (componentId: string) => void;
 }
 
 export function ComponentTreeItem({
@@ -37,15 +34,14 @@ export function ComponentTreeItem({
   index,
   parentId,
   selectedId,
-  onSelect,
-  onDrop,
-  onMove,
-  onUpdate,
-  onDelete,
-  onAddImages
+  onAddImages,
 }: ComponentTreeItemProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  // 使用编辑器钩子获取所有需要的方法
+  const { setSelectedComponent, handleDrop, moveComponent, deleteComponent } = useEditor();
+
 
   // 获取组件模板信息
   const template = getComponentTemplate(component.type);
@@ -55,33 +51,10 @@ export function ComponentTreeItem({
     component,
     index,
     parentId,
-    onDrop,
-    onMove,
+    onDrop: handleDrop,
+    onMove: moveComponent,
     isDescendant: isDescendantOf
   });
-
-  /**
-   * @description 处理删除组件
-   */
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowDeleteDialog(true);
-  };
-
-  /**
-   * @description 处理确认删除
-   */
-  const handleConfirmDelete = () => {
-    onDelete(component.id);
-    setShowDeleteDialog(false);
-  };
-
-  /**
-   * @description 处理取消删除
-   */
-  const handleCancelDelete = () => {
-    setShowDeleteDialog(false);
-  };
 
   /**
    * @description 渲染子组件
@@ -110,12 +83,6 @@ export function ComponentTreeItem({
             index={childIndex}
             parentId={component.id}
             selectedId={selectedId}
-            onSelect={onSelect}
-            onDrop={onDrop}
-            onMove={onMove}
-            onUpdate={onUpdate}
-            onDelete={onDelete}
-            onAddImages={onAddImages}
           />
         ))}
       </div>
@@ -142,11 +109,11 @@ export function ComponentTreeItem({
           ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}
           cursor-pointer transition-colors duration-200
         `}
-        onClick={() => onSelect(component)}
+        onClick={() => setSelectedComponent(component)}
       >
         <span className="text-sm text-blue-600 mr-2">{index + 1}</span>
-        <span className="mr-2">{template.icon}</span>
-        <span className="font-medium">{template.label}</span>
+        <span className="mr-2">{template?.icon}</span>
+        <span className="font-medium">{template?.label}</span>
 
         {/* 将所有操作按钮放在一个容器中，并应用ml-auto确保它们始终在右侧 */}
         <div className="ml-auto flex items-center">
@@ -166,20 +133,23 @@ export function ComponentTreeItem({
           {/* 删除按钮 */}
           <button
             className="p-1 hover:text-red-600 transition-colors duration-200"
-            onClick={handleDelete}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDeleteDialog(true);
+            }}
             title="删除组件"
           >
             <Trash className="h-4 w-4" />
           </button>
 
           {/* 只在 SVG 容器上显示添加图片按钮 */}
-          {component.type === 'svgPic' && onAddImages && (
+          {component.type === 'svgPic' && (
             <Button
               variant="ghost"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                onAddImages(component.id);
+                onAddImages?.(component.id);
               }}
               className="h-7 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
             >
@@ -203,12 +173,18 @@ export function ComponentTreeItem({
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除组件</AlertDialogTitle>
             <AlertDialogDescription>
-              此操作将删除组件"{template.label}"及其所有子组件，此操作无法撤销。
+              此操作将删除组件"{template?.label}"及其所有子组件，此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelDelete}>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                deleteComponent(component.id);
+                setShowDeleteDialog(false);
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
               删除
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -24,12 +24,6 @@ export const COMPONENT_TEMPLATES: Record<string, BaseComponentTemplate> = {
   animateTransform: ANIMATE_TRANSFORM_TEMPLATE
 };
 
-// 设置允许的子组件类型
-SVG_PIC_TEMPLATE.allowedChildren = ['rect', 'g', 'set', 'animate', 'animateTransform'] as ComponentType[];
-SVG_SEAMLESS_PIC_TEMPLATE.allowedChildren = ['rect', 'g', 'set', 'animate', 'animateTransform'] as ComponentType[];
-GROUP_TEMPLATE.allowedChildren = ['rect', 'g', 'set', 'animate', 'animateTransform'] as ComponentType[];
-RECT_TEMPLATE.allowedChildren = ['set', 'animate', 'animateTransform'] as ComponentType[];
-
 /**
  * @description 获取组件模板
  * @param {ComponentType} type - 组件类型
@@ -52,4 +46,4 @@ export function getAllowedChildrenTypes(type: ComponentType): ComponentType[] {
 // 更新各模板的allowedChildren属性
 Object.values(COMPONENT_TEMPLATES).forEach(template => {
   template.allowedChildren = ALL_COMPONENT_TYPES;
-}); 
+});

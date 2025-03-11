@@ -134,43 +134,37 @@ export function useComponentDragDrop(
   ): BaseComponent[] => {
     if (!Array.isArray(components)) return [];
 
-    const processed = components.map(comp => {
+    const result: BaseComponent[] = [];
+
+    for (const comp of components) {
       if (comp.id === targetId) {
         if (dropPosition === 'nested') {
           // 添加为子组件
-          return {
+          result.push({
             ...comp,
             children: [...(Array.isArray(comp.children) ? comp.children : []), movedComponent]
-          };
+          });
         } else if (dropPosition === 'before') {
           // 在当前组件前插入
-          return [movedComponent, comp];
+          result.push(movedComponent, comp);
         } else {
           // 在当前组件后插入
-          return [comp, movedComponent];
+          result.push(comp, movedComponent);
+        }
+      } else {
+        // 递归处理子组件
+        if (Array.isArray(comp.children) && comp.children.length > 0) {
+          result.push({
+            ...comp,
+            children: updateComponentTree(comp.children, targetId, movedComponent, dropPosition)
+          });
+        } else {
+          result.push(comp);
         }
       }
+    }
 
-      // 递归处理子组件
-      if (Array.isArray(comp.children) && comp.children.length > 0) {
-        return {
-          ...comp,
-          children: updateComponentTree(comp.children, targetId, movedComponent, dropPosition)
-        };
-      }
-
-      return comp;
-    });
-
-    // 展平可能的数组嵌套
-    const flattened = processed.reduce<BaseComponent[]>((acc, curr) => {
-      if (Array.isArray(curr)) {
-        return [...acc, ...curr];
-      }
-      return [...acc, curr as BaseComponent];
-    }, []);
-
-    return flattened;
+    return result;
   }, []);
 
   return {

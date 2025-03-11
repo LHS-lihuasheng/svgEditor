@@ -8,6 +8,7 @@ import { useComponentTree } from './useComponentTree';
 import { useComponentDragDrop } from './useComponentDragDrop';
 import { useComponentOperations } from './useComponentOperations';
 import { useComponentSelection } from './useComponentSelection';
+import { useEditorDrop } from './useEditorDrop';
 
 export {
   EditorProvider,
@@ -15,5 +16,6 @@ export {
   useComponentTree,
   useComponentDragDrop,
   useComponentOperations,
-  useComponentSelection
+  useComponentSelection,
+  useEditorDrop,
 }; 
