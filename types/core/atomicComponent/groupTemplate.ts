@@ -14,16 +14,18 @@ export const GROUP_TEMPLATE: BaseComponentTemplate = {
   icon: '🔄',
   description: 'SVG组合元素，可以包含多个子元素',
   defaultProperties: {
-    attributes: {},
-    style: {
+    attributes: {
+      transform: {
+        translate: { x: 0, y: 0 },
+        scale: 1,
+        rotate: 0
+      }
     },
-    transform: {
-      translate: { x: 0, y: 0 },
-      scale: 1,
-      rotate: 0
+    style: {
     }
   },
   propertyControls: [
+    createProperty(GROUP_PROPERTY.transform, { isDefault: true }),
     createProperty(GROUP_PROPERTY.opacity, { isDefault: true }),
   ],
   tags: ['SVG', 'Container', 'Group']

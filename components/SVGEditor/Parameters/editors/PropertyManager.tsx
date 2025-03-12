@@ -12,17 +12,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { PropertyControl } from "@/types/core/property/index";
-import { COMPONENT_TEMPLATES } from '@/components/SVGEditor/atomicComponent';
+import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 import { SVG_PROPERTY } from '@/types/core/property/svgProperty';
 import { RECT_PROPERTY } from '@/types/core/property/rectProperty';
 import { GROUP_PROPERTY } from '@/types/core/property/groupProperty';
 import { ANIMATE_PROPERTY } from '@/types/core/property/animateProperty';
 import { ANIMATE_TRANSFORM_PROPERTY } from '@/types/core/property/animateTransformProperty';
 import { SET_PROPERTY } from '@/types/core/property/setProperty';
-import { DynamicPropertyControl } from "./controls/DynamicPropertyControlProps";
+import { DynamicPropertyControl } from "../controls/DynamicPropertyControlProps";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import get from "lodash/get";
-import { AnimationValuesEditor } from "./controls/animation/AnimationValuesEditor";
+import { AnimationValuesEditor } from "../controls/animation/AnimationValuesEditor";
 
 // 组件类型到属性库的映射
 const COMPONENT_TYPE_TO_PROPERTY: Record<string, Record<string, PropertyControl>> = {
@@ -294,10 +294,9 @@ export function PropertyManager({
                     {prop.control && (
                       <DynamicPropertyControl
                         property={prop.control}
-                        value={prop.path === 'viewBox' ? component.viewBox :
-                          prop.path === 'transform' ? component.transform :
-                            get(component, prop.path)}
+                        value={get(component, prop.path)}
                         onChange={(value) => onUpdateProperty(prop.path, value)}
+                        component={component}
                       />
                     )}
                   </CollapsibleContent>

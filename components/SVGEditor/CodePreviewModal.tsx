@@ -8,15 +8,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { generateCode } from "@/utils/code-generator";
 import { usePanel } from '@/contexts/PanelContext';
-import type { BaseComponent } from '@/types/core';
+import { useEditor } from '@/contexts/EditorContext/index'
 
-interface CodePreviewModalProps {
-  components: BaseComponent[];
-}
-
-export function CodePreviewModal({ components }: CodePreviewModalProps) {
+export function CodePreviewModal() {
   const { setShowCodePreview } = usePanel();
-
+  const { components } = useEditor();
   // 处理点击背景关闭模态框
   const handleBackdropClick = () => {
     setShowCodePreview(false);

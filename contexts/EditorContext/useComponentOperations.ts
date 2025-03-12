@@ -4,7 +4,7 @@
  */
 import { useCallback } from 'react';
 import { useEditor } from './index';
-import { getComponentTemplate } from '@/components/SVGEditor/atomicComponent';
+import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 import type { BaseComponent, ComponentType } from '@/types/core';
 
 export function useComponentOperations() {
@@ -12,6 +12,7 @@ export function useComponentOperations() {
     components,
     findComponentById,
     updateComponent,
+    setComponents
   } = useEditor();
 
   /**
@@ -21,7 +22,7 @@ export function useComponentOperations() {
     const [parent] = findComponentById(components, parentId);
     if (!parent) return;
 
-    const childTemplate = getComponentTemplate(childType);
+    const childTemplate = COMPONENT_TEMPLATES[childType];
     const childId = `${childType}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
     const childComponent: BaseComponent = {
@@ -31,13 +32,11 @@ export function useComponentOperations() {
       ...(childTemplate?.defaultProperties || {})
     };
 
-    // 更新父组件
-    const updatedParent = {
+    // 将操作交给updateComponent处理
+    updateComponent({
       ...parent,
       children: [...(Array.isArray(parent.children) ? parent.children : []), childComponent]
-    };
-
-    updateComponent(updatedParent);
+    });
   }, [components, findComponentById, updateComponent]);
 
   /**
@@ -51,18 +50,13 @@ export function useComponentOperations() {
     const [component] = findComponentById(components, componentId);
     if (!component) return;
 
-    const updatedComponent = { ...component };
-
-    if (!updatedComponent.style) {
-      updatedComponent.style = {};
-    }
-
-    updatedComponent.style = {
-      ...updatedComponent.style,
-      [styleProp]: value
-    };
-
-    updateComponent(updatedComponent);
+    updateComponent({
+      ...component,
+      style: {
+        ...(component.style || {}),
+        [styleProp]: value
+      }
+    });
   }, [components, findComponentById, updateComponent]);
 
   /**
@@ -76,26 +70,22 @@ export function useComponentOperations() {
     const [component] = findComponentById(components, componentId);
     if (!component) return;
 
-    const updatedComponent = { ...component };
-
-    if (!updatedComponent.attributes) {
-      updatedComponent.attributes = {};
-    }
-
-    updatedComponent.attributes = {
-      ...updatedComponent.attributes,
-      [attrKey]: value
-    };
-
-    updateComponent(updatedComponent);
+    updateComponent({
+      ...component,
+      attributes: {
+        ...(component.attributes || {}),
+        [attrKey]: value
+      }
+    });
   }, [components, findComponentById, updateComponent]);
 
   /**
    * @description 复制组件
+   * 完成了未实现的逻辑，利用immer来更新组件树
    */
   const duplicateComponent = useCallback((componentId: string) => {
-    const [component] = findComponentById(components, componentId);
-    if (!component) return;
+    const [component, parentArray] = findComponentById(components, componentId);
+    if (!component || !parentArray) return;
 
     // 创建深拷贝
     const clone = JSON.parse(JSON.stringify(component));
@@ -116,23 +106,29 @@ export function useComponentOperations() {
 
     const duplicated = assignNewIds(clone);
 
-    // 找出父数组并添加复制的组件
-    const [, parentArray] = findComponentById(components, componentId);
+    // 使用setComponents (其实是updateComponents)更新状态
+    setComponents(draft => {
+      // 递归查找并更新父数组
+      const findAndUpdate = (items: BaseComponent[]) => {
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].id === componentId) {
+            // 在当前组件后插入复制的组件
+            items.splice(i + 1, 0, duplicated);
+            return true;
+          }
 
-    if (parentArray) {
-      const index = parentArray.findIndex(c => c.id === componentId);
-      if (index !== -1) {
-        const updatedArray = [...parentArray];
-        updatedArray.splice(index + 1, 0, duplicated);
-
-        // 更新父组件
-        const parentId = parentArray.find(c => c.id === componentId)?.id;
-        if (parentId) {
-          // 需要再实现这部分逻辑
+          if (items[i].children && items[i].children.length > 0) {
+            if (findAndUpdate(items[i].children)) {
+              return true;
+            }
+          }
         }
-      }
-    }
-  }, [components, findComponentById]);
+        return false;
+      };
+
+      findAndUpdate(draft);
+    });
+  }, [components, findComponentById, setComponents]);
 
   return {
     addChildComponent,

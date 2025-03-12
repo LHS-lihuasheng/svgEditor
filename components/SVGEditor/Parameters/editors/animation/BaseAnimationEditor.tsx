@@ -3,7 +3,7 @@
 import { useEditor } from '@/contexts/EditorContext/index';
 import { BaseComponent } from "@/types/core";
 import { useState, useEffect } from 'react';
-import { COMPONENT_TEMPLATES } from '@/components/SVGEditor/atomicComponent';
+import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 import { DynamicPropertyControl } from '../../controls/DynamicPropertyControlProps';
 import { PropertyManager } from '../../PropertyManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

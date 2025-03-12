@@ -14,24 +14,24 @@ export const SVG_PIC_TEMPLATE: BaseComponentTemplate = {
   icon: '🖼️',
   description: 'SVG图片容器，可设置背景图和样式',
   defaultProperties: {
-    attributes: {},
+    attributes: {
+      viewBox: {
+        x: 0,
+        y: 0,
+        width: 1080,
+        height: 1920
+      },
+    },
     style: {
       backgroundSize: 'cover',
-      backgroundColor: 'transparent',
-      margin: {}
-    },
-    viewBox: {
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0
+      margin: { top: 0, right: 0, bottom: 0, left: 0 },
+      backgroundColor: 'transparent'
     }
   },
   propertyControls: [
     createProperty(SVG_PROPERTY.viewBox, { isFixed: true }),
     createProperty(SVG_PROPERTY.backgroundImage, { isDefault: true }),
     createProperty(SVG_PROPERTY.backgroundSize, { isDefault: true }),
-    createProperty(SVG_PROPERTY.backgroundColor, { isDefault: true }),
   ],
   tags: ['SVG', 'Container', 'Image']
 };

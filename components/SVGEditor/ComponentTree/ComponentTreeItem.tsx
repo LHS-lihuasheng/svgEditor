@@ -9,7 +9,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
-import { getComponentTemplate } from '@/components/SVGEditor/atomicComponent';
+import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 import { useDragDrop } from '@/hooks/useDragDrop';
 import { isDescendantOf } from '@/utils/component';
 import type { BaseComponent } from '@/types/core';
@@ -44,7 +44,7 @@ export function ComponentTreeItem({
 
 
   // 获取组件模板信息
-  const template = getComponentTemplate(component.type);
+  const template = COMPONENT_TEMPLATES[component.type];
 
   // 拖放逻辑
   const { ref, isDragging, isOver, isOverCurrent, dropPosition } = useDragDrop({

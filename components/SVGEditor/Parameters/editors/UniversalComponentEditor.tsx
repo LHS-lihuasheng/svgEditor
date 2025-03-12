@@ -1,33 +1,22 @@
 "use client"
 
 import { useEditor } from '@/contexts/EditorContext/index';
-import type { BaseComponent } from "@/types/core";
-import { PropertyManager } from '../PropertyManager';
+import { PropertyManager } from './PropertyManager';
 import get from "lodash/get";
 import set from "lodash/set";
-import { useState, useEffect } from 'react';
-import { COMPONENT_TEMPLATES } from '@/components/SVGEditor/atomicComponent';
+import unset from "lodash/unset";
+import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 import { DynamicPropertyControl } from '../controls/DynamicPropertyControlProps';
-import { ViewBoxControl } from '../controls/common/ViewBoxControl';
 import type { PropertyControl } from "@/types/core/property/index";
 import {
-  SVG_PROPERTY
-} from '@/types/core/property/svgProperty';
-import {
-  RECT_PROPERTY
-} from '@/types/core/property/rectProperty';
-import {
-  GROUP_PROPERTY
-} from '@/types/core/property/groupProperty';
-import {
-  ANIMATE_PROPERTY
-} from '@/types/core/property/animateProperty';
-import {
-  ANIMATE_TRANSFORM_PROPERTY
-} from '@/types/core/property/animateTransformProperty';
-import {
-  SET_PROPERTY
-} from '@/types/core/property/setProperty';
+  RECT_PROPERTY,
+  SVG_PROPERTY,
+  GROUP_PROPERTY,
+  ANIMATE_PROPERTY,
+  ANIMATE_TRANSFORM_PROPERTY,
+  SET_PROPERTY,
+  FOREIGN_OBJECT_PROPERTY
+} from '@/types/core/property';
 
 // 组件类型到属性库的映射
 const COMPONENT_TYPE_TO_PROPERTY: Record<string, Record<string, PropertyControl>> = {
@@ -37,43 +26,30 @@ const COMPONENT_TYPE_TO_PROPERTY: Record<string, Record<string, PropertyControl>
   'g': GROUP_PROPERTY,
   'animate': ANIMATE_PROPERTY,
   'animateTransform': ANIMATE_TRANSFORM_PROPERTY,
-  'set': SET_PROPERTY
+  'set': SET_PROPERTY,
+  'foreignObject': FOREIGN_OBJECT_PROPERTY
 };
 
-interface UniversalComponentEditorProps {
-  component: BaseComponent;
-}
+export function UniversalComponentEditor() {
+  const { selectedComponent, updateComponent } = useEditor();
 
-export function UniversalComponentEditor({ component }: UniversalComponentEditorProps) {
-  // 使用本地状态并确保随组件更新
-  const [localComponent, setLocalComponent] = useState<BaseComponent>(component);
-  const { updateComponent } = useEditor();
+  if (!selectedComponent) {
+    return <div className="text-center p-4 text-gray-500">请选择一个组件进行编辑</div>;
+  }
 
-  // 当外部组件变化时，更新本地状态
-  useEffect(() => {
-    setLocalComponent(component);
-  }, [component]);
-
-  // 处理属性变更 - 特殊处理viewBox和transform属性
+  // 统一处理所有属性变更
   const handleUpdateProperty = (path: string, value: any) => {
-    const updatedComponent = JSON.parse(JSON.stringify(localComponent));
+    // 创建组件的深拷贝用于更新
+    const updatedComponent = JSON.parse(JSON.stringify(selectedComponent));
 
-    // 特殊处理根级属性
-    if (path === 'viewBox') {
-      updatedComponent.viewBox = value;
-    } else if (path === 'transform') {
-      updatedComponent.transform = value;
-    } else {
-      // 使用lodash.set处理普通嵌套属性
-      set(updatedComponent, path, value);
-    }
+    // 使用lodash.set统一处理所有属性
+    set(updatedComponent, path, value);
 
-    setLocalComponent(updatedComponent);
     updateComponent(updatedComponent);
   };
 
   const handleAddProperty = (property: string) => {
-    const updatedComponent = JSON.parse(JSON.stringify(localComponent));
+    const updatedComponent = JSON.parse(JSON.stringify(selectedComponent));
     const [category, key] = property.split('.');
 
     // 确保目标对象存在
@@ -81,19 +57,18 @@ export function UniversalComponentEditor({ component }: UniversalComponentEditor
       updatedComponent[category] = {};
     }
 
-    // 查找属性控件 - 修改这里的查找逻辑
+    // 查找属性控件
     let propertyControl: PropertyControl | undefined;
 
     // 1. 首先从组件模板中查找
-    const template = COMPONENT_TEMPLATES[component.type];
+    const template = COMPONENT_TEMPLATES[selectedComponent.type];
     if (template && template.propertyControls) {
       propertyControl = template.propertyControls.find(prop => prop.property === property);
     }
 
     // 2. 如果模板中没找到，则从属性库中查找
     if (!propertyControl) {
-      const controlsLibrary = COMPONENT_TYPE_TO_PROPERTY[component.type] || {};
-      // 注意：属性库中的key不是完整路径，需要进行匹配
+      const controlsLibrary = COMPONENT_TYPE_TO_PROPERTY[selectedComponent.type] || {};
       propertyControl = Object.values(controlsLibrary).find(
         control => control.property === property
       );
@@ -107,70 +82,40 @@ export function UniversalComponentEditor({ component }: UniversalComponentEditor
       updatedComponent[category][key] = propertyControl.defaultValue;
     }
 
-    setLocalComponent(updatedComponent);
     updateComponent(updatedComponent);
   };
 
   const handleRemoveProperty = (propertyPath: string) => {
-    const updatedComponent = JSON.parse(JSON.stringify(localComponent));
+    const updatedComponent = JSON.parse(JSON.stringify(selectedComponent));
 
-    // 处理特殊属性
-    if (propertyPath === 'viewBox') {
-      delete updatedComponent.viewBox;
-    } else if (propertyPath === 'transform') {
-      delete updatedComponent.transform;
-    } else {
-      // 处理常规属性
-      const [category, key] = propertyPath.split('.');
+    // 使用lodash.unset统一删除属性
+    unset(updatedComponent, propertyPath);
 
-      if (updatedComponent[category] && key in updatedComponent[category]) {
-        delete updatedComponent[category][key];
-      }
-    }
-
-    setLocalComponent(updatedComponent);
     updateComponent(updatedComponent);
   };
 
-  // 获取该组件类型的模板
-  const template = COMPONENT_TEMPLATES[component.type];
-  if (!template || !template.propertyControls) {
-    return <div>无法找到该组件类型的模板</div>;
-  }
+  // 获取组件类型对应的模板
+  const template = COMPONENT_TEMPLATES[selectedComponent.type];
 
-  // 获取固定属性（只渲染这些）
+  // 从模板中获取固定属性控件定义
   const fixedPropertyControls = template.propertyControls.filter(prop => prop.isFixed);
-
-  // 检查是否有固定的viewBox属性
-  const hasViewBoxControl = fixedPropertyControls.some(prop => prop.property === 'viewBox');
 
   return (
     <div className="space-y-4">
-      {/* 手动渲染viewBox控件（如果是SVG类型） */}
-      {(component.type === 'svgPic' || component.type === 'svgSeamlessPic') && hasViewBoxControl && (
-        <ViewBoxControl
-          label="ViewBox"
-          value={localComponent.viewBox || { x: 0, y: 0, width: 0, height: 0 }}
-          onChange={(value) => handleUpdateProperty('viewBox', value)}
+      {/* 渲染固定属性控件 */}
+      {fixedPropertyControls.map(prop => (
+        <DynamicPropertyControl
+          key={prop.property}
+          property={prop}
+          value={get(selectedComponent, prop.property) || prop.defaultValue}
+          onChange={(value) => handleUpdateProperty(prop.property, value)}
+          component={selectedComponent}
         />
-      )}
+      ))}
 
-      {/* 渲染其他固定属性（除了viewBox） */}
-      {fixedPropertyControls
-        .filter(prop => prop.property !== 'viewBox') // 排除viewBox，因为已单独处理
-        .map(prop => (
-          <DynamicPropertyControl
-            key={prop.property}
-            property={prop}
-            value={get(localComponent, prop.property)}
-            onChange={(value) => handleUpdateProperty(prop.property, value)}
-            component={localComponent}
-          />
-        ))}
-
-      {/* PropertyManager处理所有非固定属性 */}
+      {/* PropertyManager处理可添加/删除的属性 */}
       <PropertyManager
-        component={localComponent}
+        component={selectedComponent}
         onAddProperty={handleAddProperty}
         onRemoveProperty={handleRemoveProperty}
         onUpdateProperty={handleUpdateProperty}

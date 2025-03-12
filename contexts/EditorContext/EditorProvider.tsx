@@ -6,13 +6,15 @@
  * 3. 代码预览的切换
  */
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
-import { COMPONENT_TEMPLATES } from '@/components/SVGEditor/atomicComponent';
+import { useImmer } from 'use-immer';
+import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 import { useComponentTree } from './useComponentTree';
 import { useComponentDragDrop } from './useComponentDragDrop';
 import type {
   BaseComponent,
   ComponentType,
-  DragItem
+  DragItem,
+  DropPosition
 } from '@/types/core';
 
 /**
@@ -48,9 +50,9 @@ const EditorContext = createContext<EditorContextType | null>(null);
  * @returns {JSX.Element} 上下文提供者组件
  */
 export function EditorProvider({ children }: { children: React.ReactNode }) {
-  // 基础状态定义
-  const [components, setComponents] = useState<BaseComponent[]>([]); // 存储所有SVG组件
-  const [selectedComponent, setSelectedComponent] = useState<BaseComponent | null>(null); // 当前选中的组件
+  // 使用useImmer替代useState管理组件树
+  const [components, updateComponents] = useImmer<BaseComponent[]>([]);
+  const [selectedComponent, setSelectedComponent] = useState<BaseComponent | null>(null);
 
   // 引入组件树操作钩子，提供组件树的基本操作功能
   const {
@@ -59,15 +61,14 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     deleteComponent,       // 删除组件
     generateUniqueId,      // 生成唯一ID
     removeComponentById    // 通过ID移除组件
-  } = useComponentTree(setComponents);
+  } = useComponentTree(updateComponents);
 
   // 引入拖放操作钩子，提供拖拽相关功能
   const {
     handleDrop,           // 处理拖放完成事件
     moveComponent,        // 移动组件在列表中的位置
-    updateComponentTree   // 更新整个组件树
   } = useComponentDragDrop(
-    setComponents,
+    updateComponents,
     findComponentById,
     generateUniqueId,
     removeComponentById
@@ -92,21 +93,18 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
    * 会根据组件类型获取默认模板，并生成一个带有唯一ID的新组件
    */
   const addComponent = useCallback((type: ComponentType) => {
-    setComponents(prev => {
-      // 获取对应类型的组件模板
+    updateComponents(draft => {
       const template = COMPONENT_TEMPLATES[type as keyof typeof COMPONENT_TEMPLATES];
-
-      // 创建新组件，包含基本属性和默认值
       const newComponent: BaseComponent = {
-        id: generateUniqueId(type),  // 生成唯一ID
-        type,                       // 组件类型
-        children: [],               // 子组件列表（初始为空）
-        ...(template.defaultProperties || {})  // 合并默认属性
+        id: generateUniqueId(type),
+        type,
+        children: [],
+        ...(template.defaultProperties || {})
       } as BaseComponent;
 
-      return [...prev, newComponent];  // 添加到组件列表末尾
+      draft.push(newComponent);
     });
-  }, [generateUniqueId]);
+  }, [updateComponents, generateUniqueId]);
 
   // 构建上下文值，使用useMemo优化性能，避免不必要的重渲染
   const contextValue = useMemo<EditorContextType>(() => ({
@@ -115,7 +113,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     selectedComponent,
 
     // 操作方法
-    setComponents,
+    setComponents: updateComponents,
     setSelectedComponent,
     updateComponent,
     addComponent,

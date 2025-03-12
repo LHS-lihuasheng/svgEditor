@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -12,13 +12,9 @@ import type { BaseComponent } from "@/types/core"
 // 导入通用组件编辑器
 import { UniversalComponentEditor } from './editors/UniversalComponentEditor'
 
-interface ParametersProps {
-  selectedComponent: BaseComponent | null;
-}
-
-export function Parameters({ selectedComponent }: ParametersProps) {
+export function Parameters() {
   const { isParametersPanelOpen, toggleParametersPanel } = usePanel();
-  const { updateComponent } = useEditor();
+  const { selectedComponent } = useEditor();
 
   // 添加调试日志，观察组件变化
   useEffect(() => {
@@ -60,7 +56,7 @@ export function Parameters({ selectedComponent }: ParametersProps) {
                   <h4 className="font-medium text-sm mb-3">属性</h4>
                   <div className="space-y-4">
                     {/* 使用通用组件编辑器处理所有组件类型 */}
-                    <UniversalComponentEditor component={selectedComponent} />
+                    <UniversalComponentEditor />
                   </div>
                 </div>
               </div>

@@ -28,9 +28,9 @@ export function useComponentSelection() {
    * @param {string} id - 要选择的组件ID
    */
   const selectComponent = useCallback((id: string) => {
-    // 通过ID查找组件
+
     const [component] = findComponentById(components, id);
-    // 如果找到对应组件，则设置为当前选中组件
+    
     if (component) {
       setSelectedComponent(component);
     }

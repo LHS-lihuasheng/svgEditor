@@ -5,8 +5,14 @@ import { createPropertyControl } from './utils';
 
 // SVG标签属性库
 export const SVG_PROPERTY = {
-    viewBox: createPropertyControl('viewBox', 'viewBox', 'ViewBox', {
-        defaultValue: { x: 0, y: 0, width: 1080, height: 1920 }
+    viewBox: createPropertyControl('attributes.viewBox', 'quadValue', 'ViewBox', {
+        defaultValue: { x: 0, y: 0, width: 1080, height: 1920 },
+        fieldConfig: [
+            { key: 'x', label: 'x', defaultValue: 0 },
+            { key: 'y', label: 'y', defaultValue: 0 },
+            { key: 'width', label: '宽度', defaultValue: 1080 },
+            { key: 'height', label: '高度', defaultValue: 1920 }
+        ]
     }),
 
     xmlns: createPropertyControl('attributes.xmlns', 'string', 'XML Namespace', {
@@ -45,7 +51,7 @@ export const SVG_PROPERTY = {
         ]
     }),
 
-    opacity: createPropertyControl('style.opacity', 'number', 'Opacity', {
+    opacity: createPropertyControl('style.opacity', 'slider', 'Opacity', {
         defaultValue: 1,
         min: 0,
         max: 1,
@@ -92,8 +98,14 @@ export const SVG_PROPERTY = {
         ]
     }),
 
-    margin: createPropertyControl('style.margin', 'margin', 'Margin', {
-        defaultValue: { top: 0, right: 0, bottom: 0, left: 0 }
+    margin: createPropertyControl('style.margin', 'quadValue', 'Margin', {
+        defaultValue: { top: 0, right: 0, bottom: 0, left: 0 },
+        fieldConfig: [
+            { key: 'top', label: '上', defaultValue: 0 },
+            { key: 'right', label: '右', defaultValue: 0 },
+            { key: 'bottom', label: '下', defaultValue: 0 },
+            { key: 'left', label: '左', defaultValue: 0 }
+        ]
     }),
 
     position: createPropertyControl('style.position', 'select', 'Position', {

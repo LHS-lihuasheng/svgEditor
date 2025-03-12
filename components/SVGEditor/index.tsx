@@ -36,27 +36,16 @@ export default function SVGEditorContainer() {
  * @returns {JSX.Element} SVG编辑器的用户界面
  */
 function SVGEditor() {
-  const {
-    components,
-    selectedComponent,
-    handleDrop,
-    addComponent
-  } = useEditor();
 
   const { showCodePreview } = usePanel();
 
   // 使用封装的拖放钩子
-  const dropRef = useEditorDrop(handleDrop);
-
-
+  const dropRef = useEditorDrop();
 
   return (
     <div className="h-full flex bg-gray-50">
       {/* 左侧工具栏 */}
-      <SideBarMenu
-        onAddComponent={addComponent}
-        selectedComponent={selectedComponent}
-      />
+      <SideBarMenu />
 
       {/* 中间编辑区域 */}
       <EditorArea
@@ -64,13 +53,11 @@ function SVGEditor() {
       />
 
       {/* 右侧参数面板 */}
-      <Parameters
-        selectedComponent={selectedComponent}
-      />
+      <Parameters />
 
       {/* 代码预览模态框 */}
       {showCodePreview && (
-        <CodePreviewModal components={components} />
+        <CodePreviewModal />
       )}
     </div>
   );

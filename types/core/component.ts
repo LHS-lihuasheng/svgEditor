@@ -3,7 +3,7 @@ export interface BaseComponent {
   id: string;
   type: ComponentType;
   name?: string;
-  children?: BaseComponent[];
+  children: BaseComponent[];
   attributes?: Record<string, any>;
   style?: Record<string, any>;
   description?: string;
@@ -20,4 +20,5 @@ export type ComponentType =
   | 'rect'
   | 'set'
   | 'animate'
-  | 'animateTransform';
+  | 'animateTransform'
+  | 'foreignObject';

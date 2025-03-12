@@ -5,32 +5,6 @@
 import type { BaseComponent, ComponentType } from '@/types/core';
 
 /**
- * @description 深拷贝组件对象
- * @param {BaseComponent} component - 要拷贝的组件
- * @returns {BaseComponent} 拷贝后的组件
- */
-export function cloneComponent(component: BaseComponent): BaseComponent {
-    return JSON.parse(JSON.stringify(component));
-}
-
-/**
- * @description 递归查找组件
- * @param {BaseComponent[]} components - 组件数组
- * @param {string} id - 要查找的组件ID
- * @returns {BaseComponent|undefined} 找到的组件或undefined
- */
-export function findComponent(components: BaseComponent[], id: string): BaseComponent | undefined {
-    for (const comp of components) {
-        if (comp.id === id) return comp;
-        if (comp.children) {
-            const found = findComponent(comp.children, id);
-            if (found) return found;
-        }
-    }
-    return undefined;
-}
-
-/**
  * @description 生成唯一的组件ID
  * @param {ComponentType} type - 组件类型
  * @returns {string} 唯一ID

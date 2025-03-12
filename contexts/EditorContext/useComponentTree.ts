@@ -11,17 +11,16 @@ import { generateComponentId } from '@/utils/component';
 import type { BaseComponent, ComponentType } from '@/types/core';
 
 /**
- * 组件状态设置函数类型
- * 用于更新React状态中的组件树
+ * Immer 更新函数类型
  */
-type SetComponentsFunction = React.Dispatch<React.SetStateAction<BaseComponent[]>>;
+type UpdateComponentsFunction = (updater: (draft: BaseComponent[]) => void) => void;
 
 /**
  * @description 组件树操作钩子函数
- * @param {SetComponentsFunction} setComponents - 用于更新组件状态的函数
+ * @param {UpdateComponentsFunction} updateComponents - 用于更新组件状态的函数
  * @returns {Object} 返回一组组件树操作函数
  */
-export function useComponentTree(setComponents: SetComponentsFunction) {
+export function useComponentTree(updateComponents: UpdateComponentsFunction) {
     /**
      * @description 通过ID查找组件和其父数组
      * @param {BaseComponent[]} components - 要搜索的组件数组
@@ -51,98 +50,72 @@ export function useComponentTree(setComponents: SetComponentsFunction) {
 
     /**
      * @description 更新组件属性
-     * 保留原始组件的结构，只更新指定的属性
-     * @param {BaseComponent} updated - 包含更新内容的组件对象
+     * 使用Immer直接修改draft状态
      */
     const updateComponent = useCallback((updated: BaseComponent) => {
-        setComponents(prev => {
-            // 创建新的组件树数组，确保不直接修改原始状态（符合React不可变性原则）
-            return prev.map(comp => {
-                // 找到匹配的组件
-                if (comp.id === updated.id) {
-                    // 确保保留原始组件的所有字段，并应用更新
-                    return {
-                        ...comp,  // 保留原始字段
-                        ...updated, // 覆盖更新的字段
-                        // 特殊处理style字段，确保合并而不是替换
-                        style: { ...comp.style, ...updated.style },
-                        // 特殊处理attributes字段，确保合并
-                        attributes: { ...comp.attributes, ...updated.attributes },
-                        // 确保子组件保留
-                        children: updated.children || comp.children
-                    };
+        updateComponents(draft => {
+            const updateInDraft = (items: BaseComponent[]): boolean => {
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].id === updated.id) {
+                        // 直接更新draft中的组件
+                        items[i] = {
+                            ...items[i],
+                            ...updated,
+                            // 确保正确合并嵌套字段
+                            style: { ...items[i].style, ...updated.style },
+                            attributes: { ...items[i].attributes, ...updated.attributes },
+                            children: updated.children || items[i].children
+                        };
+                        return true;
+                    }
+
+                    // 递归到子组件
+                    if (items[i].children && items[i].children.length > 0) {
+                        if (updateInDraft(items[i].children)) {
+                            return true;
+                        }
+                    }
                 }
+                return false;
+            };
 
-                // 递归更新子级组件
-                if (comp.children && comp.children.length > 0) {
-                    return {
-                        ...comp,
-                        children: updateComponentInArray(comp.children, updated)
-                    };
-                }
-
-                // 不匹配的组件原样返回
-                return comp;
-            });
+            updateInDraft(draft);
         });
-    }, [setComponents]);
-
-    /**
-     * @description 辅助函数 - 递归更新组件数组中的指定组件
-     * 在组件树的任意深度查找并更新指定ID的组件
-     * @param {BaseComponent[]} components - 要处理的组件数组
-     * @param {BaseComponent} updated - 包含更新内容的组件对象
-     * @returns {BaseComponent[]} 返回更新后的组件数组
-     */
-    const updateComponentInArray = (components: BaseComponent[], updated: BaseComponent): BaseComponent[] => {
-        return components.map(comp => {
-            // 找到匹配的组件直接替换
-            if (comp.id === updated.id) {
-                return updated;
-            }
-
-            // 递归检查子组件
-            if (comp.children && comp.children.length > 0) {
-                return {
-                    ...comp,
-                    children: updateComponentInArray(comp.children, updated)
-                };
-            }
-
-            // 不匹配的组件原样返回
-            return comp;
-        });
-    };
+    }, [updateComponents]);
 
     /**
      * @description 删除组件
-     * 通过组件ID从组件树中移除特定组件
-     * @param {string} id - 要删除的组件ID
+     * 使用Immer简化删除逻辑
      */
     const deleteComponent = useCallback((id: string) => {
-        setComponents(prev => removeComponentById(prev, id));
-    }, [setComponents]);
+        updateComponents(draft => {
+            removeComponentById(draft, id);
+        });
+    }, [updateComponents]);
 
     /**
      * @description 递归删除组件
-     * 在组件树的任意深度查找并删除指定ID的组件
-     * @param {BaseComponent[]} components - 要处理的组件数组
-     * @param {string} id - 要删除的组件ID
-     * @returns {BaseComponent[]} 返回删除后的组件数组
+     * 修改为就地删除组件的实现
      */
-    const removeComponentById = useCallback((components: BaseComponent[], id: string): BaseComponent[] => {
-        if (!Array.isArray(components)) return [];
+    const removeComponentById = useCallback((components: BaseComponent[], id: string): boolean => {
+        if (!Array.isArray(components)) return false;
 
-        return components.filter(comp => {
-            if (comp.id === id) return false;
-
-            // 递归处理子组件
-            if (Array.isArray(comp.children) && comp.children.length > 0) {
-                comp.children = removeComponentById(comp.children, id);
+        for (let i = 0; i < components.length; i++) {
+            if (components[i].id === id) {
+                // 直接从数组中删除组件
+                components.splice(i, 1);
+                return true;
             }
 
-            return true;
-        });
+            // 递归处理子组件
+            if (components[i].children && components[i].children.length > 0) {
+                if (removeComponentById(components[i].children, id)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }, []);
 
     /**

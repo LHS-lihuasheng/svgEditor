@@ -4,22 +4,23 @@ import { StringControl } from './basic/StringControl';
 import { NumberControl } from './basic/NumberControl';
 import { ColorControl } from './basic/ColorControl';
 import { SelectControl } from './basic/SelectControl';
-import { OpacityControl } from './basic/OpacityControl';
 import { ImageControl } from './common/ImageControl';
-import { ViewBoxControl } from './common/ViewBoxControl';
-import { MarginControl } from './common/MarginControl';
-import { TransformControl } from './animation/TransformControl';
 import { TriggerControl } from './animation/TriggerControl';
 import { RepeatCountControl } from './animation/RepeatCountControl';
 import type { PropertyControl } from '@/types/core/property/index';
 import { TransformTypeControl } from './animation/TransformTypeControl';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiValueControl } from './basic/MultiValueControl';
+import type { BaseComponent } from '@/types/core/component';
+import React from 'react';
+import { SliderWithInput } from './basic/SliderWithInput';
+import { Label } from "@/components/ui/label";
 
 interface DynamicPropertyControlProps {
   property: PropertyControl;
   value: any;
   onChange: (value: any) => void;
-  component?: any; // 用于获取组件上下文
+  component?: BaseComponent;
 }
 
 export function DynamicPropertyControl({
@@ -123,15 +124,6 @@ export function DynamicPropertyControl({
         />
       );
 
-    case 'opacity':
-      return (
-        <OpacityControl
-          label={property.label}
-          value={value || 1}
-          onChange={onChange}
-        />
-      );
-
     case 'image':
       return (
         <ImageControl
@@ -141,40 +133,110 @@ export function DynamicPropertyControl({
         />
       );
 
-    case 'viewbox':
+    case 'quadValue':
+      // 确保安全处理嵌套属性路径
+      const defaultQuadValue = property.defaultValue
+        ? JSON.parse(JSON.stringify(property.defaultValue))
+        : {};
+
       return (
-        <ViewBoxControl
+        <MultiValueControl
           label={property.label}
-          value={value || { x: 0, y: 0, width: 0, height: 0 }}
+          value={value || defaultQuadValue}
           onChange={onChange}
+          fields={property.fieldConfig || []}
+          layout={property.fieldConfig?.length ? (property.fieldConfig?.length <= 2 ? "flex" : "grid") : "flex"}
+          groupLabel={property.property.includes(".translate") ? "位置" : undefined}
         />
       );
 
-    case 'margin':
+    case 'slider':
       return (
-        <MarginControl
+        <SliderWithInput
           label={property.label}
-          value={value || { top: 0, right: 0, bottom: 0, left: 0 }}
+          value={value || property.defaultValue || 0}
           onChange={onChange}
+          min={property.min}
+          max={property.max}
+          step={property.step}
         />
       );
 
     case 'transform':
+      // 内联实现transform控件
+      const safeValue = value || { translate: { x: 0, y: 0 }, scale: 1, rotate: 0 };
+
+      // 处理平移变更
+      const handleTranslateChange = (newTranslate: Record<string, number>) => {
+        onChange({
+          ...safeValue,
+          translate: newTranslate
+        });
+      };
+
+      // 处理缩放变更
+      const handleScaleChange = (newScale: number) => {
+        onChange({
+          ...safeValue,
+          scale: newScale
+        });
+      };
+
+      // 处理旋转变更
+      const handleRotateChange = (newRotate: number) => {
+        onChange({
+          ...safeValue,
+          rotate: newRotate
+        });
+      };
+
       return (
-        <TransformControl
-          label={property.label}
-          value={value || ''}
-          onChange={onChange}
-        />
+        <div className="space-y-4">
+          <Label>{property.label}</Label>
+
+          {/* 平移控件 */}
+          <MultiValueControl
+            value={safeValue.translate || { x: 0, y: 0 }}
+            onChange={handleTranslateChange}
+            fields={[
+              { key: 'x', label: 'X', defaultValue: 0 },
+              { key: 'y', label: 'Y', defaultValue: 0 }
+            ]}
+            layout="flex"
+            groupLabel="位置"
+          />
+
+          {/* 缩放控件 */}
+          <SliderWithInput
+            value={safeValue.scale || 1}
+            onChange={handleScaleChange}
+            min={0.1}
+            max={10}
+            step={0.1}
+            label="缩放"
+            showLabel={false}
+            className="mt-2"
+          />
+
+          {/* 旋转控件 */}
+          <SliderWithInput
+            value={safeValue.rotate || 0}
+            onChange={handleRotateChange}
+            min={0}
+            max={360}
+            step={1}
+            label="旋转"
+            showLabel={false}
+            className="mt-2"
+          />
+        </div>
       );
 
     default:
       return (
-        <StringControl
-          label={property.label}
-          value={String(value || '')}
-          onChange={onChange}
-        />
+        <div className="text-sm text-red-500">
+          不支持的属性类型: {property.type}
+        </div>
       );
   }
 } 

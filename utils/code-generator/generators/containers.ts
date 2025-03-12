@@ -12,14 +12,46 @@ export function generateGroupCode(component: BaseComponent): string {
   const { style = {}, attributes = {} } = component;
   const children = component.children || [];
 
-  // 生成样式属性
+  // 处理 transform 属性
+  const processedAttributes = { ...attributes };
+
+  // 确保transform对象存在，即使属性是通过子属性单独设置的
+  if (!processedAttributes.transform) {
+    processedAttributes.transform = {};
+  }
+
+  // 如果 transform 是对象，转换为 SVG transform 字符串
+  if (processedAttributes.transform && typeof processedAttributes.transform === 'object') {
+    const transform = processedAttributes.transform;
+    let transformStr = '';
+
+    // 处理平移
+    if (transform.translate) {
+      transformStr += `translate(${transform.translate.x || 0},${transform.translate.y || 0}) `;
+    }
+
+    // 处理缩放
+    if (transform.scale) {
+      transformStr += `scale(${transform.scale}) `;
+    }
+
+    // 处理旋转 - 添加deg单位
+    if (transform.rotate) {
+      transformStr += `rotate(${transform.rotate}deg) `;
+    }
+
+    processedAttributes.transform = transformStr.trim();
+  }
+
+  // 生成属性和样式
+  const attributesStr = generateAttributes(processedAttributes);
   const styleAttrs = generateStyleAttributes(style);
 
   // 生成子元素代码
   const childrenCode = children.map(child => generateComponentCode(child)).join('\n  ');
 
   // 生成g标签
-  return `<g ${generateAttributes(attributes)} ${styleAttrs}>
+  return `<g ${attributesStr} ${styleAttrs}>
   ${childrenCode}
 </g>`;
 }

@@ -10,6 +10,6 @@ export type PropertyControlType =
   | 'select'
   | 'color'
   | 'image'
-  | 'margin'
-  | 'viewBox'
-  | 'transform'; 
+  | 'quadValue'
+  | 'transform'
+  | 'slider'; 

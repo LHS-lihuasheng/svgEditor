@@ -6,7 +6,6 @@ import { useCallback } from 'react';
 import { ComponentTreeItem } from './ComponentTreeItem';
 import { useAssets } from '@/contexts/AssetContext';
 import type { ComponentTreeProps } from './index';
-import type { BaseComponent } from '@/types/core';
 import { useEditor } from '@/contexts/EditorContext/index';
 
 export function ComponentTreeView({

@@ -6,16 +6,11 @@ import { usePanel } from "@/contexts/PanelContext"
 import { NavBar } from "./menuNav"
 import { MenuTab } from "./menuTab/menuTab"
 
-interface SideBarMenuProps {
-    onAddComponent: (type: ComponentType) => void
-    selectedComponent: BaseComponent | null
-    onUpdateComponent?: (component: BaseComponent) => void
-}
 
-export function SideBarMenu({ onAddComponent }: SideBarMenuProps) {
+export function SideBarMenu() {
     const { isMenuBarOpen } = usePanel()
 
-    return (
+    return (    
         <div
             className={cn(
                 "fixed top-[57px] left-0 bottom-0 bg-white shadow-lg transition-[width] duration-300 ease-in-out z-10",
@@ -28,7 +23,6 @@ export function SideBarMenu({ onAddComponent }: SideBarMenuProps) {
 
                 {/* Tab内容区 */}
                 <MenuTab
-                    onAddComponent={onAddComponent}
                 />
             </div>
         </div>

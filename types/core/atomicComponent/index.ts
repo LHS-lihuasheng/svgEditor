@@ -11,11 +11,9 @@ import { ANIMATE_TEMPLATE } from './animateTemplate';
 import { ANIMATE_TRANSFORM_TEMPLATE } from './animateTransformTemplate';
 import { FOREIGN_OBJECT_TEMPLATE } from './foreignObjectTemplate';
 import { BaseComponentTemplate } from '@/types/core/template';
-// 所有支持的组件类型数组，用于全局共享
-export const ALL_COMPONENT_TYPES: ComponentType[] = ['svgPic', 'svgSeamlessPic', 'g', 'rect', 'set', 'animate', 'animateTransform', 'foreignObject'];
 
 // 注册所有组件模板
-export const COMPONENT_TEMPLATES: Record<string, BaseComponentTemplate> = {
+export const COMPONENT_TEMPLATES: Record<ComponentType, BaseComponentTemplate> = {
   svgPic: SVG_PIC_TEMPLATE,
   svgSeamlessPic: SVG_SEAMLESS_PIC_TEMPLATE,
   g: GROUP_TEMPLATE,
@@ -25,12 +23,3 @@ export const COMPONENT_TEMPLATES: Record<string, BaseComponentTemplate> = {
   animateTransform: ANIMATE_TRANSFORM_TEMPLATE,
   foreignObject: FOREIGN_OBJECT_TEMPLATE
 };
-
-/**
- * @description 获取组件模板
- * @param {ComponentType} type - 组件类型
- * @returns 组件模板或默认模板
- */
-export function getComponentTemplate(type: string): BaseComponentTemplate | undefined {
-  return COMPONENT_TEMPLATES[type];
-}

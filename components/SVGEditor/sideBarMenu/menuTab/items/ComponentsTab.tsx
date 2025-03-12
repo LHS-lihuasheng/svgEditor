@@ -3,17 +3,14 @@
 import { Card } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { ComponentType } from '@/types/core'
-import { COMPONENT_TEMPLATES } from '@/components/SVGEditor/atomicComponent'
+import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent'
 import { Component, GripHorizontal } from "lucide-react"
 import { useDrag } from "react-dnd"
 import type { DragItem } from '@/types/core'
 import { cn } from "@/lib/utils"
+import { useEditor } from "@/contexts/EditorContext"
 
-interface ComponentsTabProps {
-    onAddComponent: (type: ComponentType) => void
-}
-
-export function ComponentsTab({ onAddComponent }: ComponentsTabProps) {
+export function ComponentsTab() {
     return (
         <div className="p-4">
             <div className="space-y-4">
@@ -32,7 +29,6 @@ export function ComponentsTab({ onAddComponent }: ComponentsTabProps) {
                                 title={template.label}
                                 description={template.description || ''}
                                 icon={template.icon}
-                                onAdd={(type) => onAddComponent(type)}
                             />
                         ))}
                     </div>
@@ -47,10 +43,12 @@ interface ComponentCardProps {
     title: string
     description: string
     icon: React.ReactNode | string
-    onAdd: (type: ComponentType) => void
 }
 
-function ComponentCard({ type, title, description, icon, onAdd }: ComponentCardProps) {
+function ComponentCard({ type, title, description, icon }: ComponentCardProps) {
+
+    const { addComponent } = useEditor();
+
     const [{ isDragging }, drag] = useDrag(() => ({
         type: 'TOOL',
         item: {
@@ -71,9 +69,12 @@ function ComponentCard({ type, title, description, icon, onAdd }: ComponentCardP
             )}
         >
             <div
-                ref={drag as React.RefObject<HTMLDivElement>}
+                ref={drag as unknown as React.RefObject<HTMLDivElement>}
                 className="cursor-grab active:cursor-grabbing"
-                onClick={() => onAdd(type)}
+                onClick={() => {
+                    console.log('点击了', type)
+                    addComponent(type)
+                }}
             >
                 <div className="flex items-center p-3 group">
                     {/* 组件图标 */}

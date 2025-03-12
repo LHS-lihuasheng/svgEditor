@@ -9,22 +9,25 @@ import { generateComponentCode } from '../component-generators';
  * @returns {string} 生成的SVG代码
  */
 export function generateSVGPicCode(component: BaseComponent): string {
-  const { style = {}, viewBox = {}, attributes = {} } = component;
+  const { style = {}, attributes = {} } = component;
   const children = component.children || [];
 
-  // 格式化viewBox
-  const viewBoxStr = viewBox ?
-    `${viewBox.x || 0} ${viewBox.y || 0} ${viewBox.width || 0} ${viewBox.height || 0}` :
-    "0 0 0 0";
+  // 处理特殊的viewBox格式 - 将对象转换为字符串
+  const processedAttributes = { ...attributes };
+  if (processedAttributes.viewBox && typeof processedAttributes.viewBox === 'object') {
+    const viewBox = processedAttributes.viewBox;
+    processedAttributes.viewBox = `${viewBox.x || 0} ${viewBox.y || 0} ${viewBox.width || 0} ${viewBox.height || 0}`;
+  }
 
-  // 生成样式属性
+  // 生成属性和样式
+  const attributesStr = generateAttributes(processedAttributes);
   const styleAttrs = generateStyleAttributes(style);
 
   // 生成子元素代码
   const childrenCode = children.map(child => generateComponentCode(child)).join('\n  ');
 
   // 生成SVG标签
-  return `<svg viewBox="${viewBoxStr}" ${generateAttributes(attributes)} ${styleAttrs}>
+  return `<svg ${attributesStr} ${styleAttrs}>
   ${childrenCode}
 </svg>`;
 } 
