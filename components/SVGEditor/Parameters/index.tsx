@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { usePanel } from "@/contexts/PanelContext"
-import { useEditor } from '@/contexts/EditorContext/index'
-import type { BaseComponent } from "@/types/core"
+import { useEditor } from '@/contexts/EditorContext'
 
 // 导入通用组件编辑器
 import { UniversalComponentEditor } from './editors/UniversalComponentEditor'

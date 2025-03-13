@@ -8,7 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CodePreviewModal } from "./CodePreviewModal";
 import { PanelProvider } from '@/contexts/PanelContext';
 import { EditorProvider } from '@/contexts/EditorContext/index';
-import { useEditor, useEditorDrop } from '@/contexts/EditorContext/index';
+import { useEditor } from '@/contexts/EditorContext';
 import { usePanel } from '@/contexts/PanelContext';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -40,7 +40,7 @@ function SVGEditor() {
   const { showCodePreview } = usePanel();
 
   // 使用封装的拖放钩子
-  const dropRef = useEditorDrop();
+  const {editorDrop} = useEditor();
 
   return (
     <div className="h-full flex bg-gray-50">
@@ -49,7 +49,7 @@ function SVGEditor() {
 
       {/* 中间编辑区域 */}
       <EditorArea
-        dropRef={dropRef as unknown as React.RefObject<HTMLDivElement>}
+        dropRef={editorDrop as unknown as React.RefObject<HTMLDivElement>}
       />
 
       {/* 右侧参数面板 */}

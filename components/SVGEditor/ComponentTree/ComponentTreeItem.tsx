@@ -14,9 +14,8 @@ import { useDragDrop } from '@/hooks/useDragDrop';
 import { isDescendantOf } from '@/utils/component';
 import type { BaseComponent } from '@/types/core';
 import { DragIndicator } from './DragIndicator';
-import { useEditor } from '@/contexts/EditorContext/index';
+import { useEditor } from '@/contexts/EditorContext';
 import { useAssets } from '@/contexts/AssetContext';
-
 
 interface ComponentTreeItemProps {
   component: BaseComponent;
@@ -31,15 +30,12 @@ export function ComponentTreeItem({
   index,
   parentId,
 }: ComponentTreeItemProps) {
-  const { selectedComponent, setSelectedComponent, updateComponent } = useEditor();
+  const { updateComponent, selectedComponent, selectComponent, handleDrop, deleteComponent, clearSelection, selectPrevComponent } = useEditor();
   const { shiftFirstSelectedImage } = useAssets();
   const [isExpanded, setIsExpanded] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  
-  const isSelected = selectedComponent?.id === component.id;
 
-  // 使用编辑器钩子获取所有需要的方法
-  const { handleDrop, deleteComponent } = useEditor();
+  const isSelected = selectedComponent?.id === component.id;
 
   const template = COMPONENT_TEMPLATES[component.type];
 
@@ -120,7 +116,15 @@ export function ComponentTreeItem({
         hover:border-blue-300 transition-colors duration-200
         ${isSelected ? 'ring-1 ring-blue-300' : ''}
       `}
-      onClick={() => setSelectedComponent(component)}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (selectedComponent && selectedComponent.id === component.id) {
+          clearSelection();
+        } else {
+          selectPrevComponent();
+          selectComponent(component.id);
+        }
+      }}
     >
       {/* 组件标题栏 */}
       <div
@@ -141,7 +145,6 @@ export function ComponentTreeItem({
             <button
               className="p-1 hover:bg-gray-100 rounded"
               onClick={(e) => {
-                e.stopPropagation();
                 setIsExpanded(!isExpanded);
               }}
             >
@@ -173,9 +176,10 @@ export function ComponentTreeItem({
             }}
             title="删除组件"
           >
-            <Trash className="h-4 w-4" />
+            <Trash
+              className="h-4 w-4"
+            />
           </button>
-
 
         </div>
       </div>
@@ -198,9 +202,13 @@ export function ComponentTreeItem({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>取消</AlertDialogCancel>
+            <AlertDialogCancel onClick={(e) => {
+              e.stopPropagation();
+              setShowDeleteDialog(false);
+            }}>取消</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 deleteComponent(component.id);
                 setShowDeleteDialog(false);
               }}

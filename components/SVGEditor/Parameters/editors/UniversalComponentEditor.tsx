@@ -1,18 +1,17 @@
 "use client"
 
-import { useEditor } from '@/contexts/EditorContext/index';
 import { PropertyManager } from './PropertyManager';
 import get from "lodash/get";
 import set from "lodash/set";
 import unset from "lodash/unset";
+import { useEditor } from '@/contexts/EditorContext/index';
 import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 import { DynamicPropertyControl } from '../controls/DynamicPropertyControlProps';
 import type { PropertyControl } from "@/types/core/property/index";
-
 import { COMPONENT_TYPE_TO_PROPERTY } from '@/types/core/property';
 
 export function UniversalComponentEditor() {
-  const { selectedComponent, updateComponent } = useEditor();
+  const {  updateComponent, selectedComponent } = useEditor();
 
   if (!selectedComponent) {
     return <div className="text-center p-4 text-gray-500">请选择一个组件进行编辑</div>;
