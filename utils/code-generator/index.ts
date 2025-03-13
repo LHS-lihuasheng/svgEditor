@@ -11,10 +11,3 @@ export function generateCode(components: BaseComponent | BaseComponent[]): strin
     const componentsArray = Array.isArray(components) ? components : [components];
     return componentsArray.map(component => generateComponentCode(component)).join('\n\n');
 }
-
-// 重新导出所有公共API
-export * from './component-generators';
-export * from './generators/svg';
-export * from './generators/shapes';
-export * from './generators/containers';
-export * from './generators/animation'; 

@@ -2,9 +2,9 @@
  * @description 代码预览模态框组件
  * 用于显示生成的SVG代码，并提供复制功能
  */
-import React from 'react';
+import React, { useRef } from 'react';
+import Editor, { OnMount } from '@monaco-editor/react';
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { generateCode } from "@/utils/code-generator";
 import { usePanel } from '@/contexts/PanelContext';
@@ -13,46 +13,79 @@ import { useEditor } from '@/contexts/EditorContext/index'
 export function CodePreviewModal() {
   const { setShowCodePreview } = usePanel();
   const { components } = useEditor();
-  // 处理点击背景关闭模态框
+
+  const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
+
+  const handleEditorDidMount: OnMount = (editor) => {
+    editorRef.current = editor;
+    // 编辑器加载完成后立即自动格式化
+    editor.getAction('editor.action.formatDocument')?.run();
+    // 添加淡入动画
+    editor.getDomNode()?.style.setProperty('opacity', '0');
+    editor.getDomNode()?.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: 300,
+      easing: 'ease-out',
+      fill: 'forwards'
+    });
+  };
+
   const handleBackdropClick = () => {
     setShowCodePreview(false);
   };
 
-  // 阻止卡片点击事件冒泡
-  const handleCardClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-
-  // 处理复制代码
   const handleCopyCode = () => {
     navigator.clipboard.writeText(generateCode(components))
       .then(() => alert("代码已复制到剪贴板"))
       .catch(err => console.error("复制失败:", err));
   };
 
+  const code = generateCode(components);
+
   return (
-    <div 
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" 
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       onClick={handleBackdropClick}
     >
-      <Card className="max-w-4xl w-full" onClick={handleCardClick}>
-        <CardHeader>
-          <CardTitle>完整代码预览</CardTitle>
+      <Card className="max-w-5xl w-[95%] rounded-xl shadow-xl" onClick={e => e.stopPropagation()}>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl font-semibold">完整代码预览</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ScrollArea className="max-h-[70vh]">
-            <pre className="p-4 bg-gray-50 rounded-lg">
-              <code className="text-sm text-gray-700 whitespace-pre-wrap break-all">
-                {generateCode(components)}
-              </code>
-            </pre>
-          </ScrollArea>
+        <CardContent className="px-6">
+          <div className="h-[70vh]  rounded-lg overflow-hidden">
+            <Editor
+              height="100%"
+              defaultLanguage="html"
+              defaultValue={code}
+              onMount={handleEditorDidMount}
+              options={{
+                readOnly: false,
+                minimap: { enabled: false },
+                fontSize: 13,
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                formatOnPaste: true,
+                formatOnType: true,
+                wordWrap: 'on',
+                lineNumbersMinChars: 3,
+                padding: { top: 12, bottom: 12 },
+              }}
+              theme="vs"
+            />
+          </div>
         </CardContent>
-        <CardFooter className="flex justify-end">
+        <CardFooter className="flex justify-end gap-3 px-6 py-4 bg-gray-50/50">
           <Button
             variant="outline"
             size="sm"
-            className="mr-2"
+            onClick={() => editorRef.current?.getAction('editor.action.formatDocument')?.run()}
+          >
+            格式化
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="px-4 bg-blue-50 hover:bg-blue-100 text-blue-600"
             onClick={handleCopyCode}
           >
             复制代码

@@ -1,6 +1,6 @@
 import type { BaseComponent } from '@/types/core';
 import { generateAttributes, processAnimationAttributes } from '../utils/attributes';
-import { generateComponentCode } from '../component-generators';
+import { generateComponentCode, generateTagCode } from '../component-generators';
 
 /**
  * @description 生成set动画代码
@@ -8,12 +8,13 @@ import { generateComponentCode } from '../component-generators';
  * @returns {string} 生成的set代码
  */
 export function generateSetCode(component: BaseComponent): string {
-  const { attributes = {} } = component;
-
-  // 处理属性 - 特殊处理set动画属性
+  const { attributes = {}, children = [] } = component;
   const filteredAttributes = processAnimationAttributes(attributes, 'set');
+  const childrenCode = children && children.length > 0
+    ? children.map(child => generateComponentCode(child)).join('\n  ')
+    : '';
 
-  return `<set ${generateAttributes(filteredAttributes)} />`;
+  return generateTagCode('set', generateAttributes(filteredAttributes), '', childrenCode, true);
 }
 
 /**
@@ -22,7 +23,7 @@ export function generateSetCode(component: BaseComponent): string {
  * @returns {string} 生成的animate代码
  */
 export function generateAnimateCode(component: BaseComponent): string {
-  const { attributes = {}, animationMode } = component;
+  const { attributes = {}, animationMode, children = [] } = component;
 
   // 创建一个新的属性对象
   const processedAttributes = { ...attributes };
@@ -85,7 +86,12 @@ export function generateAnimateCode(component: BaseComponent): string {
     }
   });
 
-  return `<animate ${generateAttributes(processedAttributes)} />`;
+  // 处理可能的子元素
+  const childrenCode = children && children.length > 0
+    ? children.map(child => generateComponentCode(child)).join('\n  ')
+    : '';
+
+  return generateTagCode('animate', generateAttributes(processedAttributes), '', childrenCode);
 }
 
 /**
@@ -95,7 +101,7 @@ export function generateAnimateCode(component: BaseComponent): string {
  */
 export function generateAnimateTransformCode(component: BaseComponent): string {
   // 使用解构赋值获取animationMode字段和属性
-  const { attributes = {}, animationMode } = component;
+  const { attributes = {}, animationMode, children = [] } = component;
 
   // 创建一个新的属性对象，避免修改原始属性
   const processedAttributes = {
@@ -168,7 +174,12 @@ export function generateAnimateTransformCode(component: BaseComponent): string {
     }
   });
 
-  return `<animateTransform ${generateAttributes(processedAttributes)} />`;
+  // 处理可能的子元素
+  const childrenCode = children && children.length > 0
+    ? children.map(child => generateComponentCode(child)).join('\n  ')
+    : '';
+
+  return generateTagCode('animateTransform', generateAttributes(processedAttributes), '', childrenCode);
 }
 
 /**
@@ -182,14 +193,13 @@ export function generateAnimateMotionCode(component: BaseComponent): string {
   // 处理动画属性
   const filteredAttributes = processAnimationAttributes(attributes, 'animateMotion');
 
-  // 检查是否有mpath子元素
-  const mpath = children.find(child => child.type === 'mpath');
-
-  if (mpath) {
+  // 检查是否有子元素
+  if (children && children.length > 0) {
+    const childrenCode = children.map(child => generateComponentCode(child)).join('\n  ');
     return `<animateMotion ${generateAttributes(filteredAttributes)}>
-  <mpath ${generateAttributes(mpath.attributes || {})} />
+  ${childrenCode}
 </animateMotion>`;
   } else {
-    return `<animateMotion ${generateAttributes(filteredAttributes)} />`;
+    return `<animateMotion ${generateAttributes(filteredAttributes)}></animateMotion>`;
   }
 } 

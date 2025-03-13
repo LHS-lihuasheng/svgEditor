@@ -4,13 +4,13 @@
  */
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { LucideRefreshCw, LucideEye, Settings, LucideCode } from "lucide-react";
+import { LucideRefreshCw, LucideEye, Settings, LucideCode, LucideFileCode2 } from "lucide-react";
 import { usePanel } from '@/contexts/PanelContext';
 import { useEditor } from '@/contexts/EditorContext';
+
 export function EditorToolbar() {
     const { setShowCodePreview } = usePanel();
     const { updateComponents } = useEditor();
-
     return (
         <div className="h-12 bg-white shadow-sm border-b px-4 flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -30,10 +30,6 @@ export function EditorToolbar() {
                 </Button>
             </div>
             <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm">
-                    <Settings className="h-4 w-4 mr-2" />
-                    设置
-                </Button>
                 <Button
                     variant="default"
                     size="sm"

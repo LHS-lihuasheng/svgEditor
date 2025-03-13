@@ -14,13 +14,12 @@ export function generateRectCode(component: BaseComponent): string {
   // 生成样式属性
   const styleAttrs = generateStyleAttributes(style);
 
-  // 如果有子元素，则生成复合组件，否则生成单标签
-  if (component.children && component.children.length > 0) {
-    const childrenCode = component.children.map(child => generateComponentCode(child)).join('\n  ');
-    return `<rect ${generateAttributes(attributes)} ${styleAttrs}>
+  // 无论是否有子元素，都使用双标签格式
+  const childrenCode = component.children && component.children.length > 0
+    ? component.children.map(child => generateComponentCode(child)).join('\n  ')
+    : '';
+
+  return `<rect ${generateAttributes(attributes)} ${styleAttrs}>
   ${childrenCode}
 </rect>`;
-  } else {
-    return `<rect ${generateAttributes(attributes)} ${styleAttrs} />`;
-  }
 } 

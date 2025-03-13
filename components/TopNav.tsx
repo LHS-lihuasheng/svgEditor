@@ -10,10 +10,6 @@ const routes = [
     href: "/",
   },
   {
-    label: "Code",
-    href: "/code",
-  },
-  {
     label: "Drafts",
     href: "/drafts",
   },
