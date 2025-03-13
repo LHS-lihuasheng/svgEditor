@@ -6,14 +6,21 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { LucideRefreshCw, LucideEye, Settings, LucideCode } from "lucide-react";
 import { usePanel } from '@/contexts/PanelContext';
-
+import { useEditor } from '@/contexts/EditorContext';
 export function EditorToolbar() {
     const { setShowCodePreview } = usePanel();
+    const { updateComponents } = useEditor();
 
     return (
         <div className="h-12 bg-white shadow-sm border-b px-4 flex items-center justify-between">
             <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => updateComponents(draft => {
+                        draft.splice(0, draft.length);
+                    })}
+                >
                     <LucideRefreshCw className="h-4 w-4 mr-2" />
                     重置
                 </Button>
@@ -36,6 +43,6 @@ export function EditorToolbar() {
                     获取代码
                 </Button>
             </div>
-        </div>
+        </div >
     );
 } 

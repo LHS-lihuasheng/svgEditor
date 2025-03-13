@@ -8,27 +8,8 @@ import unset from "lodash/unset";
 import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 import { DynamicPropertyControl } from '../controls/DynamicPropertyControlProps';
 import type { PropertyControl } from "@/types/core/property/index";
-import {
-  RECT_PROPERTY,
-  SVG_PROPERTY,
-  GROUP_PROPERTY,
-  ANIMATE_PROPERTY,
-  ANIMATE_TRANSFORM_PROPERTY,
-  SET_PROPERTY,
-  FOREIGN_OBJECT_PROPERTY
-} from '@/types/core/property';
 
-// 组件类型到属性库的映射
-const COMPONENT_TYPE_TO_PROPERTY: Record<string, Record<string, PropertyControl>> = {
-  'svgPic': SVG_PROPERTY,
-  'svgSeamlessPic': SVG_PROPERTY,
-  'rect': RECT_PROPERTY,
-  'g': GROUP_PROPERTY,
-  'animate': ANIMATE_PROPERTY,
-  'animateTransform': ANIMATE_TRANSFORM_PROPERTY,
-  'set': SET_PROPERTY,
-  'foreignObject': FOREIGN_OBJECT_PROPERTY
-};
+import { COMPONENT_TYPE_TO_PROPERTY } from '@/types/core/property';
 
 export function UniversalComponentEditor() {
   const { selectedComponent, updateComponent } = useEditor();

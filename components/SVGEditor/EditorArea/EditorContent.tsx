@@ -27,7 +27,7 @@ export function EditorContent({ dropRef }: EditorContentProps) {
             {components.length === 0 ? (
                 <EmptyEditorState />
             ) : (
-                <ComponentTree level={0} />
+                <ComponentTree />
             )}
         </div>
     );

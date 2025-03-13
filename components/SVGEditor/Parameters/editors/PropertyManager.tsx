@@ -13,27 +13,13 @@ import {
 } from "@/components/ui/select";
 import type { PropertyControl } from "@/types/core/property/index";
 import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
-import { SVG_PROPERTY } from '@/types/core/property/svgProperty';
-import { RECT_PROPERTY } from '@/types/core/property/rectProperty';
-import { GROUP_PROPERTY } from '@/types/core/property/groupProperty';
-import { ANIMATE_PROPERTY } from '@/types/core/property/animateProperty';
-import { ANIMATE_TRANSFORM_PROPERTY } from '@/types/core/property/animateTransformProperty';
-import { SET_PROPERTY } from '@/types/core/property/setProperty';
 import { DynamicPropertyControl } from "../controls/DynamicPropertyControlProps";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import get from "lodash/get";
 import { AnimationValuesEditor } from "../controls/animation/AnimationValuesEditor";
 
-// 组件类型到属性库的映射
-const COMPONENT_TYPE_TO_PROPERTY: Record<string, Record<string, PropertyControl>> = {
-  'svgPic': SVG_PROPERTY,
-  'svgSeamlessPic': SVG_PROPERTY,
-  'rect': RECT_PROPERTY,
-  'g': GROUP_PROPERTY,
-  'animate': ANIMATE_PROPERTY,
-  'animateTransform': ANIMATE_TRANSFORM_PROPERTY,
-  'set': SET_PROPERTY
-};
+import { COMPONENT_TYPE_TO_PROPERTY } from '@/types/core/property';
+
 
 interface PropertyManagerProps {
   component: any;
@@ -51,7 +37,7 @@ export function PropertyManager({
   const [selectedProperty, setSelectedProperty] = useState<string>("");
 
   // 获取该组件的模板
-  const template = COMPONENT_TEMPLATES[component.type];
+  const template = COMPONENT_TEMPLATES[component.type as keyof typeof COMPONENT_TEMPLATES];
   if (!template || !template.propertyControls) return null;
 
   // 获取该组件类型对应的属性库

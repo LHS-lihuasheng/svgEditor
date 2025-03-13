@@ -8,7 +8,7 @@ import type { DragItem } from '@/types/core';
 
 export function useEditorDrop() {
   const { handleDrop } = useEditor();
-  
+
   const drop = useDrop<DragItem, void, any>(() => ({
     accept: ['TOOL', 'COMPONENT'],
     drop: (item: DragItem, monitor) => {
@@ -23,13 +23,8 @@ export function useEditorDrop() {
       const offset = monitor.getClientOffset();
       if (!offset) return;
 
-      // 计算相对于编辑区域的坐标
       const x = offset.x - editorRect.left;
       const y = offset.y - editorRect.top;
-
-      // 获取鼠标下方的元素及其组件ID
-      const targetElement = document.elementFromPoint(offset.x, offset.y);
-      const targetComponentId = targetElement?.closest('[data-component-id]')?.getAttribute('data-component-id') || null;
 
       // 更新拖放项目，添加坐标信息
       const updatedItem: DragItem = {
@@ -37,6 +32,9 @@ export function useEditorDrop() {
         x,
         y
       };
+      // 获取鼠标下方的元素及其组件ID
+      const targetElement = document.elementFromPoint(offset.x, offset.y);
+      const targetComponentId = targetElement?.closest('[data-component-id]')?.getAttribute('data-component-id') || null;
 
       // 调用处理函数
       handleDrop(updatedItem, targetComponentId);

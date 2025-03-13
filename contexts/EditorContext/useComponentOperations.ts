@@ -6,13 +6,13 @@ import { useCallback } from 'react';
 import { useEditor } from './index';
 import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 import type { BaseComponent, ComponentType } from '@/types/core';
-
+import { Draft } from 'immer';
 export function useComponentOperations() {
   const {
     components,
     findComponentById,
     updateComponent,
-    setComponents
+    updateComponents
   } = useEditor();
 
   /**
@@ -106,8 +106,8 @@ export function useComponentOperations() {
 
     const duplicated = assignNewIds(clone);
 
-    // 使用setComponents (其实是updateComponents)更新状态
-    setComponents(draft => {
+    // 使用updateComponents更新状态
+    updateComponents((draft: Draft<BaseComponent[]>) => {
       // 递归查找并更新父数组
       const findAndUpdate = (items: BaseComponent[]) => {
         for (let i = 0; i < items.length; i++) {
@@ -128,7 +128,7 @@ export function useComponentOperations() {
 
       findAndUpdate(draft);
     });
-  }, [components, findComponentById, setComponents]);
+  }, [components, findComponentById, updateComponents]);
 
   return {
     addChildComponent,

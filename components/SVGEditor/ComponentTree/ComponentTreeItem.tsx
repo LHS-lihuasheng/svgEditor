@@ -2,7 +2,7 @@
  * @description 组件树项
  * 渲染单个组件和其子组件
  */
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Trash, ImagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,35 +15,32 @@ import { isDescendantOf } from '@/utils/component';
 import type { BaseComponent } from '@/types/core';
 import { DragIndicator } from './DragIndicator';
 import { useEditor } from '@/contexts/EditorContext/index';
+import { useAssets } from '@/contexts/AssetContext';
 
 
 interface ComponentTreeItemProps {
   component: BaseComponent;
-  isSelected: boolean;
   level: number;
   index: number;
   parentId: string | null;
-  selectedId?: string;
-  onAddImages?: (componentId: string) => void;
 }
 
 export function ComponentTreeItem({
   component,
-  isSelected,
   level,
   index,
   parentId,
-  selectedId,
-  onAddImages,
 }: ComponentTreeItemProps) {
+  const { selectedComponent, setSelectedComponent, updateComponent } = useEditor();
+  const { shiftFirstSelectedImage } = useAssets();
   const [isExpanded, setIsExpanded] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  
+  const isSelected = selectedComponent?.id === component.id;
 
   // 使用编辑器钩子获取所有需要的方法
-  const { setSelectedComponent, handleDrop, moveComponent, deleteComponent } = useEditor();
+  const { handleDrop, deleteComponent } = useEditor();
 
-
-  // 获取组件模板信息
   const template = COMPONENT_TEMPLATES[component.type];
 
   // 拖放逻辑
@@ -52,9 +49,33 @@ export function ComponentTreeItem({
     index,
     parentId,
     onDrop: handleDrop,
-    onMove: moveComponent,
     isDescendant: isDescendantOf
   });
+
+  /**
+   * @description 处理向组件添加图片的功能
+   */
+  const handleAddImages = useCallback(() => {
+    const selectedImage = shiftFirstSelectedImage();
+    if (!selectedImage) return;
+
+    const updatedComponent = JSON.parse(JSON.stringify(component));
+
+    if (!updatedComponent.style) {
+      updatedComponent.style = {};
+    }
+
+    updatedComponent.style.backgroundImage = `url('${selectedImage.relativePath}')`;
+
+    // 填充viewBox
+    updatedComponent.viewBox = {
+      ...updatedComponent.viewBox,
+      width: selectedImage.dimensions.width,
+      height: selectedImage.dimensions.height
+    };
+
+    updateComponent(updatedComponent);
+  }, [component, updateComponent, shiftFirstSelectedImage]);
 
   /**
    * @description 渲染子组件
@@ -78,11 +99,9 @@ export function ComponentTreeItem({
           <ComponentTreeItem
             key={child.id}
             component={child}
-            isSelected={child.id === selectedId}
             level={level + 1}
             index={childIndex}
             parentId={component.id}
-            selectedId={selectedId}
           />
         ))}
       </div>
@@ -101,6 +120,7 @@ export function ComponentTreeItem({
         hover:border-blue-300 transition-colors duration-200
         ${isSelected ? 'ring-1 ring-blue-300' : ''}
       `}
+      onClick={() => setSelectedComponent(component)}
     >
       {/* 组件标题栏 */}
       <div
@@ -109,7 +129,6 @@ export function ComponentTreeItem({
           ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}
           cursor-pointer transition-colors duration-200
         `}
-        onClick={() => setSelectedComponent(component)}
       >
         <span className="text-sm text-blue-600 mr-2">{index + 1}</span>
         <span className="mr-2">{template?.icon}</span>
@@ -130,6 +149,21 @@ export function ComponentTreeItem({
             </button>
           )}
 
+          {/* 只在 SVG 容器上显示添加图片按钮 */}
+          {component.type === 'svgPic' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddImages();
+              }}
+              className="h-7 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            >
+              <ImagePlus className="h-4 w-4 mr-1" />
+            </Button>
+          )}
+
           {/* 删除按钮 */}
           <button
             className="p-1 hover:text-red-600 transition-colors duration-200"
@@ -142,20 +176,7 @@ export function ComponentTreeItem({
             <Trash className="h-4 w-4" />
           </button>
 
-          {/* 只在 SVG 容器上显示添加图片按钮 */}
-          {component.type === 'svgPic' && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddImages?.(component.id);
-              }}
-              className="h-7 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-            >
-              <ImagePlus className="h-4 w-4 mr-1" />
-            </Button>
-          )}
+
         </div>
       </div>
 

@@ -2,23 +2,24 @@
  * @description 组件树入口组件
  * 负责组合子组件并导出一个完整的组件树
  */
-import { ComponentTreeView } from './ComponentTreeView';
-import { ComponentTreeProvider } from './ComponentTreeContext';
+import { ComponentTreeItem } from './ComponentTreeItem';
+import { useEditor } from '@/contexts/EditorContext/index';
 
-// 定义组件树组件的props类型
-export interface ComponentTreeProps {
-    level?: number;
-}
+export function ComponentTree() {
 
-export function ComponentTree({ level = 0 }: ComponentTreeProps = {}) {
+    const { components } = useEditor();
+
     return (
-        <ComponentTreeProvider>
-            <ComponentTreeView level={level} />
-        </ComponentTreeProvider>
+        <div className="space-y-2">
+            {components.map((component, index) => (
+                <ComponentTreeItem
+                    key={component.id}
+                    component={component}
+                    level={0}
+                    index={index}
+                    parentId={null}
+                />
+            ))}
+        </div>
     );
 }
-
-// 导出组件时使用完整路径
-export { ComponentTreeItem } from './ComponentTreeItem';
-export { useComponentTree } from './ComponentTreeContext';
-export { DragIndicator } from './DragIndicator';

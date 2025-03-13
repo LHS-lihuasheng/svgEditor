@@ -7,12 +7,10 @@ import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 import type { BaseComponent, ComponentType, DragItem, DropPosition } from '@/types/core';
 
 type UpdateComponentsFunction = (updater: (draft: BaseComponent[]) => void) => void;
-type FindComponentFunction = (components: BaseComponent[], id: string) => [BaseComponent | null, BaseComponent[] | null];
 type GenerateIdFunction = (type: ComponentType) => string;
 
 export function useComponentDragDrop(
   updateComponents: UpdateComponentsFunction,
-  findComponentById: FindComponentFunction,
   generateUniqueId: GenerateIdFunction
 ) {
   /**
@@ -59,18 +57,20 @@ export function useComponentDragDrop(
 
     updateComponents(draft => {
       if (item.isToolItem) {
-        // 创建新组件逻辑...
         const template = COMPONENT_TEMPLATES[item.type as keyof typeof COMPONENT_TEMPLATES];
         if (!template) return;
+
+        // 深拷贝默认属性
+        const defaultProps = template.defaultProperties
+          ? JSON.parse(JSON.stringify(template.defaultProperties))
+          : {};
 
         const newComponent: BaseComponent = {
           id: generateUniqueId(item.type),
           type: item.type,
           children: [],
-          ...(template.defaultProperties || {})
-        } as BaseComponent;
-
-        // 设置位置逻辑...
+          ...defaultProps
+        };
 
         // 添加到目标位置
         if (!targetId) {
@@ -79,7 +79,7 @@ export function useComponentDragDrop(
           insertComponent(draft, targetId, newComponent, item.dropPosition || 'after');
         }
       } else {
-        // 移动现有组件逻辑...
+        // 移动现有组件
         let movedComponent: BaseComponent | null = null;
 
         // 找到并移除要移动的组件

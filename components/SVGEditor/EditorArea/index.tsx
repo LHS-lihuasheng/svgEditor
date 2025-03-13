@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils"
 import { EditorToolbar } from "./EditorToolbar"
 import { EditorContent } from "./EditorContent"
   
-
 interface EditorAreaProps {
   dropRef: React.RefObject<HTMLDivElement>
 }

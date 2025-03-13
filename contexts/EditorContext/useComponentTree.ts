@@ -10,9 +10,6 @@ import { useCallback } from 'react';
 import { generateComponentId } from '@/utils/component';
 import type { BaseComponent, ComponentType } from '@/types/core';
 
-/**
- * Immer 更新函数类型
- */
 type UpdateComponentsFunction = (updater: (draft: BaseComponent[]) => void) => void;
 
 /**
@@ -120,9 +117,6 @@ export function useComponentTree(updateComponents: UpdateComponentsFunction) {
 
     /**
      * @description 生成唯一组件ID
-     * 基于组件类型创建一个唯一标识符
-     * @param {ComponentType} type - 组件类型
-     * @returns {string} 返回生成的唯一ID
      */
     const generateUniqueId = useCallback((type: ComponentType): string => {
         return generateComponentId(type);

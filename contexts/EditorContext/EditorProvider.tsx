@@ -7,6 +7,7 @@
  */
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import { useImmer } from 'use-immer';
+import { Draft } from 'immer';
 import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 import { useComponentTree } from './useComponentTree';
 import { useComponentDragDrop } from './useComponentDragDrop';
@@ -14,7 +15,6 @@ import type {
   BaseComponent,
   ComponentType,
   DragItem,
-  DropPosition
 } from '@/types/core';
 
 /**
@@ -27,7 +27,7 @@ interface EditorContextType {
   selectedComponent: BaseComponent | null;  // 当前选中的组件
 
   // 状态操作方法
-  setComponents: React.Dispatch<React.SetStateAction<BaseComponent[]>>;  // 设置组件列表
+  updateComponents: (draft: Draft<BaseComponent[]>) => void;  // 设置组件列表
   setSelectedComponent: (component: BaseComponent | null) => void;      // 设置选中组件
   updateComponent: (updated: BaseComponent) => void;                   // 更新特定组件
   addComponent: (type: ComponentType) => void;                        // 添加新组件
@@ -40,17 +40,10 @@ interface EditorContextType {
   generateUniqueId: (type: ComponentType) => string;                 // 生成唯一组件ID
 }
 
-// 创建上下文实例
 const EditorContext = createContext<EditorContextType | null>(null);
 
-/**
- * @description 编辑器上下文提供者组件
- * @param {Object} props - 组件属性
- * @param {React.ReactNode} props.children - 子组件
- * @returns {JSX.Element} 上下文提供者组件
- */
 export function EditorProvider({ children }: { children: React.ReactNode }) {
-  // 使用useImmer替代useState管理组件树
+
   const [components, updateComponents] = useImmer<BaseComponent[]>([]);
   const [selectedComponent, setSelectedComponent] = useState<BaseComponent | null>(null);
 
@@ -60,7 +53,6 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     updateComponent,       // 更新组件属性
     deleteComponent,       // 删除组件
     generateUniqueId,      // 生成唯一ID
-    removeComponentById    // 通过ID移除组件
   } = useComponentTree(updateComponents);
 
   // 引入拖放操作钩子，提供拖拽相关功能
@@ -69,9 +61,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     moveComponent,        // 移动组件在列表中的位置
   } = useComponentDragDrop(
     updateComponents,
-    findComponentById,
     generateUniqueId,
-    removeComponentById
   );
 
   /**
@@ -108,12 +98,10 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
 
   // 构建上下文值，使用useMemo优化性能，避免不必要的重渲染
   const contextValue = useMemo<EditorContextType>(() => ({
-    // 状态
     components,
     selectedComponent,
 
-    // 操作方法
-    setComponents: updateComponents,
+    updateComponents,
     setSelectedComponent,
     updateComponent,
     addComponent,
@@ -121,7 +109,6 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     moveComponent,
     handleDrop,
 
-    // 工具方法
     findComponentById,
     generateUniqueId
   }), [

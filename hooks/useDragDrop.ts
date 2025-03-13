@@ -11,7 +11,6 @@ interface UseDragDropOptions {
   index: number;
   parentId: string | null;
   onDrop: (item: DragItem, targetId: string | null) => void;
-  onMove: (dragIndex: number, hoverIndex: number, parentId: string | null) => void;
   isDescendant: (component: BaseComponent, childId: string) => boolean;
 }
 
@@ -20,10 +19,9 @@ export function useDragDrop({
   index,
   parentId,
   onDrop,
-  onMove,
   isDescendant
 }: UseDragDropOptions) {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<any>(null);
 
   /**
    * @description 获取放置位置
@@ -36,17 +34,15 @@ export function useDragDrop({
     const hoverBoundingRect = ref.current.getBoundingClientRect();
     const clientOffset = monitor.getClientOffset()!;
 
-    // 计算相对位置
+    // 计算鼠标指针与目标组件顶部的垂直距离
     const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+    // 目标组件的高度
     const hoverHeight = hoverBoundingRect.bottom - hoverBoundingRect.top;
 
-    // 在上部25%区域时放置在前面
     if (hoverClientY < hoverHeight * 0.25) return 'before';
 
-    // 在下部25%区域时放置在后面
     if (hoverClientY > hoverHeight * 0.75) return 'after';
 
-    // 中间区域放置在内部
     return 'nested';
   }, []);
 
@@ -71,17 +67,15 @@ export function useDragDrop({
       if (monitor.didDrop()) return;
       if (item.id === component.id) return;
 
-      // 处理放置
       onDrop(item, component.id);
     },
     hover: (item: DragItem, monitor) => {
       if (!ref.current) return;
       if (!item.id || item.id === component.id) return;
 
-      // 确定放置位置
       const position = getDropPosition(monitor);
 
-      // 禁止将组件嵌套到自己或自己的子组件中
+      // 防止嵌套循环
       if (position === 'nested' && !item.isToolItem && isDescendant(component, item.id)) {
         item.dropPosition = 'after';
       } else {
@@ -96,11 +90,11 @@ export function useDragDrop({
   });
 
   // 组合拖放引用
-  const combineRefs = (el: HTMLDivElement | null) => {
-    ref.current = el;
-    drag(el);
-    drop(el);
-  };
+  const combineRefs = useCallback((el: any) => {
+      ref.current = el;
+      drag(el);
+      drop(el);
+  }, [drag, drop]);
 
   return {
     ref: combineRefs,

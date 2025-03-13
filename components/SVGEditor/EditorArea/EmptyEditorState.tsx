@@ -1,6 +1,5 @@
 /**
  * @description 编辑器空状态提示组件
- * 当编辑区域没有组件时显示的提示界面
  */
 import React from 'react';
 import { Image } from "lucide-react";
