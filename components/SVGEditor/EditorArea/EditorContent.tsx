@@ -5,7 +5,7 @@
 import React from 'react';
 import { ComponentTree } from "../ComponentTree";
 import { EmptyEditorState } from "./EmptyEditorState";
-import { useEditor } from '@/contexts/EditorContext/index';
+import { useEditor } from '@/contexts/EditorContext';
 
 interface EditorContentProps {
     dropRef: React.RefObject<HTMLDivElement>;

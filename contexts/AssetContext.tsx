@@ -122,20 +122,47 @@ export function AssetProvider({ children }: { children: React.ReactNode }) {
     await loadAssets(rootDirectory)
   }, [rootDirectory, loadAssets])
 
-  // 路径查找方法（支持多种路径格式）
+  // 增强 findImageByPath 函数以处理更多路径格式
   const findImageByPath = useCallback((path: string) => {
-    const normalized = normalizeAssetPath(path)
+    if (!path) return undefined;
+
+    // 清理和规范化路径
+    const originalPath = path.trim();
+    const normalized = normalizeAssetPath(originalPath);
+
+    // 尝试多种可能的路径格式
     const searchPaths = [
       normalized,
-      normalized.replace(/^\.\//, '')  // 尝试两种路径格式
-    ]
+      normalized.replace(/^\.\//, ''),   // 移除开头的./
+      `./${normalized.replace(/^\.\//, '')}`, // 确保有./前缀
+      decodeURI(normalized),             // 解码URL
+      // 如果是http路径，直接返回null（外部资源）
+      originalPath.startsWith('http') ? null : originalPath
+    ].filter(Boolean); // 移除null值
 
+    console.log("查找图片路径:", path);
+    console.log("尝试搜索路径:", searchPaths);
+
+    // 尝试所有可能的路径格式
     for (const p of searchPaths) {
-      const image = imageAssets.get(p)
-      if (image) return image
+      const image = imageAssets.get(p);
+      if (image) {
+        console.log("找到图片:", p);
+        return image;
+      }
     }
-    return undefined
-  }, [imageAssets])
+
+    // 如果仍未找到，尝试部分匹配
+    for (const [assetPath, asset] of imageAssets.entries()) {
+      if (assetPath.includes(originalPath) || originalPath.includes(assetPath)) {
+        console.log("部分匹配找到图片:", assetPath);
+        return asset;
+      }
+    }
+
+    console.log("未找到图片资源");
+    return undefined;
+  }, [imageAssets]);
 
   // 图片选择切换逻辑
   const selectImage = useCallback((inputPath: string) => {

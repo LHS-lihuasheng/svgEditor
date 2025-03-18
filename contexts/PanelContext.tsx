@@ -11,8 +11,8 @@ interface PanelContextType {
 interface MenuBarContextType {
     isMenuBarOpen: boolean
     toggleMenuBar: () => void
-    activeTab: 'components' | 'assets'
-    setActiveTab: (tab: 'components' | 'assets') => void
+    activeTab: 'components' | 'assets' | 'preview'
+    setActiveTab: (tab: 'components' | 'assets' | 'preview') => void
 }
 
 interface CodePreviewContextType {
@@ -25,7 +25,7 @@ const PanelContext = createContext<PanelContextType & MenuBarContextType & CodeP
 export function PanelProvider({ children }: { children: ReactNode }) {
     const [isParametersPanelOpen, setIsParametersPanelOpen] = useState(true)
     const [isMenuBarOpen, setIsMenuBarOpen] = useState(true)
-    const [activeTab, setActiveTab] = useState<'components' | 'assets'>('components')
+    const [activeTab, setActiveTab] = useState<'components' | 'assets' | 'preview'>('components')
     const [showCodePreview, setShowCodePreview] = useState(false)
 
     const toggleParametersPanel = () => {

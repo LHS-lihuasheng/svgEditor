@@ -6,20 +6,19 @@ import React, { useRef } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { generateCode } from "@/utils/code-generator";
 import { usePanel } from '@/contexts/PanelContext';
-import { useEditor } from '@/contexts/EditorContext/index'
+import { useCode } from '@/contexts/CodeContext'
 
 export function CodePreviewModal() {
   const { setShowCodePreview } = usePanel();
-  const { components } = useEditor();
+  const { code } = useCode()
 
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
 
   const handleEditorDidMount: OnMount = (editor) => {
     editorRef.current = editor;
-    // 编辑器加载完成后立即自动格式化
-    editor.getAction('editor.action.formatDocument')?.run();
+    // // 编辑器加载完成后立即自动格式化
+    // editor.getAction('editor.action.formatDocument')?.run();
     // 添加淡入动画
     editor.getDomNode()?.style.setProperty('opacity', '0');
     editor.getDomNode()?.animate([{ opacity: 0 }, { opacity: 1 }], {
@@ -34,12 +33,10 @@ export function CodePreviewModal() {
   };
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(generateCode(components))
+    navigator.clipboard.writeText(code)
       .then(() => alert("代码已复制到剪贴板"))
-      .catch(err => console.error("复制失败:", err));
+      .catch(err => console.error("复制失败:", err))
   };
-
-  const code = generateCode(components);
 
   return (
     <div
@@ -60,7 +57,7 @@ export function CodePreviewModal() {
               options={{
                 readOnly: false,
                 minimap: { enabled: false },
-                fontSize: 13,
+                fontSize: 12,
                 lineNumbers: 'on',
                 scrollBeyondLastLine: false,
                 automaticLayout: true,

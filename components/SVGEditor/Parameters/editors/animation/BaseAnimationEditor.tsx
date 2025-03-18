@@ -1,15 +1,14 @@
 "use client"
 
-import { useEditor } from '@/contexts/EditorContext/index';
+import { useEditor } from '@/contexts/EditorContext';
 import { BaseComponent } from "@/types/core";
 import { useState, useEffect } from 'react';
 import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 import { DynamicPropertyControl } from '../../controls/DynamicPropertyControlProps';
-import { PropertyManager } from '../../PropertyManager';
+import { PropertyManager } from '../PropertyManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TriggerControl } from '../../controls/animation/TriggerControl';
 import { RepeatCountControl } from '../../controls/animation/RepeatCountControl';
-import get from "lodash/get";
 import set from "lodash/set";
 
 interface BaseAnimationEditorProps {

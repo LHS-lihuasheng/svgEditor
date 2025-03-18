@@ -7,11 +7,12 @@ import { Parameters } from "./Parameters/index";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CodePreviewModal } from "./CodePreviewModal";
 import { PanelProvider } from '@/contexts/PanelContext';
-import { EditorProvider } from '@/contexts/EditorContext/index';
+import { EditorProvider } from '@/contexts/EditorContext';
 import { useEditor } from '@/contexts/EditorContext';
 import { usePanel } from '@/contexts/PanelContext';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { CodeProvider } from '@/contexts/CodeContext';
 
 /**
  * @description SVG编辑器的顶层容器组件，提供所有必要的上下文
@@ -22,9 +23,11 @@ export default function SVGEditorContainer() {
     <DndProvider backend={HTML5Backend}>
       <EditorProvider>
         <PanelProvider>
-          <TooltipProvider>
-            <SVGEditor />
-          </TooltipProvider>
+          <CodeProvider>
+            <TooltipProvider>
+              <SVGEditor />
+            </TooltipProvider>
+          </CodeProvider>
         </PanelProvider>
       </EditorProvider>
     </DndProvider>
@@ -40,7 +43,7 @@ function SVGEditor() {
   const { showCodePreview } = usePanel();
 
   // 使用封装的拖放钩子
-  const {editorDrop} = useEditor();
+  const { editorDrop } = useEditor();
 
   return (
     <div className="h-full flex bg-gray-50">

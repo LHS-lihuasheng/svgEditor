@@ -18,12 +18,40 @@ export function ImageControl({
     const { shiftFirstSelectedImage, findImageByPath } = useAssets();
     const [previewUrl, setPreviewUrl] = useState<string>('');
 
-    // 从CSS url()格式中提取路径
+    // 提取路径，支持不同引号格式
     const extractPath = (cssUrl: string): string => {
-        return cssUrl?.replace(/url\(['"](.+)['"]\)/, '$1') || '';
+        if (!cssUrl) return '';
+
+        // 单引号格式
+        const singleQuoteMatch = cssUrl.match(/url\('([^']+)'\)/);
+        if (singleQuoteMatch) return singleQuoteMatch[1];
+
+        // 双引号格式
+        const doubleQuoteMatch = cssUrl.match(/url\("([^"]+)"\)/);
+        if (doubleQuoteMatch) return doubleQuoteMatch[1];
+
+        // 无引号格式
+        const noQuoteMatch = cssUrl.match(/url\(([^'"]+)\)/);
+        if (noQuoteMatch) return noQuoteMatch[1];
+
+        return cssUrl;
     };
 
-    // 当组件或当前值变化时，更新预览URL
+    // 输入框变化处理
+    const handleInputChange = (e) => {
+        onChange(e.target.value); // 直接存储路径，不添加url()格式
+    };
+
+    // 选择图片按钮处理
+    const handleSelectImage = () => {
+        const selectedImage = shiftFirstSelectedImage();
+        if (selectedImage) {
+            onChange(selectedImage.relativePath);
+            setPreviewUrl(selectedImage.url);
+        }
+    };
+
+    // 更新预览URL
     useEffect(() => {
         const path = extractPath(value);
         if (!path) {
@@ -31,7 +59,6 @@ export function ImageControl({
             return;
         }
 
-        // 尝试从资产库找到对应的图片
         const imageAsset = findImageByPath?.(path);
         if (imageAsset) {
             setPreviewUrl(imageAsset.url);
@@ -49,24 +76,14 @@ export function ImageControl({
                     <Input
                         id={`image-${label}`}
                         value={extractPath(value)}
-                        onChange={(e) => {
-                            const url = e.target.value ? `url('${e.target.value}')` : '';
-                            onChange(url);
-                        }}
+                        onChange={handleInputChange}
                         placeholder="输入图片URL"
                     />
                 </div>
                 <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => {
-                        const selectedImage = shiftFirstSelectedImage();
-                        if (selectedImage) {
-                            const url = `url('${selectedImage.relativePath}')`;
-                            onChange(url);
-                            setPreviewUrl(selectedImage.url);
-                        }
-                    }}
+                    onClick={handleSelectImage}
                 >
                     <ImageIcon className="h-4 w-4" />
                 </Button>
@@ -75,7 +92,9 @@ export function ImageControl({
                 <div className="mt-2 relative w-full h-20 bg-gray-100 rounded-md overflow-hidden">
                     <div
                         className="absolute inset-0 bg-contain bg-center bg-no-repeat"
-                        style={{ backgroundImage: previewUrl ? `url('${previewUrl}')` : value }}
+                        style={{
+                            backgroundImage: previewUrl ? `url('${previewUrl}')` : (value ? `url('${value}')` : 'none')
+                        }}
                     />
                 </div>
             )}

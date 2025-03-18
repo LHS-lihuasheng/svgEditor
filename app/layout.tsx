@@ -5,7 +5,6 @@ import "@/app/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import TopNav from "@/components/TopNav"
 import { AssetProvider } from "@/contexts/AssetContext"
-
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
@@ -23,14 +22,14 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <AssetProvider>
-              <div className="flex flex-col h-screen bg-gray-50">
-                <TopNav />
-                <main className="flex-1 overflow-auto">{children}</main>
-              </div>
-          </AssetProvider>
-        </ThemeProvider>
-      </body>
-    </html>
+            <div className="flex flex-col h-screen bg-gray-50">
+              <TopNav />
+              <main className="flex-1 overflow-auto">{children}</main>
+            </div>
+        </AssetProvider>
+      </ThemeProvider>
+    </body>
+    </html >
   )
 }
 

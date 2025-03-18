@@ -4,7 +4,7 @@ import { PropertyManager } from './PropertyManager';
 import get from "lodash/get";
 import set from "lodash/set";
 import unset from "lodash/unset";
-import { useEditor } from '@/contexts/EditorContext/index';
+import { useEditor } from '@/contexts/EditorContext';
 import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 import { DynamicPropertyControl } from '../controls/DynamicPropertyControlProps';
 import type { PropertyControl } from "@/types/core/property/index";
@@ -78,7 +78,7 @@ export function UniversalComponentEditor() {
   const template = COMPONENT_TEMPLATES[selectedComponent.type];
 
   // 从模板中获取固定属性控件定义
-  const fixedPropertyControls = template.propertyControls.filter(prop => prop.isFixed);
+  const fixedPropertyControls = template?.propertyControls?.filter(prop => prop.isFixed) || [];
 
   return (
     <div className="space-y-4">

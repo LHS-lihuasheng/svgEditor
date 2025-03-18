@@ -12,8 +12,8 @@ export function generateStyleAttributes(style: Record<string, any>): string {
   // 移除空值
   Object.keys(processedStyle).forEach(key => {
     const value = processedStyle[key];
-    if (value === undefined || value === null || 
-        (typeof value === 'string' && value.trim() === '')) {
+    if (value === undefined || value === null ||
+      (typeof value === 'string' && value.trim() === '')) {
       delete processedStyle[key];
     }
   });
@@ -28,27 +28,27 @@ export function generateStyleAttributes(style: Record<string, any>): string {
   const svgAttributes = extractSvgStyleAttributes(processedStyle);
 
   // 过滤并生成style字符串
-  const styleEntries = Object.entries(processedStyle).filter(([_, value]) => 
-    value !== undefined && value !== null && 
+  const styleEntries = Object.entries(processedStyle).filter(([_, value]) =>
+    value !== undefined && value !== null &&
     !(typeof value === 'string' && value.trim() === '')
   );
-  
-  const styleStr = styleEntries.length > 0 
+
+  const styleStr = styleEntries.length > 0
     ? styleEntries
-        .map(([key, value]) => `${kebabCase(key)}: ${formatStyleValue(key, value)};`)
-        .join(' ')
+      .map(([key, value]) => `${kebabCase(key)}: ${formatStyleValue(key, value)};`)
+      .join(' ')
     : '';
 
   // 过滤并生成SVG属性字符串
-  const attrEntries = Object.entries(svgAttributes).filter(([_, value]) => 
-    value !== undefined && value !== null && 
+  const attrEntries = Object.entries(svgAttributes).filter(([_, value]) =>
+    value !== undefined && value !== null &&
     !(typeof value === 'string' && value.trim() === '')
   );
-  
+
   const attrsStr = attrEntries.length > 0
     ? attrEntries
-        .map(([key, value]) => `${key}="${value}"`)
-        .join(' ')
+      .map(([key, value]) => `${key}="${value}"`)
+      .join(' ')
     : '';
 
   // 合并属性和样式
@@ -128,6 +128,21 @@ export function formatStyleValue(key: string, value: any): string {
     return `${value}px`;
   }
 
+  // 特殊处理背景图像路径
+  if (key === 'backgroundImage' && typeof value === 'string') {
+    // 去除多余空格
+    const cleanValue = value.trim();
+
+    // 如果value已经是url格式，提取并清理路径
+    if (cleanValue.startsWith('url(')) {
+      const path = extractPath(cleanValue);
+      // 为代码预览使用双引号格式
+      return `url("${encodeURI(path.trim())}")`;
+    }
+    // 如果只是路径，添加url()并使用双引号
+    return `url("${encodeURI(cleanValue)}")`;
+  }
+
   return String(value);
 }
 
@@ -145,4 +160,27 @@ export function processMargin(margin: any): string {
     return `${top}px ${right}px ${bottom}px ${left}px`;
   }
   return margin;
+}
+
+// 在生成 SVG 代码时统一处理背景图像
+function processBackgroundImage(value: string): string {
+  // 确保我们只处理纯路径
+  const path = value.startsWith('url') ? extractPath(value) : value.trim();
+
+  if (!path) return '';
+
+  // 安全地构造 URL，确保没有多余的空白字符
+  return `url("${encodeURI(path)}")`;
+}
+
+// 辅助函数提取路径
+function extractPath(cssUrl: string): string {
+  if (!cssUrl) return '';
+
+  // 提取路径并移除多余空白
+  const match = cssUrl.match(/url\((['"]?)([\s\S]+?)\1\)/);
+  if (!match) return cssUrl;
+
+  // 清理路径中的空白字符
+  return match[2].trim();
 } 

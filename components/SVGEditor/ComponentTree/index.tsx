@@ -3,7 +3,7 @@
  * 负责组合子组件并导出一个完整的组件树
  */
 import { ComponentTreeItem } from './ComponentTreeItem';
-import { useEditor } from '@/contexts/EditorContext/index';
+import { useEditor } from '@/contexts/EditorContext';
 
 export function ComponentTree() {
 
