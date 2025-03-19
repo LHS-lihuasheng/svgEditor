@@ -1,28 +1,20 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react";
-import { Label } from "@/components/ui/label";
+import { useMemo, useState, useEffect } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Plus, X, Edit } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { PropertyControl } from "@/types/core/property/index";
-import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
-import { DynamicPropertyControl } from "../controls/DynamicPropertyControlProps";
+import { Edit, Plus, X } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DynamicPropertyControl } from '../controls/DynamicPropertyControlProps';
+import { AnimationValuesEditor } from '../controls/animation/AnimationValuesEditor';
 import get from "lodash/get";
-import { AnimationValuesEditor } from "../controls/animation/AnimationValuesEditor";
-
+import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 import { COMPONENT_TYPE_TO_PROPERTY } from '@/types/core/property';
-
+import type { BaseComponent } from "@/types/core";
 
 interface PropertyManagerProps {
-  component: any;
+  component: BaseComponent;
   onAddProperty: (property: string) => void;
   onRemoveProperty: (property: string) => void;
   onUpdateProperty: (path: string, value: any) => void;
@@ -35,85 +27,55 @@ export function PropertyManager({
   onUpdateProperty
 }: PropertyManagerProps) {
   const [selectedProperty, setSelectedProperty] = useState<string>("");
-
-  // 获取该组件的模板
-  const template = COMPONENT_TEMPLATES[component.type as keyof typeof COMPONENT_TEMPLATES];
-  if (!template || !template.propertyControls) return null;
-
-  // 获取该组件类型对应的属性库
+  const template = COMPONENT_TEMPLATES[component.type];
   const typeControls = COMPONENT_TYPE_TO_PROPERTY[component.type] || {};
 
-  // 使用useMemo缓存属性计算结果
+  // 动画状态检测
+  const isAnimationComponent = component.type === 'animate' || component.type === 'animateTransform';
+  const hasAnimationValues = isAnimationComponent &&
+    (component.attributes?.values || component.attributes?.from || component.attributes?.to);
+
+  // 计算属性列表
   const { existingProperties, addableProperties } = useMemo(() => {
-    // 获取模板中的固定属性路径
+    // 固定属性集合
     const fixedPropertyPaths = new Set(
-      template.propertyControls
-        .filter(prop => prop.isFixed)
-        .map(prop => prop.property)
+      template?.propertyControls?.filter(prop => prop.isFixed).map(prop => prop.property) || []
     );
 
-    // 当前存在的可删除属性列表
-    const existingProps: Array<{
-      label: string;
-      path: string;
-      control: PropertyControl | undefined;
-    }> = [];
+    // 当前存在的属性
+    const existingProps = [];
+    const existingPaths = new Set();
 
-    // 已添加属性的路径集合(用于防止重复)
-    const existingPropertyPaths = new Set<string>();
-
-    // 检查特殊属性 - viewBox（不处理此固定属性，由UniversalComponentEditor处理）
-
-    // 检查特殊属性 - transform（如果不是固定属性且存在）
+    // 处理transform属性
     if (component.transform && !fixedPropertyPaths.has('transform')) {
-      const transformControl = Object.values(typeControls).find(ctrl => ctrl.property === 'transform');
-      if (transformControl) {
-        existingProps.push({
-          label: transformControl.label,
-          path: 'transform',
-          control: transformControl
-        });
-        existingPropertyPaths.add('transform');
+      const control = Object.values(typeControls).find(ctrl => ctrl.property === 'transform');
+      if (control) {
+        existingProps.push({ label: control.label, path: 'transform', control });
+        existingPaths.add('transform');
       }
     }
 
-    // 1. 添加所有标记为isDefault的预设属性
-    template.propertyControls
-      .filter(prop => prop.isDefault && !prop.isFixed)
+    // 添加默认属性
+    template?.propertyControls?.filter(prop => prop.isDefault && !prop.isFixed)
       .forEach(prop => {
-        existingProps.push({
-          label: prop.label,
-          path: prop.property,
-          control: prop
-        });
-        existingPropertyPaths.add(prop.property);
+        existingProps.push({ label: prop.label, path: prop.property, control: prop });
+        existingPaths.add(prop.property);
       });
 
-    // 2. 从style中查找已存在的属性 - 确保检查所有可能的style属性
+    // 处理style属性
     if (component.style) {
       Object.keys(component.style).forEach(key => {
         const path = `style.${key}`;
+        if (existingPaths.has(path) || fixedPropertyPaths.has(path)) return;
 
-        // 跳过已添加的属性和固定属性
-        if (existingPropertyPaths.has(path) || fixedPropertyPaths.has(path)) return;
+        // 查找控件定义
+        const control = Object.values(typeControls).find(ctrl => ctrl.property === path) ||
+          template?.propertyControls?.find(prop => prop.property === path);
 
-        // 1. 首先从当前组件类型的属性库中查找
-        let control = Object.values(typeControls).find(ctrl => ctrl.property === path);
-
-        // 2. 如果没找到，再从模板中查找
-        if (!control) {
-          control = template.propertyControls.find(prop => prop.property === path);
-        }
-
-        // 如果找到了控件定义，则添加到已存在属性列表
         if (control) {
-          existingProps.push({
-            label: control.label,
-            path,
-            control
-          });
+          existingProps.push({ label: control.label, path, control });
         } else {
-          // 对于未知属性，使用格式化的key作为标签
+          // 未知属性使用默认标签
           existingProps.push({
             label: `Style: ${key.charAt(0).toUpperCase() + key.slice(1)}`,
             path,
@@ -122,35 +84,27 @@ export function PropertyManager({
               label: `Style: ${key}`,
               type: typeof component.style[key] === 'number' ? 'number' : 'string',
               defaultValue: component.style[key]
-            } as PropertyControl
+            }
           });
         }
-        existingPropertyPaths.add(path);
+        existingPaths.add(path);
       });
     }
 
-    // 3. 从attributes中查找已存在的属性
+    // 处理attributes属性
     if (component.attributes) {
       Object.keys(component.attributes).forEach(key => {
         const path = `attributes.${key}`;
+        if (existingPaths.has(path) || fixedPropertyPaths.has(path)) return;
 
-        // 跳过已添加的属性和固定属性
-        if (existingPropertyPaths.has(path) || fixedPropertyPaths.has(path)) return;
-
-        // 查找匹配的属性控件
-        let control = Object.values(typeControls).find(ctrl => ctrl.property === path);
-        if (!control) {
-          control = template.propertyControls.find(prop => prop.property === path);
-        }
+        // 查找控件定义
+        const control = Object.values(typeControls).find(ctrl => ctrl.property === path) ||
+          template?.propertyControls?.find(prop => prop.property === path);
 
         if (control) {
-          existingProps.push({
-            label: control.label,
-            path,
-            control
-          });
+          existingProps.push({ label: control.label, path, control });
         } else {
-          // 对于未知属性，创建一个临时控件
+          // 未知属性使用默认标签
           existingProps.push({
             label: `Attribute: ${key}`,
             path,
@@ -159,72 +113,42 @@ export function PropertyManager({
               label: `Attribute: ${key}`,
               type: typeof component.attributes[key] === 'number' ? 'number' : 'string',
               defaultValue: component.attributes[key]
-            } as PropertyControl
+            }
           });
         }
-        existingPropertyPaths.add(path);
+        existingPaths.add(path);
       });
     }
 
-    // 排序现有属性，使其更容易找到
+    // 排序现有属性
     existingProps.sort((a, b) => a.label.localeCompare(b.label));
 
     // 计算可添加的属性
-    const addableProps: PropertyControl[] = [];
+    const addableProps = Object.values(typeControls)
+      .filter(control => !fixedPropertyPaths.has(control.property) && !existingPaths.has(control.property))
+      .sort((a, b) => a.label.localeCompare(b.label));
 
-    // 将所有属性库控件转换为数组并过滤处理
-    Object.values(typeControls).forEach(control => {
-      // 跳过固定属性和已存在的属性
-      if (fixedPropertyPaths.has(control.property) || existingPropertyPaths.has(control.property)) {
-        return;
-      }
-
-      addableProps.push(control);
-    });
-
-    // 排序可添加属性，使其更容易找到
-    addableProps.sort((a, b) => a.label.localeCompare(b.label));
-
-    return {
-      existingProperties: existingProps,
-      addableProperties: addableProps
-    };
+    return { existingProperties: existingProps, addableProperties: addableProps };
   }, [component, template, typeControls]);
 
-  const handleAddProperty = () => {
-    if (selectedProperty) {
-      onAddProperty(selectedProperty);
-      setSelectedProperty("");
-    }
-  };
-
-  // 判断是否应该使用统一的动画值编辑器
-  const shouldUseAnimationValuesEditor = (component.type === 'animate' || component.type === 'animateTransform') &&
-    (component.attributes?.values || component.attributes?.from || component.attributes?.to);
-
-  // 检测是否需要添加动画值编辑器
+  // 为动画组件自动添加必要属性
   useEffect(() => {
-    // 检查组件是否需要添加动画值相关属性
-    if ((component.type === 'animate' || component.type === 'animateTransform') &&
-      !(component.attributes?.values || component.attributes?.from || component.attributes?.to)) {
+    if (isAnimationComponent && !hasAnimationValues) {
+      // 自动添加默认动画值
+      if (!component.attributes) return;
 
-      // 如果没有动画值属性，自动添加默认的from-to动画
-      if (!component.attributes) {
-        component.attributes = {};
-      }
-
-      // 设置默认值
       if (component.type === 'animate') {
         onUpdateProperty('attributes.from', '0');
         onUpdateProperty('attributes.to', '1');
       } else if (component.type === 'animateTransform') {
-        if (component.attributes?.type === 'translate') {
+        const type = component.attributes.type;
+        if (type === 'translate') {
           onUpdateProperty('attributes.from', '0,0');
           onUpdateProperty('attributes.to', '100,0');
-        } else if (component.attributes?.type === 'scale') {
+        } else if (type === 'scale') {
           onUpdateProperty('attributes.from', '1');
           onUpdateProperty('attributes.to', '2');
-        } else if (component.attributes?.type === 'rotate') {
+        } else if (type === 'rotate') {
           onUpdateProperty('attributes.from', '0');
           onUpdateProperty('attributes.to', '360');
         } else {
@@ -233,27 +157,27 @@ export function PropertyManager({
         }
       }
     }
-  }, [component.type]);
+  }, [component.type, isAnimationComponent, hasAnimationValues]);
 
   return (
     <div className="space-y-4">
-      {/* 如果是动画组件且有相关属性，显示统一的动画值编辑器 */}
-      {shouldUseAnimationValuesEditor && (
+      {/* 动画值编辑器 */}
+      {hasAnimationValues && (
         <AnimationValuesEditor
           component={component}
           onUpdateProperty={onUpdateProperty}
         />
       )}
 
-      {/* 现有的属性列表和添加属性功能代码 */}
+      {/* 已添加属性 */}
       {existingProperties.length > 0 && (
         <div>
           <Label>已添加属性</Label>
           <div className="mt-2 space-y-2">
             {existingProperties
-              // 过滤掉由动画值编辑器处理的属性
+              // 过滤动画专属属性
               .filter(prop => {
-                if (shouldUseAnimationValuesEditor) {
+                if (hasAnimationValues) {
                   return !['attributes.values', 'attributes.keyTimes', 'attributes.keySplines',
                     'attributes.calcMode', 'attributes.from', 'attributes.to'].includes(prop.path);
                 }
@@ -292,14 +216,7 @@ export function PropertyManager({
         </div>
       )}
 
-      {/* 添加调试信息 */}
-      {process.env.NODE_ENV !== 'production' && component.style && (
-        <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/50 rounded">
-          <div>当前style属性：{Object.keys(component.style).join(', ')}</div>
-        </div>
-      )}
-
-      {/* 可添加属性区域 - 统一属性选择菜单 */}
+      {/* 可添加属性 */}
       {addableProperties.length > 0 && (
         <div>
           <Label>添加属性</Label>
@@ -311,8 +228,7 @@ export function PropertyManager({
               <SelectContent>
                 {addableProperties
                   .filter(prop => {
-                    // 对动画组件的特殊过滤逻辑
-                    if (component.type === 'animate' || component.type === 'animateTransform') {
+                    if (isAnimationComponent) {
                       return !['attributes.values', 'attributes.from', 'attributes.to',
                         'attributes.keyTimes', 'attributes.keySplines', 'attributes.calcMode'].includes(prop.property);
                     }
@@ -328,7 +244,12 @@ export function PropertyManager({
             <Button
               size="sm"
               variant="outline"
-              onClick={handleAddProperty}
+              onClick={() => {
+                if (selectedProperty) {
+                  onAddProperty(selectedProperty);
+                  setSelectedProperty("");
+                }
+              }}
               disabled={!selectedProperty}
             >
               <Plus className="h-4 w-4" />

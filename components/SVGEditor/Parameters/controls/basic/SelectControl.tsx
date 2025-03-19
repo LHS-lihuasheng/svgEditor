@@ -1,4 +1,3 @@
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface SelectOption {
@@ -20,22 +19,17 @@ export function SelectControl({
     options
 }: SelectControlProps) {
     return (
-        <div className="space-y-2">
-            <Select
-                value={value || ''}
-                onValueChange={onChange}
-            >
-                <SelectTrigger id={`select-${label}`}>
-                    <SelectValue placeholder="选择选项" />
-                </SelectTrigger>
-                <SelectContent>
-                    {options.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-        </div>
+        <Select value={value || ''} onValueChange={onChange}>
+            <SelectTrigger id={`select-${label}`}>
+                <SelectValue placeholder="选择选项" />
+            </SelectTrigger>
+            <SelectContent>
+                {options.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
     );
 } 

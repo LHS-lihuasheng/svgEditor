@@ -9,18 +9,6 @@ import { generateComponentId } from '@/utils/component';
 import type { BaseComponent, ComponentType, DragItem } from '@/types/core';
 import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
 
-/**
- * 组件在树中的位置信息
- */
-interface ComponentLocation {
-    component: BaseComponent | null;
-    parentArray: BaseComponent[];
-    index: number;
-}
-
-/**
- * 编辑器上下文类型
- */
 type EditorContextType = {
     // 状态
     components: BaseComponent[];
@@ -34,8 +22,7 @@ type EditorContextType = {
 
     // 基础操作
     updateComponents: (updater: (draft: BaseComponent[]) => void) => void;
-    findComponentById: (components: BaseComponent[], id: string) => [BaseComponent | null, BaseComponent[] | null];
-    generateUniqueId: (type: ComponentType) => string;
+    findComponentById: (components: BaseComponent[], id: string) => [BaseComponent | null, BaseComponent[] | null, number];
 
     // 组件树操作
     addComponent: (type: ComponentType) => void;
@@ -66,42 +53,23 @@ function useEditorCore() {
     // ========== 基础工具函数 ==========
 
     /**
-     * 查找组件位置信息
+     * 查找组件及其父数组和索引
      */
-    const findComponentLocation = useCallback(
-        (
-            componentTree: BaseComponent[],
-            componentId: string,
-            parentArray: BaseComponent[] = componentTree
-        ): ComponentLocation => {
+    const findComponentById = useCallback(
+        (componentTree: BaseComponent[], componentId: string): [BaseComponent | null, BaseComponent[] | null, number] => {
             for (let i = 0; i < componentTree.length; i++) {
                 if (componentTree[i].id === componentId) {
-                    return { component: componentTree[i], parentArray, index: i };
+                    return [componentTree[i], componentTree, i];
                 }
 
                 if (componentTree[i].children?.length > 0) {
-                    const result = findComponentLocation(
-                        componentTree[i].children,
-                        componentId,
-                        componentTree[i].children
-                    );
-                    if (result.component) return result;
+                    const result = findComponentById(componentTree[i].children, componentId);
+                    if (result[0]) return result;
                 }
             }
-            return { component: null, parentArray, index: -1 };
+            return [null, null, -1];
         },
         []
-    );
-
-    /**
-     * 查找组件及其父数组
-     */
-    const findComponentById = useCallback(
-        (componentTree: BaseComponent[], id: string): [BaseComponent | null, BaseComponent[] | null] => {
-            const { component, parentArray } = findComponentLocation(componentTree, id);
-            return [component, component ? parentArray : null];
-        },
-        [findComponentLocation]
     );
 
     /**
@@ -183,71 +151,83 @@ function useEditorCore() {
     // ========== 组件操作 ==========
 
     /**
-     * 生成唯一ID
-     */
-    const generateUniqueId = useCallback((type: ComponentType) => {
-        return generateComponentId(type);
-    }, []);
-
-    /**
      * 添加组件
      */
     const addComponent = useCallback((type: ComponentType) => {
-        updateComponents(draft => {
-            draft.push(createComponent(type));
-        });
-    }, [updateComponents, createComponent]);
+        let newComponent: BaseComponent | null = null;
 
-    /**
-     * 更新组件
-     */
-    const updateComponent = useCallback((updated: BaseComponent) => {
         updateComponents(draft => {
-            const { component } = findComponentLocation(draft, updated.id);
+            newComponent = createComponent(type);
+
+            if (selectedComponent) {
+                const [target] = findComponentById(draft, selectedComponent.id);
+                if (target) {
+                    if (!target.children) {
+                        target.children = [];
+                    }
+                    target.children.push(newComponent);
+                    return;
+                }
+            }
+
+            draft.push(newComponent);
+        });
+    }, [updateComponents, createComponent, findComponentById, selectedComponent]);
+
+    // 内部辅助函数，不暴露给外部使用
+    const updateComponentField = useCallback((
+        componentId: string,
+        fieldUpdater: (component: BaseComponent) => void
+    ) => {
+        updateComponents(draft => {
+            const [component] = findComponentById(draft, componentId);
             if (component) {
-                Object.assign(component, updated);
+                fieldUpdater(component);
             }
         });
-    }, [updateComponents, findComponentLocation]);
+    }, [updateComponents, findComponentById]);
+
+    /**
+     * 更新整个组件
+     */
+    const updateComponent = useCallback((updated: BaseComponent) => {
+        updateComponentField(updated.id, (component) => {
+            Object.assign(component, updated);
+        });
+    }, [updateComponentField]);
+
+    /**
+     * 更新组件样式
+     */
+    const updateComponentStyle = useCallback((componentId: string, styleProp: string, value: any) => {
+        updateComponentField(componentId, (component) => {
+            component.style = {
+                ...(component.style || {}),
+                [styleProp]: value
+            };
+        });
+    }, [updateComponentField]);
+
+    /**
+     * 更新组件属性
+     */
+    const updateComponentAttribute = useCallback((componentId: string, attrKey: string, value: any) => {
+        updateComponentField(componentId, (component) => {
+            component.attributes = {
+                ...(component.attributes || {}),
+                [attrKey]: value
+            };
+        });
+    }, [updateComponentField]);
 
     /**
      * 删除组件
      */
     const deleteComponent = useCallback((id: string) => {
         updateComponents(draft => {
-            const { component, parentArray, index } = findComponentLocation(draft, id);
-            if (component && index !== -1) {
+            const [component, parentArray, index] = findComponentById(draft, id);
+            if (component && parentArray && index !== -1) {
                 parentArray.splice(index, 1);
-            }
-        });
-    }, [updateComponents, findComponentLocation]);
-
-    /**
-     * 更新组件样式
-     */
-    const updateComponentStyle = useCallback((componentId: string, styleProp: string, value: any) => {
-        updateComponents(draft => {
-            const [component] = findComponentById(draft, componentId);
-            if (component) {
-                component.style = {
-                    ...(component.style || {}),
-                    [styleProp]: value
-                };
-            }
-        });
-    }, [updateComponents, findComponentById]);
-
-    /**
-     * 更新组件属性
-     */
-    const updateComponentAttribute = useCallback((componentId: string, attrKey: string, value: any) => {
-        updateComponents(draft => {
-            const [component] = findComponentById(draft, componentId);
-            if (component) {
-                component.attributes = {
-                    ...(component.attributes || {}),
-                    [attrKey]: value
-                };
             }
         });
     }, [updateComponents, findComponentById]);
@@ -257,15 +237,13 @@ function useEditorCore() {
      */
     const duplicateComponent = useCallback((componentId: string) => {
         updateComponents(draft => {
-            const { component, parentArray, index } = findComponentLocation(draft, componentId);
-            if (!component || index === -1) return;
+            const [component, parentArray, index] = findComponentById(draft, componentId);
+            if (!component || !parentArray || index === -1) return;
 
-            // 创建深拷贝
             const clone = JSON.parse(JSON.stringify(component));
 
-            // 为克隆的组件及其所有子组件分配新ID
             const assignNewIds = (comp: BaseComponent): BaseComponent => {
-                const newId = generateUniqueId(comp.type as ComponentType);
+                const newId = generateComponentId(comp.type as ComponentType);
                 const newComp = { ...comp, id: newId };
 
                 if (newComp.children && newComp.children.length > 0) {
@@ -275,35 +253,29 @@ function useEditorCore() {
                 return newComp;
             };
 
-            // 插入复制的组件
             parentArray.splice(index + 1, 0, assignNewIds(clone));
         });
-    }, [updateComponents, findComponentLocation, generateUniqueId]);
+    }, [updateComponents, findComponentById]);
 
     /**
      * 处理组件拖放
      */
     const handleDrop = useCallback((draggedItem: DragItem, targetId: string | null) => {
-        if (!draggedItem.type) return;
-        if (!draggedItem.isToolItem && draggedItem.id === targetId) return; // 拖回原位
-
         updateComponents(draft => {
             if (draggedItem.isToolItem) {
-                // 从工具箱拖动新组件
                 const newComponent = createComponent(draggedItem.type);
 
                 if (!targetId) {
-                    draft.push(newComponent); // 添加到根级
-                    return;
-                }
-
-                const { component: target, parentArray, index } = findComponentLocation(draft, targetId);
-                if (!target) {
                     draft.push(newComponent);
                     return;
                 }
 
-                // 根据放置位置添加组件
+                const [target, parentArray, index] = findComponentById(draft, targetId);
+                if (!target || !parentArray) {
+                    draft.push(newComponent);
+                    return;
+                }
+
                 const position = draggedItem.dropPosition || 'after';
                 if (position === 'nested') {
                     if (!target.children) target.children = [];
@@ -314,11 +286,8 @@ function useEditorCore() {
                     parentArray.splice(index + 1, 0, newComponent);
                 }
             } else {
-                // 移动现有组件
-                const { component: source, parentArray: sourceParent, index: sourceIndex } =
-                    findComponentLocation(draft, draggedItem.id);
-
-                if (!source) return;
+                const [source, sourceParent, sourceIndex] = findComponentById(draft, draggedItem.id);
+                if (!source || !sourceParent || sourceIndex === -1) return;
 
                 // 避免拖到自身的子组件中
                 if (targetId) {
@@ -332,20 +301,16 @@ function useEditorCore() {
                     if (isDescendant(source, targetId)) return;
                 }
 
-                // 创建组件副本并从原位置移除
                 const componentToMove = JSON.parse(JSON.stringify(source));
                 sourceParent.splice(sourceIndex, 1);
 
                 if (!targetId) {
-                    draft.push(componentToMove); // 移动到根级
+                    draft.push(componentToMove);
                     return;
                 }
 
-                // 放置到目标位置
-                const { component: target, parentArray: targetParent, index: targetIndex } =
-                    findComponentLocation(draft, targetId);
-
-                if (!target) {
+                const [target, targetParent, targetIndex] = findComponentById(draft, targetId);
+                if (!target || !targetParent) {
                     draft.push(componentToMove);
                     return;
                 }
@@ -361,7 +326,7 @@ function useEditorCore() {
                 }
             }
         });
-    }, [updateComponents, createComponent, findComponentLocation]);
+    }, [updateComponents, createComponent, findComponentById]);
 
     /**
      * 编辑器区域拖放
@@ -374,7 +339,6 @@ function useEditorCore() {
             const editorElement = document.getElementById('editor-area');
             if (!editorElement) return;
 
-            // 获取拖放位置信息
             const editorRect = editorElement.getBoundingClientRect();
             const offset = monitor.getClientOffset();
             if (!offset) return;
@@ -382,7 +346,6 @@ function useEditorCore() {
             const x = offset.x - editorRect.left;
             const y = offset.y - editorRect.top;
 
-            // 确定目标组件
             const updatedItem = { ...item, x, y };
             const targetElement = document.elementFromPoint(offset.x, offset.y);
             const targetComponentId = targetElement?.closest('[data-component-id]')?.getAttribute('data-component-id') || null;
@@ -392,32 +355,25 @@ function useEditorCore() {
     }))[1];
 
     return {
-        // 状态
         components,
         selectedComponent,
 
-        // 选择操作
         selectComponent,
         clearSelection,
         selectNextComponent,
         selectPrevComponent,
 
-        // 基础操作
         updateComponents,
         findComponentById,
-        generateUniqueId,
 
-        // 组件树操作
         addComponent,
         updateComponent,
         deleteComponent,
 
-        // 组件属性操作
         updateComponentStyle,
         updateComponentAttribute,
         duplicateComponent,
 
-        // 拖放操作
         handleDrop,
         editorDrop,
     };

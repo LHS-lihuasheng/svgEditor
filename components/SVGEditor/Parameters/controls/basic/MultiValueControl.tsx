@@ -30,41 +30,29 @@ export function MultiValueControl({
     onChange,
     label,
     fields,
-    className,
+    className = "",
     layout = "grid",
     gridCols = 0, // 0表示自动
     groupLabel
 }: MultiValueControlProps) {
-    // 确保值有效
-    const safeValue = value ? { ...value } : {};
-
-    // 应用默认值 - 使用字段配置中的默认值而不是当前值
+    const safeValue = value || {};
     fields.forEach(field => {
-        // 如果当前值不存在或为空，优先使用字段配置中的默认值
-        if (safeValue[field.key] === undefined || safeValue[field.key] === null) {
+        if (safeValue[field.key] === undefined) {
             safeValue[field.key] = field.defaultValue;
         }
     });
 
-    // 处理字段变更
-    const handleFieldChange = (field: string, input: string) => {
-        const numericValue = input === '' ? 0 : Number(input);
-
-        const updatedValue = {
+    const handleChange = (field: string, input: string) => {
+        onChange({
             ...safeValue,
-            [field]: numericValue
-        };
-
-        onChange(updatedValue);
+            [field]: input === '' ? 0 : Number(input)
+        });
     };
 
-    // 确定网格列数
-    const columnsToUse = gridCols || (fields.length <= 2 ? fields.length : (fields.length <= 4 ? 4 : fields.length));
-
-    // 基于布局选择合适的内容渲染
-    const renderContent = () => {
+    const columnsToUse = gridCols || Math.min(4, Math.max(2, fields.length));
+    
+    const renderFields = () => {
         if (layout === "stack") {
-            // 垂直堆叠布局
             return (
                 <div className="space-y-2">
                     {fields.map((field) => (
@@ -74,8 +62,7 @@ export function MultiValueControl({
                                 <Input
                                     type="number"
                                     value={safeValue[field.key]?.toString() ?? ''}
-                                    onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                                    placeholder={field.label}
+                                    onChange={(e) => handleChange(field.key, e.target.value)}
                                     min={field.min}
                                     max={field.max}
                                     step={field.step}
@@ -86,17 +73,15 @@ export function MultiValueControl({
                 </div>
             );
         } else if (layout === "flex") {
-            // 弹性布局
             return (
                 <div className="flex flex-wrap gap-2">
                     {fields.map((field) => (
-                        <div key={field.key} className={field.width ? field.width : "w-24"}>
+                        <div key={field.key} className={field.width || "w-24"}>
                             <Label className="text-xs">{field.label}</Label>
                             <Input
                                 type="number"
                                 value={safeValue[field.key]?.toString() ?? ''}
-                                onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                                placeholder={field.label}
+                                onChange={(e) => handleChange(field.key, e.target.value)}
                                 min={field.min}
                                 max={field.max}
                                 step={field.step}
@@ -106,7 +91,6 @@ export function MultiValueControl({
                 </div>
             );
         } else {
-            // 默认网格布局
             return (
                 <div className={`grid grid-cols-${columnsToUse} gap-2`}>
                     {fields.map((field) => (
@@ -115,8 +99,7 @@ export function MultiValueControl({
                             <Input
                                 type="number"
                                 value={safeValue[field.key]?.toString() ?? ''}
-                                onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                                placeholder={field.label}
+                                onChange={(e) => handleChange(field.key, e.target.value)}
                                 min={field.min}
                                 max={field.max}
                                 step={field.step}
@@ -129,7 +112,7 @@ export function MultiValueControl({
     };
 
     return (
-        <div className={`space-y-2 ${className || ''}`}>
+        <div className={`space-y-2 ${className}`}>
             {/* 主标签 */}
             {label && <Label>{label}</Label>}
 
@@ -137,7 +120,7 @@ export function MultiValueControl({
             {groupLabel && <div className="text-xs text-muted-foreground mb-1">{groupLabel}</div>}
 
             {/* 渲染内容 */}
-            {renderContent()}
+            {renderFields()}
         </div>
     );
 } 

@@ -33,34 +33,14 @@ export function SliderWithInput({
 
   // 当外部值变化时更新本地状态
   useEffect(() => {
-    if (value !== undefined) {
-      setLocalValue(value);
-    } else if (defaultValue !== undefined) {
-      setLocalValue(defaultValue);
-    }
-  }, [value, defaultValue]);
-
-  // 格式化值确保在范围内
-  const formatValue = (val: number): number => {
-    if (isNaN(val)) return defaultValue;
-    return Math.max(min, Math.min(max, val));
-  };
+    value !== undefined && setLocalValue(value);
+  }, [value]);
 
   // 处理滑块变化
-  const handleSliderChange = (newValue: number[]) => {
-    const formattedValue = formatValue(newValue[0]);
+  const handleChange = (val: number) => {
+    const formattedValue = Math.max(min, Math.min(max, val));
     setLocalValue(formattedValue);
     onChange(formattedValue);
-  };
-
-  // 处理输入框变化
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const numValue = parseFloat(e.target.value);
-    if (!isNaN(numValue)) {
-      const formattedValue = formatValue(numValue);
-      setLocalValue(formattedValue);
-      onChange(formattedValue);
-    }
   };
 
   return (
@@ -73,21 +53,21 @@ export function SliderWithInput({
             min={min}
             max={max}
             step={step}
-            onValueChange={handleSliderChange}
+            onValueChange={values => handleChange(values[0])}
           />
         </div>
         <div className={inputWidth}>
-          <div className="relative">
-            <Input
-              id={`slider-input-${label || 'value'}`}
-              type="number"
-              min={min}
-              max={max}
-              step={step}
-              value={localValue}
-              onChange={handleInputChange}
-            />
-          </div>
+          <Input
+            type="number"
+            min={min}
+            max={max}
+            step={step}
+            value={localValue}
+            onChange={e => {
+              const val = parseFloat(e.target.value);
+              !isNaN(val) && handleChange(val);
+            }}
+          />
         </div>
       </div>
     </div>

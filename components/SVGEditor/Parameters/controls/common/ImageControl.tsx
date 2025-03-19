@@ -22,27 +22,21 @@ export function ImageControl({
     const extractPath = (cssUrl: string): string => {
         if (!cssUrl) return '';
 
-        // 单引号格式
-        const singleQuoteMatch = cssUrl.match(/url\('([^']+)'\)/);
-        if (singleQuoteMatch) return singleQuoteMatch[1];
+        const patterns = [
+            /url\('([^']+)'\)/,  // 单引号
+            /url\("([^"]+)"\)/,  // 双引号
+            /url\(([^'"]+)\)/    // 无引号
+        ];
 
-        // 双引号格式
-        const doubleQuoteMatch = cssUrl.match(/url\("([^"]+)"\)/);
-        if (doubleQuoteMatch) return doubleQuoteMatch[1];
-
-        // 无引号格式
-        const noQuoteMatch = cssUrl.match(/url\(([^'"]+)\)/);
-        if (noQuoteMatch) return noQuoteMatch[1];
+        for (const pattern of patterns) {
+            const match = cssUrl.match(pattern);
+            if (match) return match[1];
+        }
 
         return cssUrl;
     };
 
-    // 输入框变化处理
-    const handleInputChange = (e) => {
-        onChange(e.target.value); // 直接存储路径，不添加url()格式
-    };
-
-    // 选择图片按钮处理
+    // 处理图片选择
     const handleSelectImage = () => {
         const selectedImage = shiftFirstSelectedImage();
         if (selectedImage) {
@@ -60,26 +54,17 @@ export function ImageControl({
         }
 
         const imageAsset = findImageByPath?.(path);
-        if (imageAsset) {
-            setPreviewUrl(imageAsset.url);
-        } else if (path) {
-            setPreviewUrl(path);
-        } else {
-            setPreviewUrl('');
-        }
+        setPreviewUrl(imageAsset?.url || path);
     }, [value, findImageByPath]);
 
     return (
         <div className="space-y-2">
             <div className="flex gap-2">
-                <div className="flex-1">
-                    <Input
-                        id={`image-${label}`}
-                        value={extractPath(value)}
-                        onChange={handleInputChange}
-                        placeholder="输入图片URL"
-                    />
-                </div>
+                <Input
+                    value={extractPath(value)}
+                    onChange={e => onChange(e.target.value)}
+                    placeholder="输入图片URL"
+                />
                 <Button
                     variant="outline"
                     size="icon"
