@@ -12,13 +12,14 @@ interface EditorContentProps {
 }
 
 export function EditorContent({ dropRef }: EditorContentProps) {
-    const { components } = useEditor();
+    const { components, clearSelection } = useEditor();
 
     return (
         <div
             ref={dropRef}
             id="editor-area"
             className="flex-1 p-6 relative overflow-auto"
+            onClick={clearSelection}
             style={{
                 height: 'calc(100vh - 64px)',
                 minHeight: '80vh'

@@ -3,7 +3,7 @@
  * 渲染单个组件和其子组件
  */
 import { useState, useCallback } from 'react';
-import { Trash, ImagePlus } from 'lucide-react';
+import { Trash, ImagePlus, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -30,7 +30,7 @@ export function ComponentTreeItem({
   index,
   parentId,
 }: ComponentTreeItemProps) {
-  const { updateComponent, selectedComponent, selectComponent, handleDrop, deleteComponent, clearSelection, selectPrevComponent } = useEditor();
+  const { updateComponent, selectedComponent, selectComponent, handleDrop, deleteComponent, clearSelection, selectPrevComponent, duplicateComponent } = useEditor();
   const { shiftFirstSelectedImage } = useAssets();
   const [isExpanded, setIsExpanded] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -153,7 +153,7 @@ export function ComponentTreeItem({
           )}
 
           {/* 只在 SVG 容器上显示添加图片按钮 */}
-          {component.type === 'svgPic' && (
+          {(component.type === 'svgPic' || component.type === 'svgSeamlessPic') && (
             <Button
               variant="ghost"
               size="sm"
@@ -166,6 +166,20 @@ export function ComponentTreeItem({
               <ImagePlus className="h-4 w-4 mr-1" />
             </Button>
           )}
+
+          {/* 复制按钮 */}
+          <button
+            className="p-1 hover:text-blue-600 transition-colors duration-200"
+            onClick={(e) => {
+              e.stopPropagation();
+              duplicateComponent(component.id);
+            }}
+            title="复制组件"
+          >
+            <Copy
+              className="h-4 w-4"
+            />
+          </button>
 
           {/* 删除按钮 */}
           <button

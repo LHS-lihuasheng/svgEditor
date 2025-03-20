@@ -54,7 +54,6 @@ export function Parameters() {
                 <div className="border-t pt-4 mt-4">
                   <h4 className="font-medium text-sm mb-3">属性</h4>
                   <div className="space-y-4">
-                    {/* 使用通用组件编辑器处理所有组件类型 */}
                     <UniversalComponentEditor />
                   </div>
                 </div>

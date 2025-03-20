@@ -14,7 +14,6 @@ import { SliderWithInput } from './basic/SliderWithInput';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { PropertyControl, BaseComponent } from '@/types/core';
-import { findComponentById, updateComponent } from '@/contexts/EditorContext';
 
 interface DynamicPropertyControlProps {
   property: PropertyControl;
@@ -164,29 +163,3 @@ export function DynamicPropertyControl({
       </div>;
   }
 }
-
-const handleStyleChange = (value: any) => {
-  const [component] = findComponentById(components, componentId);
-  if (component) {
-    updateComponent({
-      ...component,
-      style: {
-        ...(component.style || {}),
-        [styleProp]: value
-      }
-    });
-  }
-};
-
-const handleAttributeChange = (value: any) => {
-  const [component] = findComponentById(components, componentId);
-  if (component) {
-    updateComponent({
-      ...component,
-      attributes: {
-        ...(component.attributes || {}),
-        [attrKey]: value
-      }
-    });
-  }
-}; 

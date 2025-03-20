@@ -1,7 +1,6 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import type { BaseComponent, ComponentType } from "@/types/core"
 import { usePanel } from "@/contexts/PanelContext"
 import { NavBar } from "./menuNav"
 import { MenuTab } from "./menuTab/menuTab"

@@ -1,13 +1,29 @@
-/**
- * @description 编辑器上下文
- * 整合了编辑器的状态管理和操作
- */
-import React, { createContext, useContext, useCallback, useState, useEffect } from 'react';
-import { useImmer } from 'use-immer';
+import React, { createContext, useContext, useCallback, useMemo } from 'react';
+import { useImmerReducer } from 'use-immer';
 import { useDrop } from 'react-dnd';
 import { generateComponentId } from '@/utils/component';
 import type { BaseComponent, ComponentType, DragItem } from '@/types/core';
 import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
+
+// 定义状态类型
+interface EditorState {
+    components: BaseComponent[];
+    selectedComponentId: string | null;
+}
+
+// 定义 Action 类型
+type EditorAction =
+    | { type: 'SELECT_COMPONENT'; payload: { id: string } }
+    | { type: 'RESET_COMPONENTS' }
+    | { type: 'CLEAR_SELECTION' }
+    | { type: 'SELECT_ADJACENT_COMPONENT'; payload: { direction: 'next' | 'prev' } }
+    | { type: 'ADD_COMPONENT'; payload: { componentType: ComponentType } }
+    | { type: 'UPDATE_COMPONENT'; payload: { component: BaseComponent } }
+    | { type: 'DELETE_COMPONENT'; payload: { id: string } }
+    | { type: 'UPDATE_COMPONENT_STYLE'; payload: { id: string; property: string; value: any } }
+    | { type: 'UPDATE_COMPONENT_ATTRIBUTE'; payload: { id: string; property: string; value: any } }
+    | { type: 'DUPLICATE_COMPONENT'; payload: { id: string } }
+    | { type: 'HANDLE_DROP'; payload: { item: DragItem; targetId: string | null } };
 
 type EditorContextType = {
     // 状态
@@ -21,14 +37,13 @@ type EditorContextType = {
     selectPrevComponent: () => void;
 
     // 基础操作
-    updateComponents: (updater: (draft: BaseComponent[]) => void) => void;
     findComponentById: (components: BaseComponent[], id: string) => [BaseComponent | null, BaseComponent[] | null, number];
 
     // 组件树操作
     addComponent: (type: ComponentType) => void;
     updateComponent: (updated: BaseComponent) => void;
     deleteComponent: (id: string) => void;
-
+    resetComponents: () => void;
     // 组件属性操作
     updateComponentStyle: (componentId: string, styleProp: string, value: any) => void;
     updateComponentAttribute: (componentId: string, attrKey: string, value: any) => void;
@@ -39,43 +54,30 @@ type EditorContextType = {
     editorDrop: any;
 }
 
-// 创建上下文
 const EditorContext = createContext<EditorContextType | null>(null);
 
 /**
- * 编辑器核心钩子
+ * reducer 函数处理状态更新
  */
-function useEditorCore() {
-    // 核心状态
-    const [components, updateComponents] = useImmer<BaseComponent[]>([]);
-    const [selectedComponent, setSelectedComponent] = useState<BaseComponent | null>(null);
-
-    // ========== 基础工具函数 ==========
-
-    /**
-     * 查找组件及其父数组和索引
-     */
-    const findComponentById = useCallback(
-        (componentTree: BaseComponent[], componentId: string): [BaseComponent | null, BaseComponent[] | null, number] => {
-            for (let i = 0; i < componentTree.length; i++) {
-                if (componentTree[i].id === componentId) {
-                    return [componentTree[i], componentTree, i];
-                }
-
-                if (componentTree[i].children?.length > 0) {
-                    const result = findComponentById(componentTree[i].children, componentId);
-                    if (result[0]) return result;
-                }
+function editorReducer(draft: EditorState, action: EditorAction) {
+    const findComponentById = (
+        componentTree: BaseComponent[],
+        componentId: string
+    ): [BaseComponent | null, BaseComponent[] | null, number] => {
+        for (let i = 0; i < componentTree.length; i++) {
+            if (componentTree[i].id === componentId) {
+                return [componentTree[i], componentTree, i];
             }
-            return [null, null, -1];
-        },
-        []
-    );
 
-    /**
-     * 展平组件树
-     */
-    const flattenComponentTree = useCallback((tree: BaseComponent[]): BaseComponent[] => {
+            if (componentTree[i].children?.length > 0) {
+                const result = findComponentById(componentTree[i].children, componentId);
+                if (result[0]) return result;
+            }
+        }
+        return [null, null, -1];
+    };
+
+    const flattenComponentTree = (tree: BaseComponent[]): BaseComponent[] => {
         if (!Array.isArray(tree)) return [];
 
         return tree.reduce<BaseComponent[]>((acc, comp) => {
@@ -85,12 +87,9 @@ function useEditorCore() {
             }
             return acc;
         }, []);
-    }, []);
+    };
 
-    /**
-     * 创建新组件
-     */
-    const createComponent = useCallback((type: ComponentType): BaseComponent => {
+    const createComponent = (type: ComponentType): BaseComponent => {
         const template = COMPONENT_TEMPLATES[type as keyof typeof COMPONENT_TEMPLATES];
         return {
             id: generateComponentId(type),
@@ -98,185 +97,140 @@ function useEditorCore() {
             children: [],
             ...(template?.defaultProperties || {})
         } as BaseComponent;
-    }, []);
+    };
 
-    // ========== 选择操作 ==========
-
-    /**
-     * 选择组件
-     */
-    const selectComponent = useCallback((id: string) => {
-        const [component] = findComponentById(components, id);
-        if (component) setSelectedComponent(component);
-    }, [components, findComponentById]);
-
-    /**
-     * 清除选择
-     */
-    const clearSelection = useCallback(() => {
-        setSelectedComponent(null);
-    }, []);
-
-    /**
-     * 选择下一个/上一个组件
-     */
-    const selectAdjacentComponent = useCallback((direction: 'next' | 'prev') => {
-        if (!selectedComponent || !components.length) return;
-
-        const allComponents = flattenComponentTree(components);
-        const currentIndex = allComponents.findIndex(c => c.id === selectedComponent.id);
-
-        if (direction === 'next' && currentIndex !== -1 && currentIndex < allComponents.length - 1) {
-            setSelectedComponent(allComponents[currentIndex + 1]);
-        } else if (direction === 'prev' && currentIndex > 0) {
-            setSelectedComponent(allComponents[currentIndex - 1]);
+    switch (action.type) {
+        case 'SELECT_COMPONENT': {
+            draft.selectedComponentId = action.payload.id;
+            break;
         }
-    }, [components, selectedComponent, flattenComponentTree]);
 
-    const selectNextComponent = useCallback(() => selectAdjacentComponent('next'), [selectAdjacentComponent]);
-    const selectPrevComponent = useCallback(() => selectAdjacentComponent('prev'), [selectAdjacentComponent]);
+        case 'CLEAR_SELECTION': {
+            draft.selectedComponentId = null;
+            break;
+        }
 
-    // 当组件树更新时，更新选中组件
-    useEffect(() => {
-        if (selectedComponent) {
-            const [updated] = findComponentById(components, selectedComponent.id);
-            if (updated) {
-                setSelectedComponent(updated);
-            } else {
-                setSelectedComponent(null);
+        case 'RESET_COMPONENTS': {
+            draft.components.splice(0, draft.components.length);
+            draft.selectedComponentId = null;
+            break;
+        }
+
+        case 'SELECT_ADJACENT_COMPONENT': {
+            if (!draft.selectedComponentId) return;
+
+            const allComponents = flattenComponentTree(draft.components);
+            const currentIndex = allComponents.findIndex(c => c.id === draft.selectedComponentId);
+
+            if (action.payload.direction === 'next' && currentIndex !== -1 && currentIndex < allComponents.length - 1) {
+                draft.selectedComponentId = allComponents[currentIndex + 1].id;
+            } else if (action.payload.direction === 'prev' && currentIndex > 0) {
+                draft.selectedComponentId = allComponents[currentIndex - 1].id;
             }
+            break;
         }
-    }, [components, selectedComponent?.id, findComponentById]);
 
-    // ========== 组件操作 ==========
+        case 'ADD_COMPONENT': {
+            const newComponent = createComponent(action.payload.componentType);
 
-    /**
-     * 添加组件
-     */
-    const addComponent = useCallback((type: ComponentType) => {
-        let newComponent: BaseComponent | null = null;
-
-        updateComponents(draft => {
-            newComponent = createComponent(type);
-
-            if (selectedComponent) {
-                const [target] = findComponentById(draft, selectedComponent.id);
-                if (target) {
-                    if (!target.children) {
-                        target.children = [];
+            if (draft.selectedComponentId === null) {
+                draft.components.push(newComponent);
+                draft.selectedComponentId = newComponent.id;
+            } else {
+                const [selectedComponent] = findComponentById(draft.components, draft.selectedComponentId);
+                if (selectedComponent) {
+                    if (!selectedComponent.children) {
+                        selectedComponent.children = [];
                     }
-                    target.children.push(newComponent);
-                    return;
+                    selectedComponent.children.push(newComponent);
                 }
             }
 
-            draft.push(newComponent);
-        });
-    }, [updateComponents, createComponent, findComponentById, selectedComponent]);
+            break;
+        }
 
-    // 内部辅助函数，不暴露给外部使用
-    const updateComponentField = useCallback((
-        componentId: string,
-        fieldUpdater: (component: BaseComponent) => void
-    ) => {
-        updateComponents(draft => {
-            const [component] = findComponentById(draft, componentId);
-            if (component) {
-                fieldUpdater(component);
+        case 'UPDATE_COMPONENT': {
+            const [, , index] = findComponentById(draft.components, action.payload.component.id);
+            if (index !== -1) {
+                const [, parentArray] = findComponentById(draft.components, action.payload.component.id);
+                if (parentArray) {
+                    parentArray[index] = action.payload.component;
+                }
             }
-        });
-    }, [updateComponents, findComponentById]);
+            break;
+        }
 
-    /**
-     * 更新整个组件
-     */
-    const updateComponent = useCallback((updated: BaseComponent) => {
-        updateComponentField(updated.id, (component) => {
-            Object.assign(component, updated);
-        });
-    }, [updateComponentField]);
-
-    /**
-     * 更新组件样式
-     */
-    const updateComponentStyle = useCallback((componentId: string, styleProp: string, value: any) => {
-        updateComponentField(componentId, (component) => {
-            component.style = {
-                ...(component.style || {}),
-                [styleProp]: value
-            };
-        });
-    }, [updateComponentField]);
-
-    /**
-     * 更新组件属性
-     */
-    const updateComponentAttribute = useCallback((componentId: string, attrKey: string, value: any) => {
-        updateComponentField(componentId, (component) => {
-            component.attributes = {
-                ...(component.attributes || {}),
-                [attrKey]: value
-            };
-        });
-    }, [updateComponentField]);
-
-    /**
-     * 删除组件
-     */
-    const deleteComponent = useCallback((id: string) => {
-        updateComponents(draft => {
-            const [component, parentArray, index] = findComponentById(draft, id);
+        case 'DELETE_COMPONENT': {
+            const [component, parentArray, index] = findComponentById(draft.components, action.payload.id);
             if (component && parentArray && index !== -1) {
                 parentArray.splice(index, 1);
+                draft.selectedComponentId = null;
             }
-        });
-    }, [updateComponents, findComponentById]);
+            break;
+        }
 
-    /**
-     * 复制组件
-     */
-    const duplicateComponent = useCallback((componentId: string) => {
-        updateComponents(draft => {
-            const [component, parentArray, index] = findComponentById(draft, componentId);
-            if (!component || !parentArray || index === -1) return;
+        case 'UPDATE_COMPONENT_STYLE': {
+            const [component] = findComponentById(draft.components, action.payload.id);
+            if (component) {
+                if (!component.style) component.style = {};
+                component.style[action.payload.property] = action.payload.value;
+            }
+            break;
+        }
 
-            const clone = JSON.parse(JSON.stringify(component));
+        case 'UPDATE_COMPONENT_ATTRIBUTE': {
+            const [component] = findComponentById(draft.components, action.payload.id);
+            if (component) {
+                if (!component.attributes) component.attributes = {};
+                component.attributes[action.payload.property] = action.payload.value;
+            }
+            break;
+        }
 
-            const assignNewIds = (comp: BaseComponent): BaseComponent => {
-                const newId = generateComponentId(comp.type as ComponentType);
-                const newComp = { ...comp, id: newId };
+        case 'DUPLICATE_COMPONENT': {
+            const [component, parentArray, index] = findComponentById(draft.components, action.payload.id);
+            if (component && parentArray && index !== -1) {
+                const duplicate = JSON.parse(JSON.stringify(component));
+                duplicate.id = generateComponentId(duplicate.type);
 
-                if (newComp.children && newComp.children.length > 0) {
-                    newComp.children = newComp.children.map(assignNewIds);
+                const updateChildrenIds = (children: BaseComponent[]) => {
+                    if (!children) return;
+                    for (const child of children) {
+                        child.id = generateComponentId(child.type);
+                        if (child.children?.length) {
+                            updateChildrenIds(child.children);
+                        }
+                    }
+                };
+
+                if (duplicate.children?.length) {
+                    updateChildrenIds(duplicate.children);
                 }
 
-                return newComp;
-            };
+                parentArray.splice(index + 1, 0, duplicate);
+                draft.selectedComponentId = duplicate.id;
+            }
+            break;
+        }
 
-            parentArray.splice(index + 1, 0, assignNewIds(clone));
-        });
-    }, [updateComponents, findComponentById]);
+        case 'HANDLE_DROP': {
+            const { item, targetId } = action.payload;
 
-    /**
-     * 处理组件拖放
-     */
-    const handleDrop = useCallback((draggedItem: DragItem, targetId: string | null) => {
-        updateComponents(draft => {
-            if (draggedItem.isToolItem) {
-                const newComponent = createComponent(draggedItem.type);
+            if (item.isToolItem) {
+                const newComponent = createComponent(item.type);
 
                 if (!targetId) {
-                    draft.push(newComponent);
+                    draft.components.push(newComponent);
                     return;
                 }
 
-                const [target, parentArray, index] = findComponentById(draft, targetId);
+                const [target, parentArray, index] = findComponentById(draft.components, targetId);
                 if (!target || !parentArray) {
-                    draft.push(newComponent);
+                    draft.components.push(newComponent);
                     return;
                 }
 
-                const position = draggedItem.dropPosition || 'after';
+                const position = item.dropPosition || 'after';
                 if (position === 'nested') {
                     if (!target.children) target.children = [];
                     target.children.push(newComponent);
@@ -286,7 +240,7 @@ function useEditorCore() {
                     parentArray.splice(index + 1, 0, newComponent);
                 }
             } else {
-                const [source, sourceParent, sourceIndex] = findComponentById(draft, draggedItem.id);
+                const [source, sourceParent, sourceIndex] = findComponentById(draft.components, item.id);
                 if (!source || !sourceParent || sourceIndex === -1) return;
 
                 // 避免拖到自身的子组件中
@@ -305,17 +259,17 @@ function useEditorCore() {
                 sourceParent.splice(sourceIndex, 1);
 
                 if (!targetId) {
-                    draft.push(componentToMove);
+                    draft.components.push(componentToMove);
                     return;
                 }
 
-                const [target, targetParent, targetIndex] = findComponentById(draft, targetId);
+                const [target, targetParent, targetIndex] = findComponentById(draft.components, targetId);
                 if (!target || !targetParent) {
-                    draft.push(componentToMove);
+                    draft.components.push(componentToMove);
                     return;
                 }
 
-                const position = draggedItem.dropPosition || 'after';
+                const position = item.dropPosition || 'after';
                 if (position === 'nested') {
                     if (!target.children) target.children = [];
                     target.children.push(componentToMove);
@@ -325,8 +279,98 @@ function useEditorCore() {
                     targetParent.splice(targetIndex + 1, 0, componentToMove);
                 }
             }
+            break;
+        }
+    }
+}
+
+/**
+ * 编辑器上下文提供者
+ */
+export function EditorProvider({ children }: { children: React.ReactNode }) {
+    const initialState: EditorState = {
+        components: [],
+        selectedComponentId: null
+    };
+
+    const [state, dispatch] = useImmerReducer(editorReducer, initialState);
+
+    const findComponentById = useCallback(
+        (componentTree: BaseComponent[], componentId: string): [BaseComponent | null, BaseComponent[] | null, number] => {
+            for (let i = 0; i < componentTree.length; i++) {
+                if (componentTree[i].id === componentId) {
+                    return [componentTree[i], componentTree, i];
+                }
+
+                if (componentTree[i].children?.length > 0) {
+                    const result = findComponentById(componentTree[i].children, componentId);
+                    if (result[0]) return result;
+                }
+            }
+            return [null, null, -1];
+        },
+        []
+    );
+
+    const selectedComponent = useMemo(() => {
+        if (!state.selectedComponentId) return null;
+        const [component] = findComponentById(state.components, state.selectedComponentId);
+        return component;
+    }, [state.components, state.selectedComponentId]);
+
+    const selectComponent = useCallback((id: string) => {
+        dispatch({ type: 'SELECT_COMPONENT', payload: { id } });
+    }, [dispatch]);
+
+    const clearSelection = useCallback(() => {
+        dispatch({ type: 'CLEAR_SELECTION' });
+    }, [dispatch]);
+
+    const resetComponents = useCallback(() => {
+        dispatch({ type: 'RESET_COMPONENTS' });
+    }, [dispatch]);
+
+    const selectNextComponent = useCallback(() => {
+        dispatch({ type: 'SELECT_ADJACENT_COMPONENT', payload: { direction: 'next' } });
+    }, [dispatch]);
+
+    const selectPrevComponent = useCallback(() => {
+        dispatch({ type: 'SELECT_ADJACENT_COMPONENT', payload: { direction: 'prev' } });
+    }, [dispatch]);
+
+    const addComponent = useCallback((type: ComponentType) => {
+        dispatch({ type: 'ADD_COMPONENT', payload: { componentType: type } });
+    }, [dispatch]);
+
+    const updateComponent = useCallback((updated: BaseComponent) => {
+        dispatch({ type: 'UPDATE_COMPONENT', payload: { component: updated } });
+    }, [dispatch]);
+
+    const deleteComponent = useCallback((id: string) => {
+        dispatch({ type: 'DELETE_COMPONENT', payload: { id } });
+    }, [dispatch]);
+
+    const updateComponentStyle = useCallback((componentId: string, styleProp: string, value: any) => {
+        dispatch({
+            type: 'UPDATE_COMPONENT_STYLE',
+            payload: { id: componentId, property: styleProp, value }
         });
-    }, [updateComponents, createComponent, findComponentById]);
+    }, [dispatch]);
+
+    const updateComponentAttribute = useCallback((componentId: string, attrKey: string, value: any) => {
+        dispatch({
+            type: 'UPDATE_COMPONENT_ATTRIBUTE',
+            payload: { id: componentId, property: attrKey, value }
+        });
+    }, [dispatch]);
+
+    const duplicateComponent = useCallback((componentId: string) => {
+        dispatch({ type: 'DUPLICATE_COMPONENT', payload: { id: componentId } });
+    }, [dispatch]);
+
+    const handleDrop = useCallback((item: DragItem, targetId: string | null) => {
+        dispatch({ type: 'HANDLE_DROP', payload: { item, targetId } });
+    }, [dispatch]);
 
     /**
      * 编辑器区域拖放
@@ -354,8 +398,8 @@ function useEditorCore() {
         }
     }))[1];
 
-    return {
-        components,
+    const contextValue: EditorContextType = {
+        components: state.components,
         selectedComponent,
 
         selectComponent,
@@ -363,12 +407,12 @@ function useEditorCore() {
         selectNextComponent,
         selectPrevComponent,
 
-        updateComponents,
         findComponentById,
 
         addComponent,
         updateComponent,
         deleteComponent,
+        resetComponents,
 
         updateComponentStyle,
         updateComponentAttribute,
@@ -377,16 +421,9 @@ function useEditorCore() {
         handleDrop,
         editorDrop,
     };
-}
-
-/**
- * 编辑器上下文提供者
- */
-export function EditorProvider({ children }: { children: React.ReactNode }) {
-    const editorFeatures = useEditorCore();
 
     return (
-        <EditorContext.Provider value={editorFeatures}>
+        <EditorContext.Provider value={contextValue}>
             {children}
         </EditorContext.Provider>
     );

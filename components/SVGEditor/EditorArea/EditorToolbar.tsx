@@ -10,16 +10,14 @@ import { useEditor } from '@/contexts/EditorContext';
 
 export function EditorToolbar() {
     const { setShowCodePreview } = usePanel();
-    const { updateComponents } = useEditor();
+    const { resetComponents } = useEditor();
     return (
         <div className="h-12 bg-white shadow-sm border-b px-4 flex items-center justify-between">
             <div className="flex items-center space-x-2">
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => updateComponents(draft => {
-                        draft.splice(0, draft.length);
-                    })}
+                    onClick={() => resetComponents()}
                 >
                     <LucideRefreshCw className="h-4 w-4 mr-2" />
                     重置
