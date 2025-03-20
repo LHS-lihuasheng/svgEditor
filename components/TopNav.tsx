@@ -13,10 +13,6 @@ const routes = [
     label: "Drafts",
     href: "/drafts",
   },
-  {
-    label: "News",
-    href: "/news",
-  }
 ]
 
 export default function TopNav() {
