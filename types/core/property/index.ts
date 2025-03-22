@@ -9,9 +9,9 @@ import { ANIMATE_PROPERTY } from './animateProperty';
 import { ANIMATE_TRANSFORM_PROPERTY } from './animateTransformProperty';
 import { FOREIGN_OBJECT_PROPERTY } from './foreignObjectProperty';
 import { SET_PROPERTY } from './setProperty';
-
+import { TemplateType } from '@/types/core';
 // 组件类型到属性库的映射
-export const COMPONENT_TYPE_TO_PROPERTY: Record<string, Record<string, PropertyControl>> = {
+export const COMPONENT_TYPE_TO_PROPERTY: Record<TemplateType, Record<string, PropertyControl>> = {
     'svgPic': SVG_PROPERTY,
     'svgSeamlessPic': SVG_PROPERTY,
     'rect': RECT_PROPERTY,

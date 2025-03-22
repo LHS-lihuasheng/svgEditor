@@ -2,7 +2,7 @@
  * @description 组件树项
  * 渲染单个组件和其子组件
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Trash, ImagePlus, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,6 +33,7 @@ export function ComponentTreeItem({
   const { updateComponent, selectedComponent, selectComponent, handleDrop, deleteComponent, clearSelection, selectPrevComponent, duplicateComponent } = useEditor();
   const { shiftFirstSelectedImage } = useAssets();
   const [isExpanded, setIsExpanded] = useState(true);
+  const [name, setName] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const isSelected = selectedComponent?.id === component.id;
@@ -47,6 +48,18 @@ export function ComponentTreeItem({
     onDrop: handleDrop,
     isDescendant: isDescendantOf
   });
+
+  // 添加背景图名称处理逻辑
+  useEffect(() => {
+    if (component.style?.backgroundImage) {
+      const bgImage = component.style.backgroundImage;
+      // 提取最后一个/后的所有内容，并移除单引号和右括号
+      const fileName = bgImage.split('/').pop()?.replace(/[')]/g, '') || '';
+      setName(fileName);
+    } else {
+      setName('');
+    }
+  }, [component.style?.backgroundImage]);
 
   /**
    * @description 处理向组件添加图片的功能
@@ -63,19 +76,17 @@ export function ComponentTreeItem({
 
     updatedComponent.style.backgroundImage = `url('${selectedImage.relativePath}')`;
 
-    // 填充viewBox
     updatedComponent.viewBox = {
       ...updatedComponent.viewBox,
       width: selectedImage.dimensions.width,
       height: selectedImage.dimensions.height
     };
 
+    setName(selectedImage.name);
+
     updateComponent(updatedComponent);
   }, [component, updateComponent, shiftFirstSelectedImage]);
 
-  /**
-   * @description 渲染子组件
-   */
   const renderChildren = () => {
     if (!component.children || component.children.length === 0) {
       return null;
@@ -136,11 +147,13 @@ export function ComponentTreeItem({
       >
         <span className="text-sm text-blue-600 mr-2">{index + 1}</span>
         <span className="mr-2">{template?.icon}</span>
-        <span className="font-medium">{template?.label}</span>
+        <span className="font-medium">
+          {template?.label}
+          {component.style?.backgroundImage && name && `-${name}`}
+        </span>
 
-        {/* 将所有操作按钮放在一个容器中，并应用ml-auto确保它们始终在右侧 */}
         <div className="ml-auto flex items-center">
-          {/* 扩展/收缩按钮 - 只在有子组件时显示 */}
+          {/* 扩展/收缩按钮 */}
           {(component.children && component.children.length > 0) && (
             <button
               className="p-1 hover:bg-gray-100 rounded"
@@ -152,7 +165,7 @@ export function ComponentTreeItem({
             </button>
           )}
 
-          {/* 只在 SVG 容器上显示添加图片按钮 */}
+          {/* 添加图片按钮 */}
           {(component.type === 'svgPic' || component.type === 'svgSeamlessPic') && (
             <Button
               variant="ghost"
@@ -223,6 +236,8 @@ export function ComponentTreeItem({
             <AlertDialogAction
               onClick={(e) => {
                 e.stopPropagation();
+                // 删除前清除背景图关联的名称
+                setName('');
                 deleteComponent(component.id);
                 setShowDeleteDialog(false);
               }}

@@ -1,10 +1,10 @@
 /**
  * @description Rect标签属性库
  */
-import { createPropertyControl } from './utils';
+import { createPropertyControl, PropertyControl } from './utils';
 
 // Rect标签属性库
-export const RECT_PROPERTY = {
+export const RECT_PROPERTY: Record<string, PropertyControl> = {
   // 位置和尺寸
   x: createPropertyControl('attributes.x', 'number', 'X Position', {
     isFixed: true,
@@ -44,14 +44,6 @@ export const RECT_PROPERTY = {
     min: 0,
     max: 1,
     step: 0.01
-  }),
-
-  rx: createPropertyControl('attributes.rx', 'number', 'Corner Radius X', {
-    defaultValue: 0
-  }),
-
-  ry: createPropertyControl('attributes.ry', 'number', 'Corner Radius Y', {
-    defaultValue: 0
   }),
 
   // 交互属性

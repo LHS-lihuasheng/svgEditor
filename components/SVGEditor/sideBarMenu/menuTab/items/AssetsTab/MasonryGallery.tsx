@@ -22,8 +22,7 @@ interface ImageItem extends FileEntry {
 }
 
 /**
- * 自然排序比较函数 - 按照人类直觉对数字进行排序
- * 如：1, 2, 3, 10, 11, 12 而不是 1, 10, 11, 12, 2, 3
+ * 自然排序比较函数
  */
 function naturalSortCompare(a: string, b: string): number {
   // 正则表达式提取字符串中的数字和非数字部分

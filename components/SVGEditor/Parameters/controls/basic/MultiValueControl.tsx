@@ -17,9 +17,8 @@ interface MultiValueControlProps {
     value: Record<string, number>;
     onChange: (value: Record<string, number>) => void;
     label?: string;
-    fields: ValueField[];
+    fields?: ValueField[];  // 修改为可选
     className?: string;
-    // 布局配置
     layout?: "grid" | "flex" | "stack";
     gridCols?: number; // 网格列数，为0时自动根据字段数量确定
     groupLabel?: string; // 值组标签（例如 "位置"）
@@ -29,13 +28,19 @@ export function MultiValueControl({
     value,
     onChange,
     label,
-    fields,
+    fields = [],  // 提供默认空数组
     className = "",
     layout = "grid",
     gridCols = 0, // 0表示自动
     groupLabel
 }: MultiValueControlProps) {
     const safeValue = value || {};
+
+    // 确保fields不为undefined
+    if (!fields || !Array.isArray(fields)) {
+        return <div className="text-red-500 text-sm">错误：未提供字段配置</div>
+    }
+
     fields.forEach(field => {
         if (safeValue[field.key] === undefined) {
             safeValue[field.key] = field.defaultValue;
@@ -50,7 +55,7 @@ export function MultiValueControl({
     };
 
     const columnsToUse = gridCols || Math.min(4, Math.max(2, fields.length));
-    
+
     const renderFields = () => {
         if (layout === "stack") {
             return (

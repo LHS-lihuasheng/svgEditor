@@ -34,9 +34,7 @@ export function useDragDrop({
     const hoverBoundingRect = ref.current.getBoundingClientRect();
     const clientOffset = monitor.getClientOffset()!;
 
-    // 计算鼠标指针与目标组件顶部的垂直距离
     const hoverClientY = clientOffset.y - hoverBoundingRect.top;
-    // 目标组件的高度
     const hoverHeight = hoverBoundingRect.bottom - hoverBoundingRect.top;
 
     if (hoverClientY < hoverHeight * 0.25) return 'before';
@@ -75,7 +73,6 @@ export function useDragDrop({
 
       const position = getDropPosition(monitor);
 
-      // 防止嵌套循环
       if (position === 'nested' && !item.isToolItem && isDescendant(component, item.id)) {
         item.dropPosition = 'after';
       } else {

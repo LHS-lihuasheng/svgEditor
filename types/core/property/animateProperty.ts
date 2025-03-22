@@ -64,6 +64,7 @@ export const ANIMATE_PROPERTY = {
 
   keyTimes: createPropertyControl('attributes.keyTimes', 'string', 'Key Times', {
     defaultValue: '0;1'
+    
   }),
 
   keySplines: createPropertyControl('attributes.keySplines', 'string', 'Key Splines', {

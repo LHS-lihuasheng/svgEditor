@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { LucideRefreshCw, LucideEye, Settings, LucideCode, LucideFileCode2 } from "lucide-react";
+import { LucideRefreshCw, LucideEye, LucideCode } from "lucide-react";
 import { usePanel } from '@/contexts/PanelContext';
 import { useEditor } from '@/contexts/EditorContext';
 

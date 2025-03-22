@@ -4,7 +4,14 @@
  */
 
 export * from './component';
-export * from './template';
 export * from './drag';
 export * from './property/index';
 export * from './component';
+
+export type {
+    PropertyControlType
+} from './property/types';
+
+export type {
+    PropertyControl
+} from './property/utils';

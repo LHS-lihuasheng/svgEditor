@@ -1,108 +1,124 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from 'react';
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { InfoIcon } from "lucide-react";
 
 interface RepeatCountControlProps {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
+  value: string | number;
+  onChange: (value: string | number) => void;
+  label?: string;
+  description?: string;
+  showLabel?: boolean;
+  [key: string]: any;
 }
 
-export function RepeatCountControl({ label, value, onChange }: RepeatCountControlProps) {
-  const [mode, setMode] = useState<"count" | "indefinite">("count");
-  const [countValue, setCountValue] = useState<number>(1);
+export function RepeatCountControl({
+  value = 1,
+  onChange,
+  label = "重复次数",
+  description = "设置动画重复播放的次数，或选择无限循环",
+  showLabel = true,
+  ...rest
+}: RepeatCountControlProps) {
+  // 是否是无限循环
+  const [isInfinite, setIsInfinite] = useState(value === "indefinite");
+  // 数值
+  const [numValue, setNumValue] = useState<string>(
+    isInfinite ? "1" : String(value)
+  );
 
-  // 初始化
+  // 处理外部值变化
   useEffect(() => {
     if (value === "indefinite") {
-      setMode("indefinite");
+      setIsInfinite(true);
     } else {
-      setMode("count");
-      const num = parseFloat(value);
-      setCountValue(isNaN(num) ? 1 : num);
+      setIsInfinite(false);
+      setNumValue(String(value));
     }
   }, [value]);
 
-  // 更新值
-  const updateValue = useCallback((newValue: string) => {
-    if (newValue !== value) {
-      onChange(newValue);
-    }
-  }, [onChange, value]);
-
-  // 模式变更
-  const handleModeChange = (newMode: string) => {
-    if (newMode === "indefinite") {
-      setMode("indefinite");
-      updateValue("indefinite");
+  // 处理无限开关变化
+  const handleInfiniteChange = (checked: boolean) => {
+    setIsInfinite(checked);
+    if (checked) {
+      onChange("indefinite");
     } else {
-      setMode("count");
-      updateValue(countValue.toString());
+      const num = parseFloat(numValue);
+      onChange(isNaN(num) ? 1 : Math.max(1, num));
+    }
+  };
+
+  // 处理数值变化
+  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setNumValue(newValue);
+
+    if (!isInfinite) {
+      const num = parseFloat(newValue);
+      if (!isNaN(num) && num > 0) {
+        onChange(num);
+      }
+    }
+  };
+
+  // 确保值有效
+  const handleBlur = () => {
+    if (!isInfinite) {
+      const num = parseFloat(numValue);
+      if (isNaN(num) || num < 1) {
+        setNumValue("1");
+        onChange(1);
+      }
     }
   };
 
   return (
-    <Tabs value={mode} onValueChange={handleModeChange} className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="count">指定次数</TabsTrigger>
-        <TabsTrigger value="indefinite">无限循环</TabsTrigger>
-      </TabsList>
+    <div className="space-y-2 w-full">
+      {showLabel && label && (
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">{label}</Label>
 
-      <TabsContent value="count" className="space-y-4 mt-2 min-h-[120px]">
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Input
-              type="text"
-              value={countValue.toString()}
-              onChange={e => {
-                const val = e.target.value;
-                if (/^[0-9]*\.?[0-9]*$/.test(val)) {
-                  const num = parseFloat(val || "1");
-                  if (num > 0) {
-                    setCountValue(num);
-                    updateValue(val || "1");
-                  }
-                }
-              }}
-              className="w-20 h-10"
-            />
-            <span className="text-sm">次</span>
-          </div>
-
-          <div className="px-1">
-            <Slider
-              value={[countValue > 10 ? 10 : countValue]}
-              min={1}
-              max={10}
-              step={1}
-              onValueChange={val => {
-                setCountValue(val[0]);
-                updateValue(val[0].toString());
-              }}
-            />
-            <div className="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>1</span>
-              <span>5</span>
-              <span>10</span>
-            </div>
-          </div>
-
-          <div className="text-xs text-muted-foreground">
-            <p>支持小数，如 1.5 表示播放 1.5 次</p>
-            <p>必须大于 0</p>
-          </div>
+          {description && (
+            <TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-72">
+                  <p>{description}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
-      </TabsContent>
+      )}
 
-      <TabsContent value="indefinite" className="mt-2 min-h-[120px]">
-        <div className="p-4 border rounded-md bg-muted/20">
-          <p className="text-sm">动画将无限循环播放</p>
-          <p className="text-xs text-muted-foreground mt-2">注意：无限循环可能会影响性能</p>
+      <div className="flex items-center justify-between space-x-2">
+        <div className="flex-1">
+          <Input
+            type="number"
+            min="1"
+            step="1"
+            value={numValue}
+            onChange={handleValueChange}
+            onBlur={handleBlur}
+            disabled={isInfinite}
+            {...rest}
+          />
         </div>
-      </TabsContent>
-    </Tabs>
+        <div className="flex items-center space-x-2">
+          <Label htmlFor="infinite-mode" className="text-sm">无限循环</Label>
+          <Switch
+            id="infinite-mode"
+            checked={isInfinite}
+            onCheckedChange={handleInfiniteChange}
+          />
+        </div>
+      </div>
+    </div>
   );
 } 

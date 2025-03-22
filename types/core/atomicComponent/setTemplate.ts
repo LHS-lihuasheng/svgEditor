@@ -1,7 +1,7 @@
 /**
  * @description Set动画组件模板
  */
-import { BaseComponentTemplate } from '@/types/core/template';
+import { BaseComponentTemplate } from '@/types/core/component';
 import { SET_PROPERTY } from '@/types/core/property/setProperty';
 
 // 克隆并修改属性
@@ -20,7 +20,8 @@ export const SET_TEMPLATE: BaseComponentTemplate = {
       begin: 'click',
       dur: '1ms',
       fill: 'freeze'
-    }
+    },
+    animationMode: 'to'
   },
   propertyControls: [
     createProperty(SET_PROPERTY.attributeName, { isFixed: true }),
@@ -28,6 +29,5 @@ export const SET_TEMPLATE: BaseComponentTemplate = {
     createProperty(SET_PROPERTY.begin, { isDefault: true }),
     createProperty(SET_PROPERTY.dur, { isDefault: true }),
     createProperty(SET_PROPERTY.fill, { isDefault: true })
-  ],
-  tags: ['SVG', 'Animation', 'Set']
+  ]
 }; 

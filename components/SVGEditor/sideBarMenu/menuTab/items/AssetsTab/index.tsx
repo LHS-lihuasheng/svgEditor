@@ -9,7 +9,7 @@ import { normalizeAssetPath } from '@/utils/pathUtils'
 import type { FileEntry } from "@/utils/file-utils"
 import { cn } from "@/lib/utils"
 import { useAssets } from "@/contexts/AssetContext"
-import { MasonryGallery } from "@/components/assets/MasonryGallery"
+import { MasonryGallery } from "@/components/SVGEditor/sideBarMenu/menuTab/items/AssetsTab/MasonryGallery"
 
 export function AssetsTab() {
   const {

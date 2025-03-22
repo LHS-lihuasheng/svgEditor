@@ -1,60 +1,120 @@
+"use client"
+
+import { useState, useEffect, useCallback } from 'react';
 import { Input } from "@/components/ui/input";
-import { useEffect, useState } from "react";
+import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { InfoIcon } from "lucide-react";
 
 interface NumberControlProps {
-    label: string;
-    value: number | string;
+    value: number;
     onChange: (value: number) => void;
+    label?: string;
     min?: number;
     max?: number;
     step?: number;
+    description?: string;
     placeholder?: string;
+    showLabel?: boolean;
+    [key: string]: any;
 }
 
 export function NumberControl({
-    label,
     value,
     onChange,
+    label,
     min,
     max,
     step = 1,
-    placeholder
+    description,
+    placeholder = "输入数值",
+    showLabel = true,
+    ...rest
 }: NumberControlProps) {
-    // 内部状态，用于控制输入值
-    const [inputValue, setInputValue] = useState<string | number>(value ?? '');
+    // 使用字符串状态避免小数问题
+    const [inputValue, setInputValue] = useState<string>(value?.toString() || '');
+    const [error, setError] = useState<string | null>(null);
 
-    // 当外部value变化时，更新内部状态
+    // 同步外部值更新
     useEffect(() => {
-        setInputValue(value ?? '');
+        if (value !== undefined && value !== null) {
+            const stringValue = value.toString();
+            if (stringValue !== inputValue) {
+                setInputValue(stringValue);
+            }
+        }
     }, [value]);
 
-    // 格式化显示值
-    const displayValue = inputValue === undefined || inputValue === '' ? '' :
-        typeof inputValue === 'string' && inputValue.trim() === '' ? '' :
-            typeof inputValue === 'string' ? inputValue : inputValue;
+    // 错误自动清除
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => setError(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
 
-    // 处理更新
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newValue = e.target.value;
-        setInputValue(newValue);
+    // 验证并提交数值
+    const validateAndSubmit = useCallback(() => {
+        try {
+            if (inputValue === '') {
+                onChange(0);
+                return;
+            }
 
-        // 转换为数字并通知父组件
-        const numericValue = newValue === '' ? undefined : parseFloat(newValue);
-        onChange(numericValue as number);
-    };
+            const numValue = parseFloat(inputValue);
+
+            if (isNaN(numValue)) {
+                throw new Error('请输入有效的数字');
+            }
+
+            if (min !== undefined && numValue < min) {
+                throw new Error(`最小值为 ${min}`);
+            }
+
+            if (max !== undefined && numValue > max) {
+                throw new Error(`最大值为 ${max}`);
+            }
+
+            onChange(numValue);
+        } catch (err) {
+            setError((err as Error).message);
+        }
+    }, [inputValue, min, max, onChange]);
 
     return (
         <div className="space-y-2">
+            {showLabel && label && (
+                <div className="flex items-center gap-2">
+                    <Label htmlFor={`number-${label}`}>{label}</Label>
+                    {description && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{description}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                </div>
+            )}
+
             <Input
-                id={`number-${label}`}
-                type="number"
-                min={min}
-                max={max}
-                step={step}
-                value={displayValue}
-                onChange={handleChange}
+                id={label ? `number-${label}` : undefined}
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onBlur={validateAndSubmit}
+                onKeyDown={(e) => e.key === 'Enter' && validateAndSubmit()}
                 placeholder={placeholder}
+                {...rest}
             />
+
+            {error && (
+                <div className="text-xs text-red-500 mt-1">{error}</div>
+            )}
         </div>
     );
 } 

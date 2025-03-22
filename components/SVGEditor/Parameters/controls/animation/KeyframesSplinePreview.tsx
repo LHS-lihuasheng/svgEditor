@@ -1,176 +1,74 @@
 "use client"
 
-import { useEffect, useRef, useMemo } from "react";
+import { useMemo } from "react";
 
 interface KeyframesSplinePreviewProps {
   x1: string;
   y1: string;
   x2: string;
   y2: string;
-  width?: number;
-  height?: number;
 }
 
 export function KeyframesSplinePreview({
-  x1, y1, x2, y2,
-  width = 100,
-  height = 60
+  x1, y1, x2, y2
 }: KeyframesSplinePreviewProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number | null>(null);
-
-  // 添加参数引用以跟踪当前渲染的参数
-  const paramsRef = useRef({ x1, y1, x2, y2 });
-
-  // 使用useMemo缓存解析后的参数
-  const splineParams = useMemo(() => ({
-    x1Value: parseFloat(x1) || 0,
-    y1Value: parseFloat(y1) || 0,
-    x2Value: parseFloat(x2) || 1,
-    y2Value: parseFloat(y2) || 1
-  }), [x1, y1, x2, y2]);
-
-  // 立即更新参数引用
-  useEffect(() => {
-    paramsRef.current = { x1, y1, x2, y2 };
+  // 解析为数字
+  const points = useMemo(() => {
+    return {
+      x1: parseFloat(x1) || 0,
+      y1: parseFloat(y1) || 0,
+      x2: parseFloat(x2) || 1,
+      y2: parseFloat(y2) || 1,
+    };
   }, [x1, y1, x2, y2]);
 
-  // 绘制函数 - 提取为单独函数便于复用
-  const drawSpline = (
-    ctx: CanvasRenderingContext2D,
-    params: { x1Value: number, y1Value: number, x2Value: number, y2Value: number }
-  ) => {
-    // 清除画布
-    ctx.clearRect(0, 0, width, height);
+  // 生成曲线路径
+  const curvePath = useMemo(() => {
+    const { x1, y1, x2, y2 } = points;
+    // 转换为SVG坐标系（y轴向下为正）
+    return `M 0,100 C ${x1 * 100},${(1 - y1) * 100} ${x2 * 100},${(1 - y2) * 100} 100,0`;
+  }, [points]);
 
-    // 绘制参考网格
-    ctx.strokeStyle = '#f0f0f0';
-    ctx.lineWidth = 0.5;
-
-    // 水平线
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(width, 0);
-    ctx.moveTo(0, height / 2);
-    ctx.lineTo(width, height / 2);
-    ctx.moveTo(0, height);
-    ctx.lineTo(width, height);
-    ctx.stroke();
-
-    // 垂直线
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, height);
-    ctx.moveTo(width / 2, 0);
-    ctx.lineTo(width / 2, height);
-    ctx.moveTo(width, 0);
-    ctx.lineTo(width, height);
-    ctx.stroke();
-
-    // 绘制贝塞尔曲线
-    ctx.strokeStyle = '#3b82f6';
-    ctx.lineWidth = 2;
-
-    ctx.beginPath();
-    ctx.moveTo(0, height);
-    ctx.bezierCurveTo(
-      params.x1Value * width, height - params.y1Value * height,
-      params.x2Value * width, height - params.y2Value * height,
-      width, 0
-    );
-    ctx.stroke();
-
-    // 绘制控制点
-    ctx.fillStyle = '#ef4444';
-
-    // 起点
-    ctx.beginPath();
-    ctx.arc(0, height, 3, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 终点
-    ctx.beginPath();
-    ctx.arc(width, 0, 3, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 控制点1
-    ctx.fillStyle = '#22c55e';
-    ctx.beginPath();
-    ctx.arc(params.x1Value * width, height - params.y1Value * height, 3, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 控制点2
-    ctx.beginPath();
-    ctx.arc(params.x2Value * width, height - params.y2Value * height, 3, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 控制线
-    ctx.strokeStyle = '#94a3b8';
-    ctx.lineWidth = 0.5;
-    ctx.setLineDash([2, 2]);
-
-    ctx.beginPath();
-    ctx.moveTo(0, height);
-    ctx.lineTo(params.x1Value * width, height - params.y1Value * height);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(width, 0);
-    ctx.lineTo(params.x2Value * width, height - params.y2Value * height);
-    ctx.stroke();
-
-    ctx.setLineDash([]);
-  };
-
-  // 更新canvas绘制
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // 清除任何现有的动画帧
-    if (animationFrameRef.current !== null) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-
-    // 立即绘制当前状态，不依赖动画帧，避免闪回
-    drawSpline(ctx, splineParams);
-
-    // 使用requestAnimationFrame作为备份确保绘制完成
-    const drawFrame = () => {
-      // 检查当前参数是否与最新请求的参数一致
-      const currentParams = paramsRef.current;
-      if (
-        currentParams.x1 === x1 &&
-        currentParams.y1 === y1 &&
-        currentParams.x2 === x2 &&
-        currentParams.y2 === y2
-      ) {
-        drawSpline(ctx, splineParams);
-      }
-      // 不再请求下一帧，避免无限循环
+  // 控制点连线
+  const controlLines = useMemo(() => {
+    const { x1, y1, x2, y2 } = points;
+    return {
+      line1: `M 0,100 L ${x1 * 100},${(1 - y1) * 100}`,
+      line2: `M 100,0 L ${x2 * 100},${(1 - y2) * 100}`
     };
-
-    // 存储动画帧ID以便清理
-    animationFrameRef.current = requestAnimationFrame(drawFrame);
-
-    return () => {
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-    };
-  }, [splineParams, width, height]);
+  }, [points]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={width}
-      height={height}
-      className="border border-slate-200 rounded"
-    />
+    <div className="w-full">
+      <svg className="w-full" viewBox="0 0 100 100" height="80">
+        {/* 背景网格 */}
+        <rect width="100" height="100" fill="#f9fafb" />
+        <path d="M 0 0 L 100 0" stroke="#e5e7eb" strokeWidth="0.5" />
+        <path d="M 0 50 L 100 50" stroke="#e5e7eb" strokeWidth="0.5" />
+        <path d="M 0 100 L 100 100" stroke="#e5e7eb" strokeWidth="0.5" />
+        <path d="M 0 0 L 0 100" stroke="#e5e7eb" strokeWidth="0.5" />
+        <path d="M 50 0 L 50 100" stroke="#e5e7eb" strokeWidth="0.5" />
+        <path d="M 100 0 L 100 100" stroke="#e5e7eb" strokeWidth="0.5" />
+
+        {/* 控制点连线 */}
+        <path d={controlLines.line1} stroke="#d1d5db" strokeWidth="0.5" strokeDasharray="2,2" />
+        <path d={controlLines.line2} stroke="#d1d5db" strokeWidth="0.5" strokeDasharray="2,2" />
+
+        {/* 贝塞尔曲线 */}
+        <path d={curvePath} stroke="#3b82f6" strokeWidth="2" fill="none" />
+
+        {/* 控制点 */}
+        <circle cx={points.x1 * 100} cy={(1 - points.y1) * 100} r="3" fill="#ef4444" />
+        <circle cx={points.x2 * 100} cy={(1 - points.y2) * 100} r="3" fill="#ef4444" />
+
+        {/* 起点和终点 */}
+        <circle cx="0" cy="100" r="3" fill="#10b981" />
+        <circle cx="100" cy="0" r="3" fill="#10b981" />
+      </svg>
+
+      <div className="text-xs text-center text-gray-500 mt-1">
+        贝塞尔曲线: {`cubic-bezier(${points.x1}, ${points.y1}, ${points.x2}, ${points.y2})`}
+      </div>
+    </div>
   );
 } 

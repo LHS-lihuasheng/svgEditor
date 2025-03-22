@@ -1,10 +1,10 @@
 /**
  * @description SVG标签属性库
  */
-import { createPropertyControl } from './utils';
+import { createPropertyControl, PropertyControl } from './utils';
 
 // SVG标签属性库
-export const SVG_PROPERTY = {
+export const SVG_PROPERTY: Record<string, PropertyControl> = {
     viewBox: createPropertyControl('attributes.viewBox', 'quadValue', 'ViewBox', {
         defaultValue: { x: 0, y: 0, width: 1080, height: 1920 },
         fieldConfig: [
@@ -12,7 +12,8 @@ export const SVG_PROPERTY = {
             { key: 'y', label: 'y', defaultValue: 0 },
             { key: 'width', label: '宽度', defaultValue: 1080 },
             { key: 'height', label: '高度', defaultValue: 1920 }
-        ]
+        ],
+        isFixed: true
     }),
 
     xmlns: createPropertyControl('attributes.xmlns', 'string', 'XML Namespace', {

@@ -1,7 +1,7 @@
 /**
  * @description AnimateTransform动画组件模板
  */
-import { BaseComponentTemplate } from '@/types/core/template';
+import { BaseComponentTemplate } from '@/types/core/component';
 import { ANIMATE_TRANSFORM_PROPERTY } from '@/types/core/property/animateTransformProperty';
 
 // 克隆并修改属性
@@ -30,7 +30,5 @@ export const ANIMATE_TRANSFORM_TEMPLATE: BaseComponentTemplate = {
   propertyControls: [
     createProperty(ANIMATE_TRANSFORM_PROPERTY.attributeName, { isFixed: true }),
     createProperty(ANIMATE_TRANSFORM_PROPERTY.type, { isFixed: true }),
-
-  ],
-  tags: ['SVG', 'Animation', 'Transform']
+  ]
 }; 

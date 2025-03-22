@@ -2,13 +2,14 @@
 
 import { Card } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { ComponentType } from '@/types/core'
+import type { TemplateType } from '@/types/core'
 import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent'
 import { Component, GripHorizontal } from "lucide-react"
 import { useDrag } from "react-dnd"
 import type { DragItem } from '@/types/core'
 import { cn } from "@/lib/utils"
 import { useEditor } from "@/contexts/EditorContext"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export function ComponentsTab() {
     return (
@@ -25,7 +26,7 @@ export function ComponentsTab() {
                         {Object.entries(COMPONENT_TEMPLATES).map(([type, template]) => (
                             <ComponentCard
                                 key={type}
-                                type={type as ComponentType}
+                                type={type as TemplateType}
                                 title={template.label}
                                 description={template.description || ''}
                                 icon={template.icon}
@@ -39,7 +40,7 @@ export function ComponentsTab() {
 }
 
 interface ComponentCardProps {
-    type: ComponentType
+    type: TemplateType
     title: string
     description: string
     icon: React.ReactNode | string
@@ -54,7 +55,7 @@ function ComponentCard({ type, title, description, icon }: ComponentCardProps) {
         item: {
             type: type,
             isToolItem: true,
-            id: `temp-${type}-${Date.now()}` // 添加临时ID
+            id: `temp-${type}-${Date.now()}`
         } as DragItem,
         collect: (monitor) => ({
             isDragging: !!monitor.isDragging(),
@@ -62,41 +63,44 @@ function ComponentCard({ type, title, description, icon }: ComponentCardProps) {
     }))
 
     return (
-        <Card
-            className={cn(
-                "overflow-hidden border border-gray-200 transition-all duration-200",
-                isDragging ? "opacity-50 scale-95 border-blue-300 shadow-md" : "hover:border-blue-200 hover:shadow-sm"
-            )}
-        >
-            <div
-                ref={drag as unknown as React.RefObject<HTMLDivElement>}
-                className="cursor-grab active:cursor-grabbing"
-                onClick={() => {
-                    console.log('点击了', type)
-                    addComponent(type)
-                }}
-            >
-                <div className="flex items-center p-3 group">
-                    {/* 组件图标 */}
-                    <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md bg-blue-50 text-blue-600 mr-3">
-                        {typeof icon === 'string' ?
-                            <span className="text-lg">{icon}</span> :
-                            <Component className="h-4 w-4" />
-                        }
-                    </div>
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Card
+                        className={cn(
+                            "overflow-hidden border border-gray-200 transition-all duration-200",
+                            isDragging ? "opacity-50 scale-95 border-blue-300 shadow-md" : "hover:border-blue-200 hover:shadow-sm"
+                        )}
+                    >
+                        <div
+                            ref={drag as unknown as React.RefObject<HTMLDivElement>}
+                            className="cursor-grab active:cursor-grabbing"
+                            onClick={() => addComponent(type)}
+                        >
+                            <div className="flex items-center p-3 group">
+                                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md bg-blue-50 text-blue-600 mr-3">
+                                    {typeof icon === 'string' ?
+                                        <span className="text-lg">{icon}</span> :
+                                        <Component className="h-4 w-4" />
+                                    }
+                                </div>
 
-                    {/* 标题和描述 */}
-                    <div className="flex-grow min-w-0">
-                        <h4 className="text-sm font-medium text-gray-900 truncate">{title}</h4>
+                                <div className="flex-grow min-w-0">
+                                    <h4 className="text-sm font-medium text-gray-900 truncate">{title}</h4>
+                                </div>
+
+                                {/* 拖拽提示器 */}
+                                <div className="flex-shrink-0 ml-2 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <GripHorizontal className="h-4 w-4" />
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                </TooltipTrigger>
+                <TooltipContent>
                         <p className="text-xs text-gray-500 truncate">{description}</p>
-                    </div>
-
-                    {/* 拖拽指示器 */}
-                    <div className="flex-shrink-0 ml-2 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <GripHorizontal className="h-4 w-4" />
-                    </div>
-                </div>
-            </div>
-        </Card>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     )
 } 

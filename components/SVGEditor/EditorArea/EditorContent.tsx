@@ -7,16 +7,12 @@ import { ComponentTree } from "../ComponentTree";
 import { EmptyEditorState } from "./EmptyEditorState";
 import { useEditor } from '@/contexts/EditorContext';
 
-interface EditorContentProps {
-    dropRef: React.RefObject<HTMLDivElement>;
-}
-
-export function EditorContent({ dropRef }: EditorContentProps) {
-    const { components, clearSelection } = useEditor();
+export function EditorContent() {
+    const { components, clearSelection, editorDrop } = useEditor();
 
     return (
         <div
-            ref={dropRef}
+            ref={editorDrop}
             id="editor-area"
             className="flex-1 p-6 relative overflow-auto"
             onClick={clearSelection}

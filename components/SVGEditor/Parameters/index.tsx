@@ -1,24 +1,17 @@
 "use client"
 
-import { useEffect } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { usePanel } from "@/contexts/PanelContext"
 import { useEditor } from '@/contexts/EditorContext'
-
-// 导入通用组件编辑器
-import { UniversalComponentEditor } from './editors/UniversalComponentEditor'
+import { ComponentEditor } from './editors/ComponentEditor'
+import { PropertyProvider } from "./providers/PropertyContext"
 
 export function Parameters() {
   const { isParametersPanelOpen, toggleParametersPanel } = usePanel();
   const { selectedComponent } = useEditor();
-
-  // 添加调试日志，观察组件变化
-  useEffect(() => {
-    console.log("Selected component updated:", selectedComponent);
-  }, [selectedComponent]);
 
   return (
     <div
@@ -38,26 +31,23 @@ export function Parameters() {
 
       {isParametersPanelOpen && (
         <div className="p-4 pt-12">
-          <h3 className="font-medium text-sm mb-2">参数设置</h3>
           <ScrollArea className="h-[calc(100vh-120px)] pr-3">
             {selectedComponent && (
-              <div className="space-y-4">
-                <div className="text-sm">
-                  <span className="font-medium">组件ID: </span>
-                  <span>{selectedComponent.id}</span>
-                </div>
-                <div className="text-sm">
-                  <span className="font-medium">组件类型: </span>
-                  <span>{selectedComponent.type}</span>
-                </div>
+              <PropertyProvider>
+                <div className="space-y-4">
+                  <div className="text-sm">
+                    <span className="font-medium">组件ID: </span>
+                    <span>{selectedComponent.id}</span>
+                  </div>
 
-                <div className="border-t pt-4 mt-4">
-                  <h4 className="font-medium text-sm mb-3">属性</h4>
-                  <div className="space-y-4">
-                    <UniversalComponentEditor />
+                  <div className="border-t pt-4 pb-8 px-1 mt-4">
+                    <h4 className="font-medium text-sm mb-3">属性</h4>
+                    <div className="space-y-4">
+                      <ComponentEditor />
+                    </div>
                   </div>
                 </div>
-              </div>
+              </PropertyProvider>
             )}
             {!selectedComponent && (
               <div className="text-sm text-gray-500">

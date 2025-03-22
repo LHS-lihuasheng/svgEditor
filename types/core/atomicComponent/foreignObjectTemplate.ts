@@ -2,7 +2,7 @@
  * @description ForeignObject组件模板
  * 用于在SVG中嵌入HTML或外部内容
  */
-import { BaseComponentTemplate } from '@/types/core/template';
+import { BaseComponentTemplate } from '@/types/core/component';
 import { FOREIGN_OBJECT_PROPERTY } from '@/types/core/property/index';
 
 // 克隆并修改属性
@@ -11,7 +11,7 @@ function createProperty(baseProperty: any, overrides: Partial<any> = {}) {
 }
 
 export const FOREIGN_OBJECT_TEMPLATE: BaseComponentTemplate = {
-  label: '外部对象',
+  label: 'ForeignObject',
   icon: '📝',
   description: '可嵌入HTML或外部内容的容器',
   defaultProperties: {
@@ -27,6 +27,5 @@ export const FOREIGN_OBJECT_TEMPLATE: BaseComponentTemplate = {
     createProperty(FOREIGN_OBJECT_PROPERTY.y, { isFixed: true }),
     createProperty(FOREIGN_OBJECT_PROPERTY.width, { isFixed: true }),
     createProperty(FOREIGN_OBJECT_PROPERTY.height, { isFixed: true }),
-  ],
-  tags: ['SVG', 'Container', 'HTML', 'ForeignObject']
+  ]
 }; 

@@ -4,11 +4,8 @@ import { cn } from "@/lib/utils"
 import { EditorToolbar } from "./EditorToolbar"
 import { EditorContent } from "./EditorContent"
   
-interface EditorAreaProps {
-  dropRef: React.RefObject<HTMLDivElement>
-}
 
-export function EditorArea({ dropRef}: EditorAreaProps) {
+export function EditorArea() {
   return (
     <div className={cn(
       "flex-1 transition-all duration-300 ml-96 mr-96",
@@ -20,7 +17,6 @@ export function EditorArea({ dropRef}: EditorAreaProps) {
 
           {/* 编辑区域 */}
           <EditorContent
-            dropRef={dropRef}
           />
         </div>
       </div>

@@ -1,7 +1,7 @@
 /**
  * @description 矩形组件模板
  */
-import { BaseComponentTemplate } from '@/types/core/template';
+import { BaseComponentTemplate } from '@/types/core/component';
 import { RECT_PROPERTY } from '@/types/core/property/rectProperty';
 
 // 克隆并修改属性
@@ -34,5 +34,4 @@ export const RECT_TEMPLATE: BaseComponentTemplate = {
     createProperty(RECT_PROPERTY.height, { isFixed: true }),
     createProperty(RECT_PROPERTY.fill, { isDefault: true }),
   ],
-  tags: ['SVG', 'Shape', 'Rectangle']
 }; 

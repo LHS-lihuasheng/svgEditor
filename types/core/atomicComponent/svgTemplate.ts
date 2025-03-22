@@ -1,7 +1,7 @@
 /**
  * @description SVG图片组件模板
  */
-import { BaseComponentTemplate } from '@/types/core/template';
+import { BaseComponentTemplate } from '@/types/core/component';
 import { SVG_PROPERTY } from '@/types/core/property/svgProperty';
 
 // 克隆并修改属性
@@ -29,11 +29,9 @@ export const SVG_PIC_TEMPLATE: BaseComponentTemplate = {
     }
   },
   propertyControls: [
-    createProperty(SVG_PROPERTY.viewBox, { isFixed: true }),
     createProperty(SVG_PROPERTY.backgroundImage, { isDefault: true }),
     createProperty(SVG_PROPERTY.backgroundSize, { isDefault: true }),
   ],
-  tags: ['SVG', 'Container', 'Image']
 };
 
 // 无缝图片模板
@@ -50,12 +48,12 @@ export const SVG_SEAMLESS_PIC_TEMPLATE: BaseComponentTemplate = {
     }
   },
   propertyControls: [
-    ...SVG_PIC_TEMPLATE.propertyControls.filter(prop => prop.property !== 'style.backgroundRepeat'),
+    createProperty(SVG_PROPERTY.backgroundImage, { isDefault: true }),
+    createProperty(SVG_PROPERTY.backgroundSize, { isDefault: true }),
     createProperty(SVG_PROPERTY.backgroundRepeat, {
       isDefault: true,
       defaultValue: 'repeat'
     })
   ],
-  tags: ['SVG', 'Container', 'Image', 'Seamless', 'Pattern']
 };
 

@@ -1,7 +1,7 @@
 /**
  * @description 组合组件模板
  */
-import { BaseComponentTemplate } from '@/types/core/template';
+import { BaseComponentTemplate } from '@/types/core/component';
 import { GROUP_PROPERTY } from '@/types/core/property/groupProperty';
 
 // 克隆并修改属性
@@ -27,6 +27,5 @@ export const GROUP_TEMPLATE: BaseComponentTemplate = {
   propertyControls: [
     createProperty(GROUP_PROPERTY.transform, { isDefault: true }),
     createProperty(GROUP_PROPERTY.opacity, { isDefault: true }),
-  ],
-  tags: ['SVG', 'Container', 'Group']
+  ]
 }; 

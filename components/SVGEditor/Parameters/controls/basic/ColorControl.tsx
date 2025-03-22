@@ -28,7 +28,7 @@ export function ColorControl({
     presetColors = DEFAULT_COLORS
 }: ColorControlProps) {
     const [color, setColor] = useState(value);
-    
+
     useEffect(() => {
         setColor(value || "");
     }, [value]);
@@ -43,7 +43,7 @@ export function ColorControl({
                     <Button
                         variant="outline"
                         className={cn("w-10 h-10 p-0 border border-input", isTransparent && transparentBg)}
-                        style={{backgroundColor: isTransparent ? undefined : color}}
+                        style={{ backgroundColor: isTransparent ? undefined : color }}
                     >
                         <span className="sr-only">选择颜色</span>
                     </Button>
@@ -60,7 +60,7 @@ export function ColorControl({
                                         "w-full h-8 p-0 border border-input flex items-center justify-center",
                                         isTransparentPreset && transparentBg
                                     )}
-                                    style={{backgroundColor: isTransparentPreset ? undefined : presetColor}}
+                                    style={{ backgroundColor: isTransparentPreset ? undefined : presetColor }}
                                     onClick={() => {
                                         setColor(presetColor);
                                         onChange(presetColor);
@@ -68,9 +68,9 @@ export function ColorControl({
                                 >
                                     {color === presetColor && (
                                         <Check className={cn(
-                                            "h-4 w-4", 
-                                            isTransparentPreset || presetColor.toLowerCase() === "#ffffff" 
-                                                ? "text-black" 
+                                            "h-4 w-4",
+                                            isTransparentPreset || presetColor.toLowerCase() === "#ffffff"
+                                                ? "text-black"
                                                 : "text-white"
                                         )} />
                                     )}

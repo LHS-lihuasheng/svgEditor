@@ -23,18 +23,22 @@ export function generateSetCode(component: BaseComponent): string {
  * @returns {string} 生成的animate代码
  */
 export function generateAnimateCode(component: BaseComponent): string {
-  const { attributes = {}, animationMode, children = [] } = component;
+  const { attributes = {}, animationMode = 'values', children = [] } = component;
 
-  // 创建一个新的属性对象
+  console.log(`Generating animate code with mode: ${animationMode}`);
+
+  // 创建一个新的属性对象，确保不修改原始组件
   const processedAttributes = { ...attributes };
 
-  // 直接使用组件的animationMode而不进行推断
-  // 确保不输出animationMode到SVG
+  // 确保移除animationMode字段，不要输出到SVG
   delete processedAttributes.animationMode;
 
+  // 使用有效的动画模式，如果检测到无效值则使用默认值
+  const validModes = ['values', 'fromTo', 'fromBy', 'to', 'by'];
+  const safeMode = validModes.includes(animationMode) ? animationMode : 'values';
+
   // 根据动画模式选择性保留属性
-  // 没有必要检查属性存在与否，直接根据模式清理
-  switch (animationMode) {
+  switch (safeMode) {
     case 'values':
       // 仅保留values相关属性
       delete processedAttributes.from;
@@ -100,8 +104,10 @@ export function generateAnimateCode(component: BaseComponent): string {
  * @returns {string} 生成的animateTransform代码
  */
 export function generateAnimateTransformCode(component: BaseComponent): string {
-  // 使用解构赋值获取animationMode字段和属性
-  const { attributes = {}, animationMode, children = [] } = component;
+  // 直接使用组件的animationMode字段，并提供默认值
+  const { attributes = {}, animationMode = 'values', children = [] } = component;
+
+  console.log(`Generating animateTransform code with mode: ${animationMode}`);
 
   // 创建一个新的属性对象，避免修改原始属性
   const processedAttributes = {
@@ -114,8 +120,12 @@ export function generateAnimateTransformCode(component: BaseComponent): string {
   // 确保移除animationMode字段，不要输出到SVG
   delete processedAttributes.animationMode;
 
-  // 根据动画模式处理属性，简化逻辑
-  switch (animationMode) {
+  // 使用有效的动画模式，确保代码生成的稳定性
+  const validModes = ['values', 'fromTo', 'fromBy', 'to', 'by'];
+  const safeMode = validModes.includes(animationMode) ? animationMode : 'values';
+
+  // 根据动画模式处理属性
+  switch (safeMode) {
     case 'values':
       // 清除 from/to/by 属性
       delete processedAttributes.from;
