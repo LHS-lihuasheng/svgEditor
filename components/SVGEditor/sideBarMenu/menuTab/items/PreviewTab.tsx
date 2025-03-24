@@ -13,10 +13,8 @@ export function PreviewTab() {
     const { code } = useCode()
     const { findImageByPath } = useAssets()
 
-    // 宽高比例 - 手机屏幕为 9:16 (1080:1920)
     const ASPECT_RATIO = 9 / 16
 
-    // 将代码中的双引号URL转换为单引号格式（用于预览）
     const prepareCodeForPreview = (svgCode: string): string => {
         return svgCode.replace(
             /background-image:\s*url\("([^"]+)"\)/g,
@@ -24,12 +22,9 @@ export function PreviewTab() {
         );
     };
 
-    // 处理SVG代码中的图片路径，替换为本地Blob URL
     const processImagePaths = (svgCode: string): string => {
-        // 先转换为单引号格式
         const codeWithSingleQuotes = prepareCodeForPreview(svgCode);
 
-        // 然后替换图片路径为Blob URL
         return codeWithSingleQuotes.replace(
             /background-image:\s*url\('([^']+)'\)/g,
             (match, path) => {
@@ -44,7 +39,6 @@ export function PreviewTab() {
         );
     };
 
-    // 生成预览HTML
     const generatePreviewHTML = () => {
         const processedCode = processImagePaths(code);
         return `
@@ -95,7 +89,7 @@ export function PreviewTab() {
               width: 100%;
               height: 100%;
               background-color: white;
-              overflow: hidden;
+              overflow: auto;
               position: relative;
             }
           </style>

@@ -3,7 +3,7 @@
  * 封装了编辑区域的内容显示逻辑
  */
 import React from 'react';
-import { ComponentTree } from "../ComponentTree";
+import { ComponentTree } from "./ComponentTree";
 import { EmptyEditorState } from "./EmptyEditorState";
 import { useEditor } from '@/contexts/EditorContext';
 

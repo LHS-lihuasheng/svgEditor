@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { BaseComponent } from "@/types/core";
+import { BaseComponent } from "@/types";
 import { debounce } from "lodash";
 import { useEditor } from "@/contexts/EditorContext";
 
@@ -229,7 +229,7 @@ function useAnimationEditorState(component: BaseComponent, onUpdateProperty: (pa
 
   // 更新单个样条
   const updateSpline = useCallback((index: number, field: keyof Spline, value: string) => {
-        const newSplines = [...splines];
+    const newSplines = [...splines];
     if (newSplines[index]) {
       newSplines[index][field] = value;
       updateSplines(newSplines);
@@ -363,7 +363,7 @@ export function AnimationValuesEditor() {
                       onChange={(e) => handleValueChange('keyTimes', e.target.value)}
                       className="font-mono text-sm"
                     />
-                </div>
+                  </div>
                   <div>
                     <Label>样条曲线控制点 (keySplines)</Label>
                     <Input
@@ -383,14 +383,14 @@ export function AnimationValuesEditor() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>关键帧</Label>
-                  <Button
+                <Button
                   size="sm"
                   variant="outline"
                   onClick={addKeyframe}
                 >
                   <Plus className="h-3.5 w-3.5 mr-1" />
                   添加关键帧
-                  </Button>
+                </Button>
               </div>
 
               {/* 关键帧列表 */}
@@ -411,23 +411,23 @@ export function AnimationValuesEditor() {
                     <CollapsibleContent className="p-3 pt-0 border-t">
                       <div className="grid grid-cols-2 gap-2 pt-2">
                         <div>
-                  <Label className="text-xs">值</Label>
-                  <Input
-                    value={keyframe.value}
+                          <Label className="text-xs">值</Label>
+                          <Input
+                            value={keyframe.value}
                             onChange={(e) => updateKeyframe(index, 'value', e.target.value)}
-                  />
-                </div>
+                          />
+                        </div>
                         <div>
                           <Label className="text-xs">时间 (0-1)</Label>
-                    <Input
+                          <Input
                             type="number"
                             min={0}
                             max={1}
                             step={0.01}
-                      value={keyframe.time}
+                            value={keyframe.time}
                             onChange={(e) => updateKeyframe(index, 'time', e.target.value)}
-                    />
-              </div>
+                          />
+                        </div>
 
                         {/* 样条曲线编辑器 (如果是spline模式，且不是最后一个关键帧) */}
                         {calcMode === "spline" && index < keyframes.length - 1 && (
@@ -435,90 +435,90 @@ export function AnimationValuesEditor() {
                             <Collapsible>
                               <div className="flex items-center justify-between">
                                 <Label className="text-xs">贝塞尔曲线控制点</Label>
-                  <CollapsibleTrigger asChild>
+                                <CollapsibleTrigger asChild>
                                   <Button variant="ghost" size="sm">
                                     <ChevronDown className="h-3.5 w-3.5" />
                                   </Button>
-                  </CollapsibleTrigger>
+                                </CollapsibleTrigger>
                               </div>
                               <CollapsibleContent className="pt-2">
                                 <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label className="text-xs">x1</Label>
-                          <Input
+                                  <div>
+                                    <Label className="text-xs">x1</Label>
+                                    <Input
                                       type="number"
                                       min={0}
                                       max={1}
                                       step={0.01}
                                       value={splines[index]?.x1 || "0"}
                                       onChange={(e) => updateSpline(index, 'x1', e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">y1</Label>
-                          <Input
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">y1</Label>
+                                    <Input
                                       type="number"
                                       min={0}
                                       max={1}
                                       step={0.01}
-                            value={splines[index]?.y1 || "0"}
+                                      value={splines[index]?.y1 || "0"}
                                       onChange={(e) => updateSpline(index, 'y1', e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">x2</Label>
-                          <Input
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">x2</Label>
+                                    <Input
                                       type="number"
                                       min={0}
                                       max={1}
                                       step={0.01}
                                       value={splines[index]?.x2 || "1"}
                                       onChange={(e) => updateSpline(index, 'x2', e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">y2</Label>
-                          <Input
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">y2</Label>
+                                    <Input
                                       type="number"
                                       min={0}
                                       max={1}
                                       step={0.01}
-                            value={splines[index]?.y2 || "1"}
+                                      value={splines[index]?.y2 || "1"}
                                       onChange={(e) => updateSpline(index, 'y2', e.target.value)}
-                          />
-                        </div>
-                      </div>
+                                    />
+                                  </div>
+                                </div>
                                 {/* 贝塞尔曲线预览 */}
                                 <div className="mt-2 border rounded p-2">
-                        <KeyframesSplinePreview
+                                  <KeyframesSplinePreview
                                     x1={parseFloat(splines[index]?.x1 || "0")}
                                     y1={parseFloat(splines[index]?.y1 || "0")}
                                     x2={parseFloat(splines[index]?.x2 || "1")}
                                     y2={parseFloat(splines[index]?.y2 || "1")}
                                   />
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-            </div>
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          </div>
                         )}
 
                         {/* 删除按钮 */}
                         <div className="col-span-2 flex justify-end mt-2">
-          <Button
-            size="sm"
+                          <Button
+                            size="sm"
                             variant="destructive"
                             onClick={() => removeKeyframe(index)}
                             disabled={keyframes.length <= 2}
                           >
                             <Trash className="h-3.5 w-3.5 mr-1" />
                             删除关键帧
-          </Button>
-        </div>
-            </div>
+                          </Button>
+                        </div>
+                      </div>
                     </CollapsibleContent>
                   </Collapsible>
                 ))}
-            </div>
+              </div>
             </div>
           )}
 
@@ -539,9 +539,9 @@ export function AnimationValuesEditor() {
                 <SelectItem value="spline">样条曲线 (spline)</SelectItem>
               </SelectContent>
             </Select>
-              </div>
-            </div>
-          )}
+          </div>
+        </div>
+      )}
 
       {/* fromTo模式 */}
       {animationMode === 'fromTo' && (
@@ -554,28 +554,28 @@ export function AnimationValuesEditor() {
               onChange={(e) => handleValueChange('from', e.target.value)}
             />
           </div>
-            <div>
+          <div>
             <Label>结束值 (to)</Label>
-              <Input
+            <Input
               placeholder="输入结束值"
               value={toValue}
               onChange={(e) => handleValueChange('to', e.target.value)}
             />
           </div>
-            </div>
-          )}
+        </div>
+      )}
 
       {/* fromBy模式 */}
       {animationMode === 'fromBy' && (
         <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div>
             <Label>初始值 (from)</Label>
-              <Input
+            <Input
               placeholder="输入起始值"
               value={fromValue}
               onChange={(e) => handleValueChange('from', e.target.value)}
             />
-              </div>
+          </div>
           <div>
             <Label>相对变化值 (by)</Label>
             <Input
@@ -584,31 +584,31 @@ export function AnimationValuesEditor() {
               onChange={(e) => handleValueChange('by', e.target.value)}
             />
           </div>
-          </div>
+        </div>
       )}
 
       {/* to模式 */}
       {animationMode === 'to' && (
-          <div>
+        <div>
           <Label>目标值 (to)</Label>
-            <Input
+          <Input
             placeholder="输入目标值"
             value={toValue}
             onChange={(e) => handleValueChange('to', e.target.value)}
-            />
-          </div>
+          />
+        </div>
       )}
 
       {/* by模式 */}
       {animationMode === 'by' && (
-          <div>
+        <div>
           <Label>相对变化值 (by)</Label>
-            <Input
+          <Input
             placeholder="输入相对变化值"
             value={byValue}
             onChange={(e) => handleValueChange('by', e.target.value)}
-            />
-          </div>
+          />
+        </div>
       )}
 
       {/* 帮助提示 - 根据不同模式显示不同的提示 */}

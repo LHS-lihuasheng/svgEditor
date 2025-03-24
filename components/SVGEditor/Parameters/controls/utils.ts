@@ -1,4 +1,4 @@
-import type { PropertyControl } from '@/types/core';
+import type { propertyConfig } from '@/types';
 
 type ControlRegistry = {
   [key: string]: React.ComponentType<any>;
@@ -30,6 +30,6 @@ standardControls['repeatCount'] = RepeatCountControl;
 standardControls['transform'] = TransformTypeControl;
 
 // 查找属性对应的控件
-export function findControlForProperty(property: PropertyControl): React.ComponentType<any> | null {
-  return property.type && standardControls[property.type] || null;
+export function findControlForProperty(propertyConfig: propertyConfig): React.ComponentType<any> | null {
+  return propertyConfig.controlType && standardControls[propertyConfig.controlType] || null;
 }

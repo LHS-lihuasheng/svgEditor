@@ -1,4 +1,4 @@
-import type { BaseComponent } from '@/types/core';
+import type { BaseComponent } from '@/types';
 import { generateComponentCode } from './component-generators';
 
 /**

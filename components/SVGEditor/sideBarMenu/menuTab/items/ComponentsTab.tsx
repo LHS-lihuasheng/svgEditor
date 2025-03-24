@@ -2,11 +2,11 @@
 
 import { Card } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { TemplateType } from '@/types/core'
-import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent'
+import type { TEMPLATE_NAMES } from '@/types/templateStorage'
+import { COMPONENT_TEMPLATES } from '@/types/templateStorage'
 import { Component, GripHorizontal } from "lucide-react"
 import { useDrag } from "react-dnd"
-import type { DragItem } from '@/types/core'
+import type { DragItem } from '@/types'
 import { cn } from "@/lib/utils"
 import { useEditor } from "@/contexts/EditorContext"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -26,7 +26,7 @@ export function ComponentsTab() {
                         {Object.entries(COMPONENT_TEMPLATES).map(([type, template]) => (
                             <ComponentCard
                                 key={type}
-                                type={type as TemplateType}
+                                type={type}
                                 title={template.label}
                                 description={template.description || ''}
                                 icon={template.icon}
@@ -40,7 +40,7 @@ export function ComponentsTab() {
 }
 
 interface ComponentCardProps {
-    type: TemplateType
+    type: TEMPLATE_NAMES
     title: string
     description: string
     icon: React.ReactNode | string
@@ -98,7 +98,7 @@ function ComponentCard({ type, title, description, icon }: ComponentCardProps) {
                     </Card>
                 </TooltipTrigger>
                 <TooltipContent>
-                        <p className="text-xs text-gray-500 truncate">{description}</p>
+                    <p className="text-xs text-gray-500 truncate">{description}</p>
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>

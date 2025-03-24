@@ -2,8 +2,9 @@ import React, { createContext, useContext, useCallback, useMemo } from 'react';
 import { useImmerReducer } from 'use-immer';
 import { useDrop } from 'react-dnd';
 import { generateComponentId } from '@/utils/component';
-import type { BaseComponent, TemplateType, DragItem } from '@/types/core';
-import { COMPONENT_TEMPLATES } from '@/types/core/atomicComponent';
+import type { BaseComponent, DragItem } from '@/types';
+import type { TEMPLATE } from '@/types/templateStorage';
+import { COMPONENT_TEMPLATES } from '@/types/templateStorage';
 
 // 定义状态类型
 interface EditorState {
@@ -17,7 +18,7 @@ type EditorAction =
     | { type: 'RESET_COMPONENTS' }
     | { type: 'CLEAR_SELECTION' }
     | { type: 'SELECT_ADJACENT_COMPONENT'; payload: { direction: 'next' | 'prev' } }
-    | { type: 'ADD_COMPONENT'; payload: { TemplateType: TemplateType } }
+    | { type: 'ADD_COMPONENT'; payload: { TEMPLATE: TEMPLATE } }
     | { type: 'UPDATE_COMPONENT'; payload: { component: BaseComponent } }
     | { type: 'DELETE_COMPONENT'; payload: { id: string } }
     | { type: 'UPDATE_COMPONENT_STYLE'; payload: { id: string; property: string; value: any } }
@@ -40,7 +41,7 @@ type EditorContextType = {
     findComponentById: (components: BaseComponent[], id: string) => [BaseComponent | null, BaseComponent[] | null, number];
 
     // 组件树操作
-    addComponent: (type: TemplateType) => void;
+    addComponent: (type: TEMPLATE) => void;
     updateComponent: (updated: BaseComponent) => void;
     deleteComponent: (id: string) => void;
     resetComponents: () => void;
@@ -89,13 +90,13 @@ function editorReducer(draft: EditorState, action: EditorAction) {
         }, []);
     };
 
-    const createComponent = (type: TemplateType): BaseComponent => {
-        const template = COMPONENT_TEMPLATES[type as keyof typeof COMPONENT_TEMPLATES];
+    const createComponent = (type: TEMPLATE): BaseComponent => {
+        const template = COMPONENT_TEMPLATES[type];
         return {
             id: generateComponentId(type),
             type,
             children: [],
-            ...(template?.defaultProperties || {})
+            ...(JSON.parse(JSON.stringify(template.defaultProperties)))
         } as BaseComponent;
     };
 
@@ -131,7 +132,7 @@ function editorReducer(draft: EditorState, action: EditorAction) {
         }
 
         case 'ADD_COMPONENT': {
-            const newComponent = createComponent(action.payload.TemplateType);
+            const newComponent = createComponent(action.payload.TEMPLATE);
 
             if (draft.selectedComponentId === null) {
                 if (!draft.components.length) {
@@ -154,12 +155,9 @@ function editorReducer(draft: EditorState, action: EditorAction) {
         }
 
         case 'UPDATE_COMPONENT': {
-            const [, , index] = findComponentById(draft.components, action.payload.component.id);
-            if (index !== -1) {
-                const [, parentArray] = findComponentById(draft.components, action.payload.component.id);
-                if (parentArray) {
-                    parentArray[index] = action.payload.component;
-                }
+            const [component, parentArray, index] = findComponentById(draft.components, action.payload.component.id);
+            if (component && parentArray && index !== -1) {
+                parentArray[index] = action.payload.component;
             }
             break;
         }
@@ -342,8 +340,8 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'SELECT_ADJACENT_COMPONENT', payload: { direction: 'prev' } });
     }, [dispatch]);
 
-    const addComponent = useCallback((type: TemplateType) => {
-        dispatch({ type: 'ADD_COMPONENT', payload: { TemplateType: type } });
+    const addComponent = useCallback((type: TEMPLATE) => {
+        dispatch({ type: 'ADD_COMPONENT', payload: { TEMPLATE: type } });
     }, [dispatch]);
 
     const updateComponent = useCallback((updated: BaseComponent) => {

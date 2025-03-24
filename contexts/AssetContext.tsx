@@ -1,101 +1,139 @@
 "use client"
 
 import type React from "react"
-import { createContext, useState, useContext, useCallback, useEffect } from "react"
+import { createContext, useReducer, useContext, useCallback } from "react"
 import { normalizeAssetPath } from '@/utils/pathUtils'
 import { getRelativePath } from '@/utils/file-utils'
 
 // 图片资源数据结构
 interface ImageAsset {
   name: string
-  relativePath: string  // 标准化后的相对路径
-  url: string          // 图片Blob URL
-  dimensions: {       // 图片尺寸
-    width: number
-    height: number
-  }
+  relativePath: string
+  url: string
+  dimensions: { width: number, height: number }
   lastModified: number
 }
 
 // 资源上下文类型定义
 interface AssetContextType {
-  imageAssets: Map<string, ImageAsset>      // 所有图片资源（路径为键）
-  selectedImagePaths: string[]              // 当前选中的图片路径
-  loadAssets: (directoryHandle: FileSystemDirectoryHandle) => Promise<void> // 加载目录资源
-  selectImage: (relativePath: string) => void  // 切换图片选中状态
-  getOrderedSelectedImages: () => ImageAsset[] // 获取按选择顺序排列的图片
-  findImageByPath: (path: string) => ImageAsset | undefined // 通过路径查找图片
-  rootDirectory: FileSystemDirectoryHandle | null // 当前根目录句柄
-  setRootDirectory: (handle: FileSystemDirectoryHandle | null) => void // 设置根目录
-  refreshAssets: () => Promise<void>        // 刷新资源列表
+  imageAssets: Map<string, ImageAsset>
+  selectedImagePaths: string[]
+  loadAssets: (directoryHandle: FileSystemDirectoryHandle) => Promise<void>
+  selectImage: (relativePath: string) => void
+  getOrderedSelectedImages: () => ImageAsset[]
+  findImageByPath: (path: string) => ImageAsset | undefined
+  rootDirectory: FileSystemDirectoryHandle | null
+  setRootDirectory: (handle: FileSystemDirectoryHandle | null) => void
+  refreshAssets: () => Promise<void>
   shiftFirstSelectedImage: () => ImageAsset | undefined
+}
+
+// 状态类型
+interface AssetState {
+  imageAssets: Map<string, ImageAsset>;
+  selectedImagePaths: string[];
+  rootDirectory: FileSystemDirectoryHandle | null;
+}
+
+// Action类型
+type AssetAction =
+  | { type: 'SET_IMAGE_ASSETS'; payload: Map<string, ImageAsset> }
+  | { type: 'SET_ROOT_DIRECTORY'; payload: FileSystemDirectoryHandle | null }
+  | { type: 'TOGGLE_IMAGE_SELECTION'; payload: string }
+  | { type: 'SHIFT_FIRST_SELECTED_IMAGE' }
+  | { type: 'CLEAR_SELECTED_IMAGES' };
+
+// Reducer函数
+function assetReducer(state: AssetState, action: AssetAction): AssetState {
+  switch (action.type) {
+    case 'SET_IMAGE_ASSETS':
+      return { ...state, imageAssets: action.payload };
+
+    case 'SET_ROOT_DIRECTORY':
+      return { ...state, rootDirectory: action.payload };
+
+    case 'TOGGLE_IMAGE_SELECTION': {
+      const path = action.payload;
+      const isSelected = state.selectedImagePaths.includes(path);
+
+      return {
+        ...state,
+        selectedImagePaths: isSelected
+          ? state.selectedImagePaths.filter(p => p !== path)
+          : [...state.selectedImagePaths, path]
+      };
+    }
+
+    case 'SHIFT_FIRST_SELECTED_IMAGE': {
+      if (state.selectedImagePaths.length === 0) return state;
+      return {
+        ...state,
+        selectedImagePaths: state.selectedImagePaths.slice(1)
+      };
+    }
+
+    case 'CLEAR_SELECTED_IMAGES':
+      return { ...state, selectedImagePaths: [] };
+
+    default:
+      return state;
+  }
 }
 
 const AssetContext = createContext<AssetContextType | null>(null)
 
 export function AssetProvider({ children }: { children: React.ReactNode }) {
-  // 状态管理
-  const [imageAssets, setImageAssets] = useState<Map<string, ImageAsset>>(new Map())
-  const [selectedImagePaths, setSelectedImagePaths] = useState<string[]>([])
-  const [selectionHistory, setSelectionHistory] = useState<string[][]>([]) // 选择历史（用于撤销）
-  const [historyIndex, setHistoryIndex] = useState(-1)
-  const [rootDirectory, setRootDirectory] = useState<FileSystemDirectoryHandle | null>(null)
+  const [state, dispatch] = useReducer(assetReducer, {
+    imageAssets: new Map(),
+    selectedImagePaths: [],
+    rootDirectory: null
+  });
 
-  // 获取图片尺寸工具方法
+  const { imageAssets, selectedImagePaths, rootDirectory } = state;
+
+  // 获取图片尺寸
   const getImageDimensions = (url: string): Promise<{ width: number; height: number }> => {
     return new Promise((resolve) => {
       const img = new Image()
-      img.onload = () => {
-        resolve({
-          width: img.naturalWidth,
-          height: img.naturalHeight
-        })
-      }
+      img.onload = () => resolve({
+        width: img.naturalWidth,
+        height: img.naturalHeight
+      })
       img.src = url
     })
   }
 
-  // 核心方法：加载目录资源
+  // 加载目录资源
   const loadAssets = useCallback(async (directoryHandle: FileSystemDirectoryHandle) => {
-    setRootDirectory(directoryHandle)
+    dispatch({ type: 'SET_ROOT_DIRECTORY', payload: directoryHandle });
     const newAssets = new Map<string, ImageAsset>()
 
-    // 递归处理文件系统条目
-    const processEntry = async (entry: FileSystemHandle, parentPath: string = '') => {
+    // 递归处理文件
+    async function processEntry(entry: FileSystemHandle, parentPath: string = '') {
       if (entry.kind === 'file') {
         const fileHandle = entry as FileSystemFileHandle
         const file = await fileHandle.getFile()
 
-        // 只处理图片文件
         if (file.name.match(/\.(jpg|jpeg|png|gif|svg)$/i)) {
-          // 路径标准化处理
           const relativePath = await getRelativePath(directoryHandle, fileHandle) ||
             (parentPath ? `./${parentPath}/${file.name}` : `./${file.name}`)
-
-          const cleanPath = relativePath
-            .replace(/\/+/g, '/')   // 合并连续斜杠
-            .replace(/^\.\//, './') // 确保相对路径格式
 
           const url = URL.createObjectURL(file)
           const dimensions = await getImageDimensions(url)
 
-          // 存储到资源表
-          const newImage: ImageAsset = {
+          newAssets.set(relativePath, {
             name: file.name,
-            relativePath: cleanPath,
+            relativePath,
             url,
             dimensions,
             lastModified: file.lastModified
-          }
-          newAssets.set(cleanPath, newImage)
+          })
         }
       } else if (entry.kind === 'directory') {
-        // 递归处理子目录
         const dirHandle = entry as FileSystemDirectoryHandle
         for await (const [name, childEntry] of dirHandle.entries()) {
           if (childEntry.kind === 'directory') {
-            const newParentPath = parentPath ? `${parentPath}/${name}` : name
-            await processEntry(childEntry, newParentPath)
+            await processEntry(childEntry, parentPath ? `${parentPath}/${name}` : name)
           } else {
             await processEntry(childEntry, parentPath)
           }
@@ -104,116 +142,60 @@ export function AssetProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      // 遍历根目录条目
-      for await (const [name, entry] of directoryHandle.entries()) {
+      for await (const [_, entry] of directoryHandle.entries()) {
         await processEntry(entry, '')
       }
 
-      setImageAssets(newAssets)
-      setSelectedImagePaths([]) // 加载新资源时清空选择
+      dispatch({ type: 'SET_IMAGE_ASSETS', payload: newAssets });
+      dispatch({ type: 'CLEAR_SELECTED_IMAGES' });
     } catch (error) {
       console.error('资源加载失败:', error)
     }
   }, [])
 
-  // 刷新资源列表
-  const refreshAssets = useCallback(async () => {
-    if (!rootDirectory) return
-    await loadAssets(rootDirectory)
-  }, [rootDirectory, loadAssets])
+  // 提供给Context的值
+  const contextValue: AssetContextType = {
+    imageAssets,
+    selectedImagePaths,
+    loadAssets,
 
-  // 增强 findImageByPath 函数以处理更多路径格式
-  const findImageByPath = useCallback((path: string) => {
-    if (!path) return undefined;
+    selectImage: (path) => {
+      dispatch({ type: 'TOGGLE_IMAGE_SELECTION', payload: path });
+    },
 
-    // 清理和规范化路径
-    const originalPath = path.trim();
-    const normalized = normalizeAssetPath(originalPath);
+    getOrderedSelectedImages: () =>
+      selectedImagePaths.map(path => imageAssets.get(path)).filter(Boolean) as ImageAsset[],
 
-    // 尝试多种可能的路径格式
-    const searchPaths = [
-      normalized,
-      normalized.replace(/^\.\//, ''),   // 移除开头的./
-      `./${normalized.replace(/^\.\//, '')}`, // 确保有./前缀
-      decodeURI(normalized),             // 解码URL
-      // 如果是http路径，直接返回null（外部资源）
-      originalPath.startsWith('http') ? null : originalPath
-    ].filter(Boolean); // 移除null值
+    findImageByPath: (path) => path ? imageAssets.get(path) : undefined,
 
-    console.log("查找图片路径:", path);
-    console.log("尝试搜索路径:", searchPaths);
+    rootDirectory,
 
-    // 尝试所有可能的路径格式
-    for (const p of searchPaths) {
-      const image = imageAssets.get(p);
-      if (image) {
-        console.log("找到图片:", p);
-        return image;
-      }
+    setRootDirectory: (handle) => {
+      dispatch({ type: 'SET_ROOT_DIRECTORY', payload: handle });
+    },
+
+    refreshAssets: async () => {
+      if (rootDirectory) await loadAssets(rootDirectory);
+    },
+
+    shiftFirstSelectedImage: () => {
+      if (selectedImagePaths.length === 0) return undefined;
+      const firstPath = selectedImagePaths[0];
+      dispatch({ type: 'SHIFT_FIRST_SELECTED_IMAGE' });
+      return imageAssets.get(firstPath);
     }
-
-    // 如果仍未找到，尝试部分匹配
-    for (const [assetPath, asset] of imageAssets.entries()) {
-      if (assetPath.includes(originalPath) || originalPath.includes(assetPath)) {
-        console.log("部分匹配找到图片:", assetPath);
-        return asset;
-      }
-    }
-
-    console.log("未找到图片资源");
-    return undefined;
-  }, [imageAssets]);
-
-  // 图片选择切换逻辑
-  const selectImage = useCallback((inputPath: string) => {
-    const normalizedPath = normalizeAssetPath(inputPath)
-    setSelectedImagePaths(prev => prev.includes(normalizedPath)
-      ? prev.filter(p => p !== normalizedPath) // 取消选择
-      : [...prev, normalizedPath] // 添加选择
-    )
-  }, [])
-
-  // 记录选择历史（支持撤销/重做）
-  useEffect(() => {
-    setSelectionHistory(prev => [...prev.slice(0, historyIndex + 1), selectedImagePaths])
-    setHistoryIndex(prev => prev + 1)
-  }, [selectedImagePaths])
-
-  // 在 AssetProvider 中添加方法
-  const shiftFirstSelectedImage = useCallback(() => {
-    if (selectedImagePaths.length === 0) return undefined
-    const firstPath = selectedImagePaths[0]
-    setSelectedImagePaths(prev => prev.slice(1))
-    return imageAssets.get(firstPath)
-  }, [selectedImagePaths, imageAssets])
+  };
 
   return (
-    <AssetContext.Provider
-      value={{
-        imageAssets,
-        selectedImagePaths,
-        loadAssets,
-        selectImage,
-        getOrderedSelectedImages: () => selectedImagePaths
-          .map(path => findImageByPath(path))
-          .filter((img): img is ImageAsset => !!img),
-        findImageByPath,
-        rootDirectory,
-        setRootDirectory,
-        refreshAssets,
-        shiftFirstSelectedImage
-      }}
-    >
+    <AssetContext.Provider value={contextValue}>
       {children}
     </AssetContext.Provider>
   )
 }
 
-// 自定义hook用于访问上下文
+// 自定义hook
 export const useAssets = () => {
   const context = useContext(AssetContext)
-  if (!context) {
-    throw new Error('useAssets must be used within an AssetProvider')
-  }
+  if (!context) throw new Error('useAssets must be used within an AssetProvider')
   return context
 }

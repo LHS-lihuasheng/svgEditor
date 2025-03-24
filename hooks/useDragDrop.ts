@@ -4,7 +4,7 @@
  */
 import { useRef, useCallback } from 'react';
 import { useDrag, useDrop, DropTargetMonitor } from 'react-dnd';
-import type { BaseComponent, DragItem, DropPosition } from '@/types/core';
+import type { BaseComponent, DragItem, DropPosition } from '@/types';
 
 interface UseDragDropOptions {
   component: BaseComponent;
@@ -88,9 +88,9 @@ export function useDragDrop({
 
   // 组合拖放引用
   const combineRefs = useCallback((el: any) => {
-      ref.current = el;
-      drag(el);
-      drop(el);
+    ref.current = el;
+    drag(el);
+    drop(el);
   }, [drag, drop]);
 
   return {

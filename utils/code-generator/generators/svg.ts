@@ -1,4 +1,4 @@
-import type { BaseComponent } from '@/types/core';
+import type { BaseComponent } from '@/types';
 import { generateAttributes } from '../utils/attributes';
 import { generateStyleAttributes } from '../utils/styles';
 import { generateComponentCode } from '../component-generators';

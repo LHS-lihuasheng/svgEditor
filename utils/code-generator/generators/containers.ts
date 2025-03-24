@@ -1,4 +1,4 @@
-import type { BaseComponent } from '@/types/core';
+import type { BaseComponent } from '@/types';
 import { generateAttributes } from '../utils/attributes';
 import { generateStyleAttributes } from '../utils/styles';
 import { generateComponentCode } from '../component-generators';
@@ -73,4 +73,29 @@ export function generateForeignObjectCode(component: BaseComponent): string {
   return `<foreignObject ${generateAttributes(attributes)}>
   ${childrenCode}
 </foreignObject>`;
+}
+
+/**
+ * @description 生成Section代码
+ * @param {BaseComponent} component - section组件
+ * @returns {string} 生成的section代码
+ */
+export function generateSectionCode(component: BaseComponent): string {
+  const { style = {}, attributes = {} } = component;
+  const children = component.children || [];
+
+  // 处理特殊样式属性，如margin和padding对象
+  const processedStyle = { ...style };
+
+  // 生成属性和样式
+  const attributesStr = generateAttributes(attributes);
+  const styleAttrs = generateStyleAttributes(processedStyle);
+
+  // 生成子元素代码
+  const childrenCode = children.map(child => generateComponentCode(child)).join('\n  ');
+
+  // 生成section标签
+  return `<section ${attributesStr} ${styleAttrs}>
+  ${childrenCode}
+</section>`;
 } 

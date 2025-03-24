@@ -2,44 +2,44 @@
 
 import { useMemo, useEffect } from 'react';
 import { findControlForProperty } from './utils';
-import type { PropertyControl } from '@/types/core';
+import type { propertyConfig } from '@/types';
 import _ from 'lodash';
 
 interface DynamicPropertyControlProps {
-  property: PropertyControl;
+  propertyConfig: propertyConfig;
   value: any;
   onChange: (value: any) => void;
 }
 
 export function DynamicPropertyControl({
-  property,
+  propertyConfig,
   value,
   onChange,
 }: DynamicPropertyControlProps) {
-  const Control = useMemo(() => findControlForProperty(property), [property]);
 
+  const Control = useMemo(() => findControlForProperty(propertyConfig), [propertyConfig]);
 
   useEffect(() => {
-    if (_.isNil(value) && !_.isNil(property.defaultValue)) {
-      onChange(property.defaultValue);
+    if (_.isNil(value) && !_.isNil(propertyConfig.defaultValue)) {
+      onChange(propertyConfig.defaultValue);
     }
-  }, [property.property, property.defaultValue, value, onChange]);
+  }, [propertyConfig.defaultValue, value, onChange]);
 
-  const safeValue = _.isNil(value) ? property.defaultValue : value;
+  const safeValue = _.isNil(value) ? propertyConfig.defaultValue : value;
 
   if (!Control) {
-    return <div className="text-sm text-red-500">不支持的属性类型: {property.type}</div>;
+    return <div className="text-sm text-red-500">不支持的属性类型: {propertyConfig.controlType}</div>;
   }
 
   // 特殊处理多值类型控件
-  if (property.type === 'quadValue') {
+  if (propertyConfig.controlType === 'quadValue') {
     return <Control
-      {...property}
-      fields={property.fieldConfig || []}
+      {...propertyConfig}
+      fields={propertyConfig.fieldConfig || []}
       value={safeValue}
       onChange={onChange}
     />;
   }
 
-  return <Control {...property} value={safeValue} onChange={onChange} />;
+  return <Control {...propertyConfig} value={safeValue} onChange={onChange} />;
 }
