@@ -90,10 +90,10 @@ export function useProperties(excludePaths: string[] = []): PropertyManagerResul
     }, [selectedComponent, updateComponent, updateComponentStyle, updateComponentAttribute]);
 
     // 添加属性
-    const addProperty = useCallback((category: category, propertyKey: string) => {
+    const addProperty = useCallback((category: 'attributes' | 'style', propertyKey: string) => {
         if (!selectedComponent || !propertyKey) return;
 
-        const categoryStorage = propertyStorage.category;
+        const categoryStorage = propertyStorage[category];
         if (!categoryStorage) {
             console.error(`分类 ${category} 在属性仓库中不存在`);
             return;
@@ -106,7 +106,9 @@ export function useProperties(excludePaths: string[] = []): PropertyManagerResul
             return;
         }
 
-        const initialValue = propertyConfig.defaultValue === 'object' ? JSON.parse(JSON.stringify(propertyConfig.defaultValue)) : propertyConfig.defaultValue;
+        const initialValue = propertyConfig.defaultValue === 'object'
+            ? JSON.parse(JSON.stringify(propertyConfig.defaultValue))
+            : propertyConfig.defaultValue;
 
         const fullPath = `${category}.${propertyKey}`;
         updateProperty(fullPath, initialValue);
@@ -152,13 +154,24 @@ export function useProperties(excludePaths: string[] = []): PropertyManagerResul
             };
         }
 
-        // 自动推断未定义的属性
+        // 自动推断未定义的属性，确保包含所有必需字段
+        const controlType = inferPropertyControlType(key, value);
         return {
             path,
             config: {
-                controlType: inferPropertyControlType(key, value),
+                controlType,
                 label: _.startCase(key),
-                defaultValue: value
+                description: `${_.startCase(key)} 属性`,
+                defaultValue: value,
+                showLabel: true,
+                ...(controlType === 'string' ? { placeholder: `输入${_.startCase(key)}` } : {}),
+                ...(controlType === 'number' ? {
+                    min: 0, max: 100, step: 1,
+                    placeholder: `输入${_.startCase(key)}`
+                } : {}),
+                ...(controlType === 'select' ? { options: [], placeholder: '请选择' } : {}),
+                ...(controlType === 'color' ? { presetColors: [] } : {}),
+                ...(controlType === 'slider' ? { min: 0, max: 100, step: 1, inputWidth: '60px' } : {})
             },
             isFixed: false
         };

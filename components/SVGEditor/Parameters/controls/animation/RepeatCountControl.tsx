@@ -6,24 +6,31 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InfoIcon } from "lucide-react";
+import { propertyConfig } from "@/types";
 
-interface RepeatCountControlProps {
-  value: string | number;
-  onChange: (value: string | number) => void;
-  label?: string;
-  description?: string;
-  showLabel?: boolean;
-  [key: string]: any;
+// 统一控件接口
+interface ControlProps {
+  propertyConfig: propertyConfig;
+  value: any;
+  onChange: (value: any) => void;
 }
 
 export function RepeatCountControl({
+  propertyConfig,
   value = 1,
-  onChange,
-  label = "重复次数",
-  description = "设置动画重复播放的次数，或选择无限循环",
-  showLabel = true,
-  ...rest
-}: RepeatCountControlProps) {
+  onChange
+}: ControlProps) {
+  // 从propertyConfig中提取配置
+  const {
+    label = "重复次数",
+    description = "设置动画重复播放的次数，或选择无限循环",
+    showLabel = true,
+    options = [
+      { label: "固定次数", value: "finite" },
+      { label: "无限循环", value: "indefinite" }
+    ]
+  } = propertyConfig;
+
   // 是否是无限循环
   const [isInfinite, setIsInfinite] = useState(value === "indefinite");
   // 数值
@@ -107,7 +114,6 @@ export function RepeatCountControl({
             onChange={handleValueChange}
             onBlur={handleBlur}
             disabled={isInfinite}
-            {...rest}
           />
         </div>
         <div className="flex items-center space-x-2">

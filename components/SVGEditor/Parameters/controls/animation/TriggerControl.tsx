@@ -3,21 +3,30 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { propertyConfig } from "@/types";
 
-const TRIGGER_TYPES = [
+const DEFAULT_TRIGGER_TYPES = [
   { label: "定时开始", value: "time" },
   { label: "click", value: "click" },
   { label: "touchstart", value: "touchstart" },
   { label: "touchend", value: "touchend" }
 ];
 
-interface TriggerControlProps {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
+// 统一控件接口
+interface ControlProps {
+  propertyConfig: propertyConfig;
+  value: any;
+  onChange: (value: any) => void;
 }
 
-export function TriggerControl({ label, value, onChange }: TriggerControlProps) {
+export function TriggerControl({ propertyConfig, value, onChange }: ControlProps) {
+  // 从propertyConfig中提取配置
+  const {
+    label,
+    description,
+    options = DEFAULT_TRIGGER_TYPES
+  } = propertyConfig;
+
   const [triggerType, setTriggerType] = useState("time");
   const [inputValue, setInputValue] = useState("0s");
   const isUpdatingRef = useRef(false);
@@ -36,7 +45,7 @@ export function TriggerControl({ label, value, onChange }: TriggerControlProps) 
 
       if (value.includes("+")) {
         const [type, delay] = value.split("+");
-        if (TRIGGER_TYPES.some(t => t.value === type)) {
+        if (options.some(t => t.value === type)) {
           setTriggerType(type);
           setInputValue(delay);
         } else {
@@ -55,16 +64,16 @@ export function TriggerControl({ label, value, onChange }: TriggerControlProps) 
     } finally {
       isUpdatingRef.current = false;
     }
-  }, [value]);
+  }, [value, options]);
 
   // 更新最终值
   const updateValue = useCallback((type: string, val: string) => {
     if (isUpdatingRef.current) return;
-    
+
     const finalValue = type === "time"
       ? val
       : val ? `${type}+${val}` : type;
-    
+
     onChange(finalValue);
   }, [onChange]);
 
@@ -81,7 +90,7 @@ export function TriggerControl({ label, value, onChange }: TriggerControlProps) 
           <SelectValue placeholder="选择触发类型" />
         </SelectTrigger>
         <SelectContent>
-          {TRIGGER_TYPES.map((type) => (
+          {options.map((type) => (
             <SelectItem key={type.value} value={type.value}>
               {type.label}
             </SelectItem>

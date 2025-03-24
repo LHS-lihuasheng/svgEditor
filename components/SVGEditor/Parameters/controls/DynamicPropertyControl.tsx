@@ -16,7 +16,6 @@ export function DynamicPropertyControl({
   value,
   onChange,
 }: DynamicPropertyControlProps) {
-
   const Control = useMemo(() => findControlForProperty(propertyConfig), [propertyConfig]);
 
   useEffect(() => {
@@ -31,15 +30,10 @@ export function DynamicPropertyControl({
     return <div className="text-sm text-red-500">不支持的属性类型: {propertyConfig.controlType}</div>;
   }
 
-  // 特殊处理多值类型控件
-  if (propertyConfig.controlType === 'quadValue') {
-    return <Control
-      {...propertyConfig}
-      fields={propertyConfig.fieldConfig || []}
-      value={safeValue}
-      onChange={onChange}
-    />;
-  }
-
-  return <Control {...propertyConfig} value={safeValue} onChange={onChange} />;
+  // 传递统一的参数：propertyConfig, value, onChange
+  return <Control
+    propertyConfig={propertyConfig}
+    value={safeValue}
+    onChange={onChange}
+  />;
 }

@@ -1,3 +1,7 @@
+/**
+ * @description 属性仓库索引
+ */
+
 // 导出类型和工具函数
 export * from './types';
 

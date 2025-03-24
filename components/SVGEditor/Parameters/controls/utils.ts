@@ -1,35 +1,39 @@
-import type { propertyConfig } from '@/types';
+"use client"
 
-type ControlRegistry = {
-  [key: string]: React.ComponentType<any>;
-};
-
-const standardControls: ControlRegistry = {};
-
-import { StringControl } from './basic/StringControl';
-import { NumberControl } from './basic/NumberControl';
-import { ColorControl } from './basic/ColorControl';
-import { SelectControl } from './basic/SelectControl';
-import { SliderWithInput } from './basic/SliderWithInput';
-import { MultiValueControl } from './basic/MultiValueControl';
-import { ImageControl } from './special/ImageControl';
-import { TriggerControl } from './animation/TriggerControl';
-import { RepeatCountControl } from './animation/RepeatCountControl';
+import { propertyConfig, PropertyControlType } from "@/types";
+import { StringControl } from "./basic/StringControl";
+import { NumberControl } from "./basic/NumberControl";
+import { SelectControl } from "./basic/SelectControl";
+import { ColorControl } from "./basic/ColorControl";
+import { SliderWithInput } from "./basic/SliderWithInput";
+import { MultiValueControl } from "./basic/MultiValueControl";
+import { ImageControl } from "./special/ImageControl";
+import { TriggerControl } from "./animation/TriggerControl";
+import { RepeatCountControl } from "./animation/RepeatCountControl";
 import { TransformTypeControl } from './animation/TransformTypeControl';
 
-// 注册所有标准控件
-standardControls['string'] = StringControl;
-standardControls['number'] = NumberControl;
-standardControls['color'] = ColorControl;
-standardControls['select'] = SelectControl;
-standardControls['slider'] = SliderWithInput;
-standardControls['quadValue'] = MultiValueControl;
-standardControls['image'] = ImageControl;
-standardControls['trigger'] = TriggerControl;
-standardControls['repeatCount'] = RepeatCountControl;
-standardControls['transform'] = TransformTypeControl;
+// 控件类型到组件的映射
+const CONTROL_MAP = {
+  'string': StringControl,
+  'number': NumberControl,
+  'boolean': null, // 待实现
+  'select': SelectControl,
+  'color': ColorControl,
+  'slider': SliderWithInput,
+  'quadValue': MultiValueControl,
+  'image': ImageControl,
+  'trigger': TriggerControl,
+  'repeatCount': RepeatCountControl,
+  'transform': TransformTypeControl
+};
 
-// 查找属性对应的控件
-export function findControlForProperty(propertyConfig: propertyConfig): React.ComponentType<any> | null {
-  return propertyConfig.controlType && standardControls[propertyConfig.controlType] || null;
+// 根据属性配置查找对应的控件组件
+export function findControlForProperty(config: propertyConfig) {
+  if (!config || !config.controlType) {
+    console.error('无效的属性配置', config);
+    return null;
+  }
+
+  const controlType = config.controlType as PropertyControlType;
+  return CONTROL_MAP[controlType] || null;
 }

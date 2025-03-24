@@ -5,80 +5,68 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InfoIcon } from "lucide-react";
+import { propertyConfig } from "@/types";
 
-interface NumberControlProps {
-    value: number;
-    onChange: (value: number) => void;
-    label?: string;
-    min?: number;
-    max?: number;
-    step?: number;
-    description?: string;
-    placeholder?: string;
-    showLabel?: boolean;
-    [key: string]: any;
+// 统一控件接口
+interface ControlProps {
+    propertyConfig: propertyConfig;
+    value: any;
+    onChange: (value: any) => void;
 }
 
 export function NumberControl({
+    propertyConfig,
     value,
-    onChange,
-    label,
-    min,
-    max,
-    step = 1,
-    description,
-    placeholder = "输入数值",
-    showLabel = true,
-    ...rest
-}: NumberControlProps) {
+    onChange
+}: ControlProps) {
+    // 从propertyConfig中提取所需的所有配置
+    const {
+        label,
+        min,
+        max,
+        step = 1,
+        description,
+        placeholder = "输入数值",
+        showLabel = true,
+        defaultValue = 0
+    } = propertyConfig;
+
     // 使用字符串状态避免小数问题
-    const [inputValue, setInputValue] = useState<string>(value?.toString() || '');
-    const [error, setError] = useState<string | null>(null);
+    const [inputValue, setInputValue] = useState<string>((value !== undefined ? value : defaultValue).toString());
+    const [error, setError] = useState<string>('');
 
-    // 同步外部值更新
     useEffect(() => {
-        if (value !== undefined && value !== null) {
-            const stringValue = value.toString();
-            if (stringValue !== inputValue) {
-                setInputValue(stringValue);
-            }
-        }
-    }, [value]);
+        setInputValue((value !== undefined ? value : defaultValue).toString());
+    }, [value, defaultValue]);
 
-    // 错误自动清除
-    useEffect(() => {
-        if (error) {
-            const timer = setTimeout(() => setError(null), 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [error]);
-
-    // 验证并提交数值
     const validateAndSubmit = useCallback(() => {
-        try {
-            if (inputValue === '') {
-                onChange(0);
-                return;
-            }
-
-            const numValue = parseFloat(inputValue);
-
-            if (isNaN(numValue)) {
-                throw new Error('请输入有效的数字');
-            }
-
-            if (min !== undefined && numValue < min) {
-                throw new Error(`最小值为 ${min}`);
-            }
-
-            if (max !== undefined && numValue > max) {
-                throw new Error(`最大值为 ${max}`);
-            }
-
-            onChange(numValue);
-        } catch (err) {
-            setError((err as Error).message);
+        if (!inputValue) {
+            onChange(0);
+            setError('');
+            return;
         }
+
+        const num = parseFloat(inputValue);
+
+        if (isNaN(num)) {
+            setError('请输入有效数字');
+            return;
+        }
+
+        let validValue = num;
+
+        if (min !== undefined && num < min) {
+            validValue = min;
+            setError(`最小值为 ${min}`);
+        } else if (max !== undefined && num > max) {
+            validValue = max;
+            setError(`最大值为 ${max}`);
+        } else {
+            setError('');
+        }
+
+        setInputValue(validValue.toString());
+        onChange(validValue);
     }, [inputValue, min, max, onChange]);
 
     return (
@@ -109,7 +97,6 @@ export function NumberControl({
                 onBlur={validateAndSubmit}
                 onKeyDown={(e) => e.key === 'Enter' && validateAndSubmit()}
                 placeholder={placeholder}
-                {...rest}
             />
 
             {error && (

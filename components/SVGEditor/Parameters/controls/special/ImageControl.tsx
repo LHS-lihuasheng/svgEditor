@@ -1,20 +1,36 @@
+"use client"
+
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ImageIcon } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { InfoIcon } from "lucide-react";
 import { useAssets } from "@/contexts/AssetContext";
+import { propertyConfig } from "@/types";
 
-interface ImageControlProps {
-    label: string;
-    value: string;
-    onChange: (value: string) => void;
+// 统一控件接口
+interface ControlProps {
+    propertyConfig: propertyConfig;
+    value: any;
+    onChange: (value: any) => void;
 }
 
 export function ImageControl({
-    label,
+    propertyConfig,
     value,
     onChange
-}: ImageControlProps) {
+}: ControlProps) {
+    // 从propertyConfig中提取所需配置
+    const {
+        label = "图片",
+        description,
+        showLabel = true,
+        acceptTypes = "image/*",
+        placeholder = "输入图片URL"
+    } = propertyConfig;
+
     const { shiftFirstSelectedImage, findImageByPath } = useAssets();
     const [previewUrl, setPreviewUrl] = useState<string>('');
 
@@ -59,11 +75,30 @@ export function ImageControl({
 
     return (
         <div className="space-y-2">
+            {showLabel && label && (
+                <div className="flex items-center gap-2">
+                    <Label htmlFor={`image-${label}`}>{label}</Label>
+                    {description && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{description}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                </div>
+            )}
+
             <div className="flex gap-2">
                 <Input
+                    id={`image-${label}`}
                     value={extractPath(value)}
                     onChange={e => onChange(e.target.value)}
-                    placeholder="输入图片URL"
+                    placeholder={placeholder}
                 />
                 <Button
                     variant="outline"

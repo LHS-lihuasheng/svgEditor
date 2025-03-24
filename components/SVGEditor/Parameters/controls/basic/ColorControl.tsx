@@ -6,12 +6,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { propertyConfig } from "@/types";
 
-interface ColorControlProps {
-    label: string;
-    value: string;
-    onChange: (value: string) => void;
-    presetColors?: string[];
+// 统一控件接口
+interface ControlProps {
+    propertyConfig: propertyConfig;
+    value: any;
+    onChange: (value: any) => void;
 }
 
 const DEFAULT_COLORS = [
@@ -22,18 +23,26 @@ const DEFAULT_COLORS = [
 ];
 
 export function ColorControl({
-    label,
+    propertyConfig,
     value = "#000000",
-    onChange,
-    presetColors = DEFAULT_COLORS
-}: ColorControlProps) {
+    onChange
+}: ControlProps) {
+    // 从propertyConfig中提取所需配置
+    const {
+        label,
+        presetColors = DEFAULT_COLORS,
+        description,
+        showLabel = true
+    } = propertyConfig;
+
     const [color, setColor] = useState(value);
+    const [isTransparent, setIsTransparent] = useState(value === 'transparent' || value === 'none');
 
     useEffect(() => {
-        setColor(value || "");
+        setColor(value);
+        setIsTransparent(value === 'transparent' || value === 'none');
     }, [value]);
 
-    const isTransparent = color === "transparent";
     const transparentBg = "bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAGElEQVQYlWNgYGD4z4AE/lMrB5hGKUUYAE0ID/h3qOk7AAAAAElFTkSuQmCC')] bg-center";
 
     return (

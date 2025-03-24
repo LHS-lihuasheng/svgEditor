@@ -1,35 +1,70 @@
+"use client"
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { InfoIcon } from "lucide-react";
+import { propertyConfig } from "@/types";
 
-interface SelectOption {
-    label: string;
-    value: string;
-}
-
-interface SelectControlProps {
-    label: string;
-    value: string;
-    onChange: (value: string) => void;
-    options: SelectOption[];
+// 统一控件接口
+interface ControlProps {
+    propertyConfig: propertyConfig;
+    value: any;
+    onChange: (value: any) => void;
 }
 
 export function SelectControl({
-    label,
+    propertyConfig,
     value,
-    onChange,
-    options
-}: SelectControlProps) {
+    onChange
+}: ControlProps) {
+    // 从propertyConfig中提取所需配置
+    const {
+        label,
+        options = [],
+        showLabel = true,
+        description,
+        placeholder = "选择选项",
+        defaultValue
+    } = propertyConfig;
+
+    // 如果当前值为未定义且有默认值，则使用默认值
+    if (value === undefined && defaultValue !== undefined) {
+        onChange(defaultValue);
+    }
+
     return (
-        <Select value={value || ''} onValueChange={onChange}>
-            <SelectTrigger id={`select-${label}`}>
-                <SelectValue placeholder="选择选项" />
-            </SelectTrigger>
-            <SelectContent>
-                {options.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+        <div className="space-y-2">
+            {showLabel && label && (
+                <div className="flex items-center gap-2">
+                    <Label htmlFor={`select-${label}`}>{label}</Label>
+                    {description && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{description}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                </div>
+            )}
+
+            <Select value={value || ''} onValueChange={onChange}>
+                <SelectTrigger id={`select-${label}`}>
+                    <SelectValue placeholder={placeholder} />
+                </SelectTrigger>
+                <SelectContent>
+                    {options.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
     );
 } 
