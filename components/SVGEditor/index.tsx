@@ -12,6 +12,7 @@ import { usePanel } from '@/contexts/PanelContext';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { CodeProvider } from '@/contexts/CodeContext';
+import { AssetProvider } from "@/contexts/AssetContext"
 
 /**
  * @description SVG编辑器的顶层容器组件，提供所有必要的上下文
@@ -20,15 +21,17 @@ import { CodeProvider } from '@/contexts/CodeContext';
 export default function SVGEditorContainer() {
   return (
     <DndProvider backend={HTML5Backend}>
-      <EditorProvider>
-        <PanelProvider>
-          <CodeProvider>
-            <TooltipProvider>
-              <SVGEditor />
-            </TooltipProvider>
-          </CodeProvider>
-        </PanelProvider>
-      </EditorProvider>
+      <AssetProvider>
+        <EditorProvider>
+          <PanelProvider>
+            <CodeProvider>
+              <TooltipProvider>
+                <SVGEditor />
+              </TooltipProvider>
+            </CodeProvider>
+          </PanelProvider>
+        </EditorProvider>
+      </AssetProvider>
     </DndProvider>
   );
 }
@@ -38,7 +41,6 @@ export default function SVGEditorContainer() {
  * @returns {JSX.Element} SVG编辑器的用户界面
  */
 function SVGEditor() {
-
   const { showCodePreview } = usePanel();
 
   return (
@@ -47,8 +49,7 @@ function SVGEditor() {
       <SideBarMenu />
 
       {/* 中间编辑区域 */}
-      <EditorArea
-      />
+      <EditorArea />
 
       {/* 右侧参数面板 */}
       <Parameters />

@@ -1,13 +1,12 @@
-const WECHAT_API_BASE = "https://api.weixin.qq.com/cgi-bin"
 const APPID = process.env.NEXT_PUBLIC_WECHAT_APPID
 const SECRET = process.env.NEXT_PUBLIC_WECHAT_SECRET
 
-export interface AccessTokenResponse {
+export type AccessTokenResponse = {
     access_token: string
     expires_in: number
 }
 
-export interface AccessTokenError {
+export type AccessTokenError = {
     errcode: number
     errmsg: string
 }
@@ -23,10 +22,12 @@ let expirationTime: number | null = null
  */
 async function fetchAccessToken(): Promise<AccessTokenResponse | AccessTokenError> {
     try {
+        console.log("请求微信接口获取token")
         const response = await fetch(
-            `${WECHAT_API_BASE}/token?grant_type=client_credential&appid=${APPID}&secret=${SECRET}`
+            `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APPID}&secret=${SECRET}`
         )
         const data: AccessTokenResponse | AccessTokenError = await response.json()
+        console.log("data", data)
 
         if ("errcode" in data) return data
 
@@ -57,13 +58,13 @@ export async function handleTokenRequest(): Promise<AccessTokenResponse | Access
     try {
         // 存在token且未过期，直接返回
         if (accessToken && expirationTime && Date.now() < expirationTime) {
+            console.log("accessToken", accessToken)
             return ({
                 access_token: accessToken,
                 expires_in: getTokenExpiresIn()
             })
         }
 
-        // 未请求成功或请求过期，重新请求
         const result = await fetchAccessToken()
         return result
     } catch (error) {

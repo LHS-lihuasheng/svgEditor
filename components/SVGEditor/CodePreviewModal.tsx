@@ -10,7 +10,7 @@ import { usePanel } from '@/contexts/PanelContext';
 import { useCode } from '@/contexts/CodeContext'
 
 export function CodePreviewModal() {
-  const { setShowCodePreview } = usePanel();
+  const { toggleShowCodePreview } = usePanel();
   const { code } = useCode()
 
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
@@ -28,10 +28,6 @@ export function CodePreviewModal() {
     });
   };
 
-  const handleBackdropClick = () => {
-    setShowCodePreview(false);
-  };
-
   const handleCopyCode = () => {
     navigator.clipboard.writeText(code)
       .then(() => alert("代码已复制到剪贴板"))
@@ -41,7 +37,7 @@ export function CodePreviewModal() {
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      onClick={handleBackdropClick}
+      onClick={toggleShowCodePreview}
     >
       <Card className="max-w-5xl w-[95%] rounded-xl shadow-xl" onClick={e => e.stopPropagation()}>
         <CardHeader className="pb-4">
@@ -90,7 +86,7 @@ export function CodePreviewModal() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowCodePreview(false)}
+            onClick={toggleShowCodePreview}
           >
             关闭
           </Button>

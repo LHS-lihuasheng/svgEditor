@@ -4,7 +4,6 @@ import { createContext, useContext, useState, ReactNode } from "react"
 
 interface PanelContextType {
     isParametersPanelOpen: boolean
-    setIsParametersPanelOpen: (value: boolean) => void
     toggleParametersPanel: () => void
 }
 
@@ -17,7 +16,7 @@ interface MenuBarContextType {
 
 interface CodePreviewContextType {
     showCodePreview: boolean
-    setShowCodePreview: (value: boolean) => void
+    toggleShowCodePreview: () => void
 }
 
 const PanelContext = createContext<PanelContextType & MenuBarContextType & CodePreviewContextType | undefined>(undefined)
@@ -36,8 +35,21 @@ export function PanelProvider({ children }: { children: ReactNode }) {
         setIsMenuBarOpen(prev => !prev)
     }
 
+    const toggleShowCodePreview = () => {
+        setShowCodePreview(prev => !prev)
+    }
+
     return (
-        <PanelContext.Provider value={{ isParametersPanelOpen, setIsParametersPanelOpen, toggleParametersPanel, isMenuBarOpen, toggleMenuBar, activeTab, setActiveTab, showCodePreview, setShowCodePreview }}>
+        <PanelContext.Provider value={{
+            isParametersPanelOpen,
+            toggleParametersPanel,
+            isMenuBarOpen,
+            toggleMenuBar,
+            activeTab,
+            setActiveTab,
+            showCodePreview,
+            toggleShowCodePreview
+        }}>
             {children}
         </PanelContext.Provider>
     )

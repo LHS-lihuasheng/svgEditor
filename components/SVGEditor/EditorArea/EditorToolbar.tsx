@@ -9,7 +9,7 @@ import { usePanel } from '@/contexts/PanelContext';
 import { useEditor } from '@/contexts/EditorContext';
 
 export function EditorToolbar() {
-    const { setShowCodePreview } = usePanel();
+    const { toggleShowCodePreview } = usePanel();
     const { resetComponents } = useEditor();
     return (
         <div className="h-12 bg-white shadow-sm border-b px-4 flex items-center justify-between">
@@ -31,7 +31,7 @@ export function EditorToolbar() {
                 <Button
                     variant="default"
                     size="sm"
-                    onClick={() => setShowCodePreview(true)}
+                    onClick={toggleShowCodePreview}
                 >
                     <LucideCode className="h-4 w-4 mr-2" />
                     获取代码

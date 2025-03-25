@@ -1,10 +1,9 @@
-import SVGEditor from "@/components/SVGEditor"
-// import SVGEditor from "@/components/operator/SVGEditor"
+import SVGEditorContainer from "@/components/SVGEditor"
 
 export default function OperationsPage() {
   return (
     <div className="container mx-auto py-6">
-      <SVGEditor />
+      <SVGEditorContainer />
     </div>
   )
 }
