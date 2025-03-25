@@ -1,12 +1,13 @@
 "use client"
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from "react"
+import React, { createContext, useContext, useState, ReactNode } from "react"
 
 interface MessageContextType {
     showMessage: boolean
     toggleShowMessage: () => void
     message: string
     setMessage: (value: string) => void
+    tip: (message: string) => void
 }
 
 const MessageContext = createContext<MessageContextType | undefined>(undefined)
@@ -19,12 +20,18 @@ export function MessageProvider({ children }: { children: ReactNode }) {
         setShowMessage(prev => !prev)
     }
 
+    const tip = (message: string) => {
+        setMessage(message)
+        toggleShowMessage()
+    }
+
     return (
         <MessageContext.Provider value={{
             showMessage,
             toggleShowMessage,
             message,
-            setMessage
+            setMessage,
+            tip
         }}>
             {children}
         </MessageContext.Provider>
