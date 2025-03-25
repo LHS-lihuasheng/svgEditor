@@ -4,14 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InfoIcon } from "lucide-react";
-import { propertyConfig } from "@/types";
-
-// 统一控件接口
-interface ControlProps {
-    propertyConfig: propertyConfig;
-    value: any;
-    onChange: (value: any) => void;
-}
+import {  ControlProps, StringPropertyConfig } from "@/types";
 
 export function StringControl({
     propertyConfig,
@@ -25,7 +18,7 @@ export function StringControl({
         showLabel = true,
         description,
         defaultValue = ""
-    } = propertyConfig;
+    } = propertyConfig as StringPropertyConfig;
 
     // 如果当前值为undefined并且有默认值，使用默认值
     if (value === undefined && defaultValue !== undefined) {

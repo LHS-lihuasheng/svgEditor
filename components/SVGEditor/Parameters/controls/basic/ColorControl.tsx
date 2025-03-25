@@ -6,14 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { propertyConfig } from "@/types";
-
-// 统一控件接口
-interface ControlProps {
-    propertyConfig: propertyConfig;
-    value: any;
-    onChange: (value: any) => void;
-}
+import { ColorPropertyConfig, ControlProps } from "@/types";
 
 const DEFAULT_COLORS = [
     "#000000", "#ffffff", "#f44336", "#e91e63", "#9c27b0", "#673ab7",
@@ -33,7 +26,7 @@ export function ColorControl({
         presetColors = DEFAULT_COLORS,
         description,
         showLabel = true
-    } = propertyConfig;
+    } = propertyConfig as ColorPropertyConfig;
 
     const [color, setColor] = useState(value);
     const [isTransparent, setIsTransparent] = useState(value === 'transparent' || value === 'none');

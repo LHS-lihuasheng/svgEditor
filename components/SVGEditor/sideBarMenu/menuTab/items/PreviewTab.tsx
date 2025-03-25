@@ -12,6 +12,7 @@ export function PreviewTab() {
     const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
     const { code } = useCode()
     const { findImageByPath } = useAssets()
+    const [isIframeInitialized, setIsIframeInitialized] = useState(false)
 
     const ASPECT_RATIO = 9 / 16
 
@@ -109,13 +110,34 @@ export function PreviewTab() {
     const updatePreview = () => {
         if (iframeRef.current) {
             const iframe = iframeRef.current;
-            const doc = iframe.contentDocument || (iframe.contentWindow?.document);
+            const iframeWindow = iframe.contentWindow;
+            const doc = iframe.contentDocument || iframeWindow?.document;
 
             if (doc) {
                 try {
-                    doc.open();
-                    doc.write(generatePreviewHTML());
-                    doc.close();
+                    if (!isIframeInitialized) {
+                        // 首次初始化整个iframe内容
+                        doc.open();
+                        doc.write(generatePreviewHTML());
+                        doc.close();
+                        setIsIframeInitialized(true);
+                    } else {
+                        // 保存当前滚动位置
+                        const scrollContainer = doc.querySelector('.svg-container');
+                        const scrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+                        
+                        // 仅更新SVG内容部分
+                        const svgContainer = doc.querySelector('.svg-container');
+                        if (svgContainer) {
+                            const processedCode = processImagePaths(code);
+                            svgContainer.innerHTML = processedCode;
+                            
+                            // 恢复滚动位置
+                            if (scrollContainer) {
+                                scrollContainer.scrollTop = scrollTop;
+                            }
+                        }
+                    }
                 } catch (error) {
                     console.error("更新预览时出错:", error);
                 }
@@ -154,6 +176,13 @@ export function PreviewTab() {
     useEffect(() => {
         calculateDimensions();
         updatePreview();
+    }, []);
+
+    // 组件卸载时重置初始化状态
+    useEffect(() => {
+        return () => {
+            setIsIframeInitialized(false);
+        };
     }, []);
 
     return (

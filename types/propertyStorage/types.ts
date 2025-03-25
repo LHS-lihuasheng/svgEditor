@@ -49,6 +49,7 @@ export interface ColorPropertyConfig extends BasePropertyConfig {
 export interface ImagePropertyConfig extends BasePropertyConfig {
   controlType: 'image';
   acceptTypes: string;         // 接受的文件类型
+  placeholder: '输入背景图链接'
 }
 
 // 四值字段定义

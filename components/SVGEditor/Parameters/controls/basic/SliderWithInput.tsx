@@ -6,14 +6,9 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InfoIcon } from "lucide-react";
-import { propertyConfig } from "@/types";
+import { SliderPropertyConfig, ControlProps } from "@/types";
 
-// 统一控件接口
-interface ControlProps {
-  propertyConfig: propertyConfig;
-  value: any;
-  onChange: (value: any) => void;
-}
+
 
 export function SliderWithInput({
   propertyConfig,
@@ -30,7 +25,7 @@ export function SliderWithInput({
     showLabel = true,
     defaultValue = 0,
     description
-  } = propertyConfig;
+  } = propertyConfig as SliderPropertyConfig;
 
   // 本地状态，处理滑块和输入框的同步
   const [localValue, setLocalValue] = useState<number>(value ?? defaultValue);

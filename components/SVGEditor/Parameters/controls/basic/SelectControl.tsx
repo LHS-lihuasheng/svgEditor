@@ -4,14 +4,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InfoIcon } from "lucide-react";
-import { propertyConfig } from "@/types";
+import { SelectPropertyConfig, ControlProps } from "@/types";
 
-// 统一控件接口
-interface ControlProps {
-    propertyConfig: propertyConfig;
-    value: any;
-    onChange: (value: any) => void;
-}
+
 
 export function SelectControl({
     propertyConfig,
@@ -26,7 +21,7 @@ export function SelectControl({
         description,
         placeholder = "选择选项",
         defaultValue
-    } = propertyConfig;
+    } = propertyConfig as SelectPropertyConfig;
 
     // 如果当前值为未定义且有默认值，则使用默认值
     if (value === undefined && defaultValue !== undefined) {

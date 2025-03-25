@@ -5,14 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InfoIcon } from "lucide-react";
-import { propertyConfig } from "@/types";
-
-// 统一控件接口
-interface ControlProps {
-    propertyConfig: propertyConfig;
-    value: any;
-    onChange: (value: any) => void;
-}
+import { NumberPropertyConfig,ControlProps } from "@/types";
 
 export function NumberControl({
     propertyConfig,
@@ -29,7 +22,7 @@ export function NumberControl({
         placeholder = "输入数值",
         showLabel = true,
         defaultValue = 0
-    } = propertyConfig;
+    } = propertyConfig as NumberPropertyConfig;
 
     // 使用字符串状态避免小数问题
     const [inputValue, setInputValue] = useState<string>((value !== undefined ? value : defaultValue).toString());

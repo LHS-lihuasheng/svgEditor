@@ -2,25 +2,34 @@
 
 import { useMemo } from "react";
 
-interface KeyframesSplinePreviewProps {
+interface Spline {
   x1: string;
   y1: string;
   x2: string;
   y2: string;
 }
 
+interface KeyframesSplinePreviewProps {
+  splines: Spline[];
+  onChange?: (splines: Spline[]) => void;
+}
+
 export function KeyframesSplinePreview({
-  x1, y1, x2, y2
+  splines,
+  onChange
 }: KeyframesSplinePreviewProps) {
+  // 使用第一个样条曲线进行预览
+  const spline = splines && splines.length > 0 ? splines[0] : { x1: "0", y1: "0", x2: "1", y2: "1" };
+
   // 解析为数字
   const points = useMemo(() => {
     return {
-      x1: parseFloat(x1) || 0,
-      y1: parseFloat(y1) || 0,
-      x2: parseFloat(x2) || 1,
-      y2: parseFloat(y2) || 1,
+      x1: parseFloat(spline.x1) || 0,
+      y1: parseFloat(spline.y1) || 0,
+      x2: parseFloat(spline.x2) || 1,
+      y2: parseFloat(spline.y2) || 1,
     };
-  }, [x1, y1, x2, y2]);
+  }, [spline]);
 
   // 生成曲线路径
   const curvePath = useMemo(() => {

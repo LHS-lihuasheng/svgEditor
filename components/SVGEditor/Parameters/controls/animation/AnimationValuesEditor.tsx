@@ -65,7 +65,7 @@ function parseKeySplines(keySplines: string): Spline[] {
 function useAnimationEditorState(component: BaseComponent, onUpdateProperty: (path: string, value: any) => void) {
   // 只读取组件的现有值，不设置默认值
   const [animationMode, setAnimationMode] = useState<AnimationMode>(() => {
-    return component.animationMode as AnimationMode || 'values';
+    return (component.animationMode as AnimationMode) || 'values';
   });
 
   // 只读取当前值，不设置默认值
@@ -253,6 +253,7 @@ function useAnimationEditorState(component: BaseComponent, onUpdateProperty: (pa
     removeKeyframe,
     updateKeyframe,
     updateSpline,
+    updateSplines,
     advancedMode,
     setAdvancedMode,
     showSplineEditor,
@@ -263,385 +264,351 @@ function useAnimationEditorState(component: BaseComponent, onUpdateProperty: (pa
 export function AnimationValuesEditor() {
   const { selectedComponent, updateComponent, updateComponentAttribute } = useEditor();
 
-  // 简化动画属性更新 - 只管理模式切换和普通属性更新
-  const handleUpdateProperty = (path: string, value: any) => {
-    if (path === 'animationMode') {
-      // 只更新动画模式，不处理其他默认值
-      const updatedComponent = { ...selectedComponent, animationMode: value };
-      updateComponent(updatedComponent as BaseComponent);
-    } else {
-      // 处理其他属性更新
-      const [, key] = path.split('.');
-      if (selectedComponent) {
-        updateComponentAttribute(selectedComponent.id, key, value);
-      }
-    }
-  };
-  // 为null和undefined提供安全保护
+  // 如果没有选中组件，显示提示
   if (!selectedComponent) {
-    return <div className="text-center p-4 text-gray-500">请选择一个组件</div>;
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        请选择一个组件以编辑动画属性
+      </div>
+    );
   }
 
-  const {
-    animationMode,
-    setAnimationMode,
-    values,
-    fromValue,
-    toValue,
-    byValue,
-    keyTimes,
-    keySplines,
-    calcMode,
-    handleValueChange,
-    keyframes,
-    splines,
-    addKeyframe,
-    removeKeyframe,
-    updateKeyframe,
-    updateSpline,
-    advancedMode,
-    setAdvancedMode,
-  } = useAnimationEditorState(selectedComponent, handleUpdateProperty);
+  // 创建动画编辑状态
+  const editorState = useAnimationEditorState(
+    selectedComponent,
+    (path, value) => {
+      // 特殊处理animationMode
+      if (path === 'animationMode') {
+        updateComponent({
+          ...selectedComponent,
+          animationMode: value
+        });
+      } else {
+        // 常规属性更新
+        updateComponentAttribute(path, value);
+      }
+    }
+  );
 
   return (
-    <div className="space-y-4">
-      {/* 动画模式选择 - 修改为支持五种模式 */}
-      <div>
-        <Label>动画类型</Label>
-        <Tabs
-          value={animationMode}
-          onValueChange={(v) => setAnimationMode(v as AnimationMode)}
-          className="w-full mt-1"
-        >
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="values">关键帧</TabsTrigger>
-            <TabsTrigger value="fromTo">起止值</TabsTrigger>
-            <TabsTrigger value="fromBy">起始增量</TabsTrigger>
-            <TabsTrigger value="to">目标值</TabsTrigger>
-            <TabsTrigger value="by">相对增量</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+    <div className="space-y-4 p-4">
+      <div className="flex flex-col gap-4">
+        <h3 className="text-lg font-medium">动画模式</h3>
 
-      {/* values模式的编辑区域 */}
-      {animationMode === 'values' && (
-        <div className="space-y-3">
-          {/* 基本/高级模式切换 */}
-          <div className="flex items-center justify-between mb-2">
-            <Label>编辑模式</Label>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">基本</span>
-              <Switch
-                checked={advancedMode}
-                onCheckedChange={setAdvancedMode}
-              />
-              <span className="text-xs text-muted-foreground">高级</span>
-            </div>
-          </div>
+        <div className="flex flex-col gap-2">
+          <Tabs
+            value={editorState.animationMode}
+            onValueChange={(val) => editorState.setAnimationMode(val as AnimationMode)}
+            className="w-full"
+          >
+            <TabsList className="grid grid-cols-5 mb-2">
+              <TabsTrigger value="values">values</TabsTrigger>
+              <TabsTrigger value="fromTo">from-to</TabsTrigger>
+              <TabsTrigger value="fromBy">from-by</TabsTrigger>
+              <TabsTrigger value="to">to</TabsTrigger>
+              <TabsTrigger value="by">by</TabsTrigger>
+            </TabsList>
 
-          {/* 基本模式 - 文本框编辑 */}
-          {!advancedMode && (
-            <>
-              <div>
-                <Label>关键帧值序列</Label>
-                <Textarea
-                  placeholder="输入分号分隔的值，如: 0;50;100"
-                  value={values}
-                  onChange={(e) => handleValueChange('values', e.target.value)}
-                  className="font-mono text-sm"
-                />
-              </div>
+            <TabsContent value="values" className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>关键帧数值</Label>
+                  {editorState.advancedMode ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => editorState.setAdvancedMode(false)}
+                    >
+                      简化模式
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => editorState.setAdvancedMode(true)}
+                    >
+                      高级模式
+                    </Button>
+                  )}
+                </div>
 
-              {/* 如果是spline模式，显示keyTimes和keySplines输入 */}
-              {calcMode === "spline" && (
-                <>
-                  <div>
-                    <Label>关键时间点 (keyTimes)</Label>
-                    <Input
-                      placeholder="输入分号分隔的时间值，如: 0;0.5;1"
-                      value={keyTimes}
-                      onChange={(e) => handleValueChange('keyTimes', e.target.value)}
-                      className="font-mono text-sm"
-                    />
-                  </div>
-                  <div>
-                    <Label>样条曲线控制点 (keySplines)</Label>
-                    <Input
-                      placeholder="输入分号分隔的贝塞尔控制点，如: 0.5 0 0.5 1;0.5 0 0.5 1"
-                      value={keySplines}
-                      onChange={(e) => handleValueChange('keySplines', e.target.value)}
-                      className="font-mono text-sm"
-                    />
-                  </div>
-                </>
-              )}
-            </>
-          )}
+                {editorState.advancedMode ? (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>values</Label>
+                      <Textarea
+                        value={editorState.values}
+                        onChange={(e) => editorState.handleValueChange('values', e.target.value)}
+                        placeholder="输入values值，用分号分隔各值"
+                      />
+                    </div>
 
-          {/* 高级模式 - 关键帧对象编辑 */}
-          {advancedMode && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>关键帧</Label>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={addKeyframe}
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1" />
-                  添加关键帧
-                </Button>
-              </div>
+                    <div className="space-y-2">
+                      <Label>keyTimes</Label>
+                      <Textarea
+                        value={editorState.keyTimes}
+                        onChange={(e) => editorState.handleValueChange('keyTimes', e.target.value)}
+                        placeholder="输入keyTimes值，用分号分隔各值"
+                      />
+                    </div>
 
-              {/* 关键帧列表 */}
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                {keyframes.map((keyframe, index) => (
-                  <Collapsible key={index} className="border rounded-md">
-                    <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <ChevronDown className="h-4 w-4" />
-                        <span>关键帧 {index + 1}</span>
-                      </div>
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <span>值: {keyframe.value}</span>
-                        <span className="mx-2">|</span>
-                        <span>时间: {keyframe.time}</span>
-                      </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="p-3 pt-0 border-t">
-                      <div className="grid grid-cols-2 gap-2 pt-2">
-                        <div>
-                          <Label className="text-xs">值</Label>
-                          <Input
-                            value={keyframe.value}
-                            onChange={(e) => updateKeyframe(index, 'value', e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">时间 (0-1)</Label>
-                          <Input
-                            type="number"
-                            min={0}
-                            max={1}
-                            step={0.01}
-                            value={keyframe.time}
-                            onChange={(e) => updateKeyframe(index, 'time', e.target.value)}
-                          />
-                        </div>
+                    <div className="space-y-2">
+                      <Label>插值计算方式</Label>
+                      <Select
+                        value={editorState.calcMode}
+                        onValueChange={(value) => editorState.handleValueChange('calcMode', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择计算方式" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="linear">线性插值(linear)</SelectItem>
+                          <SelectItem value="discrete">离散值(discrete)</SelectItem>
+                          <SelectItem value="paced">等速(paced)</SelectItem>
+                          <SelectItem value="spline">贝塞尔曲线(spline)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                        {/* 样条曲线编辑器 (如果是spline模式，且不是最后一个关键帧) */}
-                        {calcMode === "spline" && index < keyframes.length - 1 && (
-                          <div className="col-span-2 mt-2">
-                            <Collapsible>
-                              <div className="flex items-center justify-between">
-                                <Label className="text-xs">贝塞尔曲线控制点</Label>
-                                <CollapsibleTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <ChevronDown className="h-3.5 w-3.5" />
-                                  </Button>
-                                </CollapsibleTrigger>
-                              </div>
-                              <CollapsibleContent className="pt-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <Label className="text-xs">x1</Label>
-                                    <Input
-                                      type="number"
-                                      min={0}
-                                      max={1}
-                                      step={0.01}
-                                      value={splines[index]?.x1 || "0"}
-                                      onChange={(e) => updateSpline(index, 'x1', e.target.value)}
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs">y1</Label>
-                                    <Input
-                                      type="number"
-                                      min={0}
-                                      max={1}
-                                      step={0.01}
-                                      value={splines[index]?.y1 || "0"}
-                                      onChange={(e) => updateSpline(index, 'y1', e.target.value)}
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs">x2</Label>
-                                    <Input
-                                      type="number"
-                                      min={0}
-                                      max={1}
-                                      step={0.01}
-                                      value={splines[index]?.x2 || "1"}
-                                      onChange={(e) => updateSpline(index, 'x2', e.target.value)}
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs">y2</Label>
-                                    <Input
-                                      type="number"
-                                      min={0}
-                                      max={1}
-                                      step={0.01}
-                                      value={splines[index]?.y2 || "1"}
-                                      onChange={(e) => updateSpline(index, 'y2', e.target.value)}
-                                    />
-                                  </div>
-                                </div>
-                                {/* 贝塞尔曲线预览 */}
-                                <div className="mt-2 border rounded p-2">
-                                  <KeyframesSplinePreview
-                                    x1={parseFloat(splines[index]?.x1 || "0")}
-                                    y1={parseFloat(splines[index]?.y1 || "0")}
-                                    x2={parseFloat(splines[index]?.x2 || "1")}
-                                    y2={parseFloat(splines[index]?.y2 || "1")}
-                                  />
-                                </div>
-                              </CollapsibleContent>
-                            </Collapsible>
-                          </div>
-                        )}
-
-                        {/* 删除按钮 */}
-                        <div className="col-span-2 flex justify-end mt-2">
+                    {editorState.calcMode === "spline" && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label>keySplines</Label>
                           <Button
+                            variant="outline"
                             size="sm"
-                            variant="destructive"
-                            onClick={() => removeKeyframe(index)}
-                            disabled={keyframes.length <= 2}
+                            onClick={() => editorState.setShowSplineEditor(!editorState.showSplineEditor)}
                           >
-                            <Trash className="h-3.5 w-3.5 mr-1" />
-                            删除关键帧
+                            {editorState.showSplineEditor ? "隐藏可视化编辑" : "可视化编辑"}
                           </Button>
                         </div>
+                        <Textarea
+                          value={editorState.keySplines}
+                          onChange={(e) => editorState.handleValueChange('keySplines', e.target.value)}
+                          placeholder="贝塞尔曲线控制点，格式: x1 y1 x2 y2; x1 y1 x2 y2"
+                        />
+
+                        {editorState.showSplineEditor && (
+                          <div className="mt-4 border rounded-md p-4">
+                            <KeyframesSplinePreview
+                              splines={editorState.splines}
+                              onChange={(newSplines) => editorState.updateSplines(newSplines)}
+                            />
+                          </div>
+                        )}
                       </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label>关键帧列表</Label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={editorState.addKeyframe}
+                        >
+                          <Plus className="h-4 w-4 mr-1" /> 添加关键帧
+                        </Button>
+                      </div>
+
+                      <div className="space-y-2 mt-2">
+                        {editorState.keyframes.map((keyframe, index) => (
+                          <div key={index} className="flex items-center gap-2 w-full">
+                            <div className="grid grid-cols-2 gap-2 flex-1">
+                              <div>
+                                <Label className="text-xs">值</Label>
+                                <Input
+                                  value={keyframe.value}
+                                  onChange={(e) => editorState.updateKeyframe(index, 'value', e.target.value)}
+                                  placeholder="值"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">时间</Label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="1"
+                                  step="0.01"
+                                  value={keyframe.time}
+                                  onChange={(e) => editorState.updateKeyframe(index, 'time', e.target.value)}
+                                  placeholder="时间 (0-1)"
+                                />
+                              </div>
+                            </div>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => editorState.removeKeyframe(index)}
+                              disabled={editorState.keyframes.length <= 2}
+                              className="mt-4"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>插值计算方式</Label>
+                      <Select
+                        value={editorState.calcMode}
+                        onValueChange={(value) => editorState.handleValueChange('calcMode', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择计算方式" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="linear">线性插值(linear)</SelectItem>
+                          <SelectItem value="discrete">离散值(discrete)</SelectItem>
+                          <SelectItem value="paced">等速(paced)</SelectItem>
+                          <SelectItem value="spline">贝塞尔曲线(spline)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {editorState.calcMode === "spline" && (
+                      <Collapsible>
+                        <CollapsibleTrigger asChild>
+                          <Button variant="outline" className="flex w-full justify-between">
+                            <span>贝塞尔曲线控制</span>
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-2">
+                          <div className="space-y-4">
+                            <KeyframesSplinePreview
+                              splines={editorState.splines}
+                              onChange={(newSplines) => editorState.updateSplines(newSplines)}
+                            />
+
+                            {editorState.splines.map((spline, index) => (
+                              <div key={index} className="grid grid-cols-4 gap-2">
+                                <div>
+                                  <Label className="text-xs">x1</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="1"
+                                    step="0.1"
+                                    value={spline.x1}
+                                    onChange={(e) => editorState.updateSpline(index, 'x1', e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">y1</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="1"
+                                    step="0.1"
+                                    value={spline.y1}
+                                    onChange={(e) => editorState.updateSpline(index, 'y1', e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">x2</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="1"
+                                    step="0.1"
+                                    value={spline.x2}
+                                    onChange={(e) => editorState.updateSpline(index, 'x2', e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">y2</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="1"
+                                    step="0.1"
+                                    value={spline.y2}
+                                    onChange={(e) => editorState.updateSpline(index, 'y2', e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            </TabsContent>
 
-          {/* 计算模式选项 */}
-          <div>
-            <Label>计算模式</Label>
-            <Select
-              value={calcMode}
-              onValueChange={(v) => handleValueChange('calcMode', v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="选择计算模式" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="linear">线性 (linear)</SelectItem>
-                <SelectItem value="discrete">离散 (discrete)</SelectItem>
-                <SelectItem value="paced">均速 (paced)</SelectItem>
-                <SelectItem value="spline">样条曲线 (spline)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <TabsContent value="fromTo" className="space-y-4">
+              <div className="space-y-2">
+                <Label>From值</Label>
+                <Input
+                  value={editorState.fromValue}
+                  onChange={(e) => editorState.handleValueChange('from', e.target.value)}
+                  placeholder="起始值"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>To值</Label>
+                <Input
+                  value={editorState.toValue}
+                  onChange={(e) => editorState.handleValueChange('to', e.target.value)}
+                  placeholder="结束值"
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="fromBy" className="space-y-4">
+              <div className="space-y-2">
+                <Label>From值</Label>
+                <Input
+                  value={editorState.fromValue}
+                  onChange={(e) => editorState.handleValueChange('from', e.target.value)}
+                  placeholder="起始值"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>By值 (增量)</Label>
+                <Input
+                  value={editorState.byValue}
+                  onChange={(e) => editorState.handleValueChange('by', e.target.value)}
+                  placeholder="增量值"
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="to" className="space-y-4">
+              <div className="space-y-2">
+                <Label>To值</Label>
+                <Input
+                  value={editorState.toValue}
+                  onChange={(e) => editorState.handleValueChange('to', e.target.value)}
+                  placeholder="结束值"
+                />
+              </div>
+              <div className="text-sm text-muted-foreground">
+                从当前值动画到指定值
+              </div>
+            </TabsContent>
+
+            <TabsContent value="by" className="space-y-4">
+              <div className="space-y-2">
+                <Label>By值 (增量)</Label>
+                <Input
+                  value={editorState.byValue}
+                  onChange={(e) => editorState.handleValueChange('by', e.target.value)}
+                  placeholder="增量值"
+                />
+              </div>
+              <div className="text-sm text-muted-foreground">
+                从当前值增加指定的增量
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
-      )}
-
-      {/* fromTo模式 */}
-      {animationMode === 'fromTo' && (
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>初始值 (from)</Label>
-            <Input
-              placeholder="输入起始值"
-              value={fromValue}
-              onChange={(e) => handleValueChange('from', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>结束值 (to)</Label>
-            <Input
-              placeholder="输入结束值"
-              value={toValue}
-              onChange={(e) => handleValueChange('to', e.target.value)}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* fromBy模式 */}
-      {animationMode === 'fromBy' && (
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>初始值 (from)</Label>
-            <Input
-              placeholder="输入起始值"
-              value={fromValue}
-              onChange={(e) => handleValueChange('from', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>相对变化值 (by)</Label>
-            <Input
-              placeholder="输入相对变化值"
-              value={byValue}
-              onChange={(e) => handleValueChange('by', e.target.value)}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* to模式 */}
-      {animationMode === 'to' && (
-        <div>
-          <Label>目标值 (to)</Label>
-          <Input
-            placeholder="输入目标值"
-            value={toValue}
-            onChange={(e) => handleValueChange('to', e.target.value)}
-          />
-        </div>
-      )}
-
-      {/* by模式 */}
-      {animationMode === 'by' && (
-        <div>
-          <Label>相对变化值 (by)</Label>
-          <Input
-            placeholder="输入相对变化值"
-            value={byValue}
-            onChange={(e) => handleValueChange('by', e.target.value)}
-          />
-        </div>
-      )}
-
-      {/* 帮助提示 - 根据不同模式显示不同的提示 */}
-      <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-md">
-        <h4 className="text-sm font-medium mb-1">提示</h4>
-        <ul className="list-disc pl-4 space-y-1 text-xs">
-          {animationMode === "values" ? (
-            <>
-              <li>values: 分号分隔的多个值，组成关键帧</li>
-              <li>示例: "0;0.5;1" 或 "red;green;blue"</li>
-              {calcMode === "spline" && (
-                <>
-                  <li>keyTimes: 对应每个关键帧的时间点(0-1)</li>
-                  <li>keySplines: 控制关键帧间的贝塞尔曲线</li>
-                </>
-              )}
-            </>
-          ) : animationMode === "fromTo" ? (
-            <>
-              <li>from: 起始值</li>
-              <li>to: 结束值</li>
-            </>
-          ) : animationMode === "fromBy" ? (
-            <>
-              <li>from: 起始值</li>
-              <li>by: 相对变化值（最终值为from+by）</li>
-            </>
-          ) : animationMode === "to" ? (
-            <li>to: 动画结束值（从当前值开始）</li>
-          ) : (
-            <li>by: 相对变化值（从当前值增加by的量）</li>
-          )}
-        </ul>
       </div>
     </div>
   );

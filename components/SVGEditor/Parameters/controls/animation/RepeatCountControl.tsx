@@ -6,14 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InfoIcon } from "lucide-react";
-import { propertyConfig } from "@/types";
-
-// 统一控件接口
-interface ControlProps {
-  propertyConfig: propertyConfig;
-  value: any;
-  onChange: (value: any) => void;
-}
+import { RepeatCountPropertyConfig, ControlProps } from "@/types";
 
 export function RepeatCountControl({
   propertyConfig,
@@ -29,7 +22,7 @@ export function RepeatCountControl({
       { label: "固定次数", value: "finite" },
       { label: "无限循环", value: "indefinite" }
     ]
-  } = propertyConfig;
+  } = propertyConfig as RepeatCountPropertyConfig;
 
   // 是否是无限循环
   const [isInfinite, setIsInfinite] = useState(value === "indefinite");

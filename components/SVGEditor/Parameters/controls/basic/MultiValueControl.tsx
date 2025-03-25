@@ -2,29 +2,23 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { propertyConfig } from "@/types";
+import { QuadValuePropertyConfig, ControlProps } from "@/types";
 
-// 统一控件接口
-interface ControlProps {
-    propertyConfig: propertyConfig;
-    value: any;
-    onChange: (value: any) => void;
-}
+
 
 export function MultiValueControl({
     propertyConfig,
     value,
     onChange
 }: ControlProps) {
-    // 从propertyConfig中提取所需配置（适配QuadValuePropertyConfig接口）
     const {
         label,
-        fieldConfig,  // 字段配置
-        layout,       // 布局类型："grid" | "flex" | "stack"
-        gridCols,     // 网格列数
+        fieldConfig,
+        layout,
+        gridCols,
         description,
-        groupLabel    // 分组标签
-    } = propertyConfig;
+        groupLabel = ''
+    } = propertyConfig as QuadValuePropertyConfig;
 
     const safeValue = value || {};
 

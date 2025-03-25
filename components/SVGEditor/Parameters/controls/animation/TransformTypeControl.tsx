@@ -1,12 +1,7 @@
 "use client"
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-interface TransformTypeControlProps {
-  label?: string;
-  value: string;
-  onChange: (value: string) => void;
-}
+import { TransformPropertyConfig, ControlProps } from "@/types";
 
 const TRANSFORM_TYPES = [
   { value: "translate", label: "translate", description: "平移" },
@@ -25,12 +20,13 @@ const FORMAT_TIPS = {
 };
 
 export function TransformTypeControl({
-  label = "Transform Type",
+  propertyConfig,
   value,
   onChange
-}: TransformTypeControlProps) {
+}: ControlProps) {
+  const { label = "Transform Type" } = propertyConfig as TransformPropertyConfig;
   const currentValue = value || "translate";
-  
+
   return (
     <div className="space-y-2">
       <Select value={currentValue} onValueChange={onChange}>

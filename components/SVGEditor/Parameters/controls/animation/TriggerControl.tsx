@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { propertyConfig } from "@/types";
+import { TriggerPropertyConfig, ControlProps } from "@/types";
 
 const DEFAULT_TRIGGER_TYPES = [
   { label: "定时开始", value: "time" },
@@ -12,20 +12,17 @@ const DEFAULT_TRIGGER_TYPES = [
   { label: "touchend", value: "touchend" }
 ];
 
-// 统一控件接口
-interface ControlProps {
-  propertyConfig: propertyConfig;
-  value: any;
-  onChange: (value: any) => void;
-}
-
-export function TriggerControl({ propertyConfig, value, onChange }: ControlProps) {
+export function TriggerControl({
+  propertyConfig,
+  value,
+  onChange
+}: ControlProps) {
   // 从propertyConfig中提取配置
   const {
     label,
     description,
     options = DEFAULT_TRIGGER_TYPES
-  } = propertyConfig;
+  } = propertyConfig as TriggerPropertyConfig;
 
   const [triggerType, setTriggerType] = useState("time");
   const [inputValue, setInputValue] = useState("0s");

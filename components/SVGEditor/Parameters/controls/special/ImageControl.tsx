@@ -8,14 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InfoIcon } from "lucide-react";
 import { useAssets } from "@/contexts/AssetContext";
-import { propertyConfig } from "@/types";
+import { ControlProps, ImagePropertyConfig } from "@/types";
 
-// 统一控件接口
-interface ControlProps {
-    propertyConfig: propertyConfig;
-    value: any;
-    onChange: (value: any) => void;
-}
 
 export function ImageControl({
     propertyConfig,
@@ -29,7 +23,7 @@ export function ImageControl({
         showLabel = true,
         acceptTypes = "image/*",
         placeholder = "输入图片URL"
-    } = propertyConfig;
+    } = propertyConfig as ImagePropertyConfig;
 
     const { shiftFirstSelectedImage, findImageByPath } = useAssets();
     const [previewUrl, setPreviewUrl] = useState<string>('');
