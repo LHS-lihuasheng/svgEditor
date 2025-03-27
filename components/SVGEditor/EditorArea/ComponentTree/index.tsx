@@ -4,10 +4,15 @@
  */
 import { ComponentTreeItem } from './ComponentTreeItem';
 import { useEditor } from '@/contexts/EditorContext';
+import { useEffect } from 'react';
 
 export function ComponentTree() {
 
     const { components } = useEditor();
+
+    useEffect(() => {
+        console.log(components);
+    }, [components]);
 
     return (
         <div className="space-y-2">

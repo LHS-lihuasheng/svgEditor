@@ -27,70 +27,31 @@ export function generateAnimateCode(component: BaseComponent): string {
 
   console.log(`Generating animate code with mode: ${animationMode}`);
 
-  // 创建一个新的属性对象，确保不修改原始组件
-  const processedAttributes = { ...attributes };
+  // 创建黑名单映射
+  const modeExcludeProps = {
+    'values': new Set(['from', 'to', 'by', 'animationMode']),
+    'fromTo': new Set(['by', 'values', 'keyTimes', 'keySplines', 'animationMode']),
+    'fromBy': new Set(['to', 'values', 'keyTimes', 'keySplines', 'animationMode']),
+    'to': new Set(['from', 'by', 'values', 'keyTimes', 'keySplines', 'animationMode']),
+    'by': new Set(['from', 'to', 'values', 'keyTimes', 'keySplines', 'animationMode'])
+  };
 
-  // 确保移除animationMode字段，不要输出到SVG
-  delete processedAttributes.animationMode;
-
-  // 使用有效的动画模式，如果检测到无效值则使用默认值
-  const validModes = ['values', 'fromTo', 'fromBy', 'to', 'by'];
+  // 获取有效的动画模式
+  const validModes = Object.keys(modeExcludeProps);
   const safeMode = validModes.includes(animationMode) ? animationMode : 'values';
 
-  // 根据动画模式选择性保留属性
-  switch (safeMode) {
-    case 'values':
-      // 仅保留values相关属性
-      delete processedAttributes.from;
-      delete processedAttributes.to;
-      delete processedAttributes.by;
-      break;
+  // 创建新的属性对象，排除黑名单中的属性
+  const processedAttributes: Record<string, any> = {};
+  const excludeProps = modeExcludeProps[safeMode];
 
-    case 'fromTo':
-      // 仅保留from和to相关属性
-      delete processedAttributes.by;
-      delete processedAttributes.values;
-      delete processedAttributes.keyTimes;
-      delete processedAttributes.keySplines;
-      break;
-
-    case 'fromBy':
-      // 仅保留from和by相关属性
-      delete processedAttributes.to;
-      delete processedAttributes.values;
-      delete processedAttributes.keyTimes;
-      delete processedAttributes.keySplines;
-      break;
-
-    case 'to':
-      // 仅保留to相关属性
-      delete processedAttributes.from;
-      delete processedAttributes.by;
-      delete processedAttributes.values;
-      delete processedAttributes.keyTimes;
-      delete processedAttributes.keySplines;
-      break;
-
-    case 'by':
-      // 仅保留by相关属性
-      delete processedAttributes.from;
-      delete processedAttributes.to;
-      delete processedAttributes.values;
-      delete processedAttributes.keyTimes;
-      delete processedAttributes.keySplines;
-      break;
-  }
-
-  // 清理所有空值属性
-  Object.keys(processedAttributes).forEach(key => {
-    const value = processedAttributes[key];
-    if (value === undefined || value === null ||
-      (typeof value === 'string' && value.trim() === '')) {
-      delete processedAttributes[key];
+  Object.keys(attributes).forEach(key => {
+    if (!excludeProps.has(key) && attributes[key] !== null && attributes[key] !== undefined &&
+      !(typeof attributes[key] === 'string' && attributes[key].trim() === '')) {
+      processedAttributes[key] = attributes[key];
     }
   });
 
-  // 处理可能的子元素
+  // 处理子元素
   const childrenCode = children && children.length > 0
     ? children.map(child => generateComponentCode(child)).join('\n  ')
     : '';
@@ -104,87 +65,34 @@ export function generateAnimateCode(component: BaseComponent): string {
  * @returns {string} 生成的animateTransform代码
  */
 export function generateAnimateTransformCode(component: BaseComponent): string {
-  // 直接使用组件的animationMode字段，并提供默认值
   const { attributes = {}, animationMode = 'values', children = [] } = component;
 
   console.log(`Generating animateTransform code with mode: ${animationMode}`);
 
-  // 创建一个新的属性对象，避免修改原始属性
-  const processedAttributes = {
-    ...attributes,
-    // 确保attributeName和type存在
-    attributeName: attributes.attributeName || 'transform',
-    type: attributes.type || 'translate'
+  // 创建黑名单映射
+  const modeExcludeProps = {
+    'values': new Set(['from', 'to', 'by', 'animationMode']),
+    'fromTo': new Set(['by', 'values', 'keyTimes', 'keySplines', 'animationMode']),
+    'fromBy': new Set(['to', 'values', 'keyTimes', 'keySplines', 'animationMode']),
+    'to': new Set(['from', 'by', 'values', 'keyTimes', 'keySplines', 'animationMode']),
+    'by': new Set(['from', 'to', 'values', 'keyTimes', 'keySplines', 'animationMode'])
   };
 
-  // 确保移除animationMode字段，不要输出到SVG
-  delete processedAttributes.animationMode;
-
-  // 使用有效的动画模式，确保代码生成的稳定性
-  const validModes = ['values', 'fromTo', 'fromBy', 'to', 'by'];
+  // 获取有效的动画模式
+  const validModes = Object.keys(modeExcludeProps);
   const safeMode = validModes.includes(animationMode) ? animationMode : 'values';
 
-  // 根据动画模式处理属性
-  switch (safeMode) {
-    case 'values':
-      // 清除 from/to/by 属性
-      delete processedAttributes.from;
-      delete processedAttributes.to;
-      delete processedAttributes.by;
+  // 创建新的属性对象，排除黑名单中的属性
+  const processedAttributes: Record<string, any> = {};
+  const excludeProps = modeExcludeProps[safeMode];
 
-      // 确保保留values相关属性
-      if (!processedAttributes.calcMode) {
-        delete processedAttributes.keySplines;
-      } else if (processedAttributes.calcMode !== 'spline') {
-        delete processedAttributes.keySplines;
-      }
-      break;
-
-    case 'fromTo':
-      // 保留from和to，清除其他
-      delete processedAttributes.by;
-      delete processedAttributes.values;
-      delete processedAttributes.keyTimes;
-      delete processedAttributes.keySplines;
-      break;
-
-    case 'fromBy':
-      // 保留from和by，清除其他
-      delete processedAttributes.to;
-      delete processedAttributes.values;
-      delete processedAttributes.keyTimes;
-      delete processedAttributes.keySplines;
-      break;
-
-    case 'to':
-      // 只保留to，清除其他
-      delete processedAttributes.from;
-      delete processedAttributes.by;
-      delete processedAttributes.values;
-      delete processedAttributes.keyTimes;
-      delete processedAttributes.keySplines;
-      break;
-
-    case 'by':
-      // 只保留by，清除其他
-      delete processedAttributes.from;
-      delete processedAttributes.to;
-      delete processedAttributes.values;
-      delete processedAttributes.keyTimes;
-      delete processedAttributes.keySplines;
-      break;
-  }
-
-  // 清理所有空值属性
-  Object.keys(processedAttributes).forEach(key => {
-    const value = processedAttributes[key];
-    if (value === undefined || value === null ||
-      (typeof value === 'string' && value.trim() === '')) {
-      delete processedAttributes[key];
+  Object.keys(attributes).forEach(key => {
+    if (!excludeProps.has(key) && attributes[key] !== null && attributes[key] !== undefined &&
+      !(typeof attributes[key] === 'string' && attributes[key].trim() === '')) {
+      processedAttributes[key] = attributes[key];
     }
   });
 
-  // 处理可能的子元素
   const childrenCode = children && children.length > 0
     ? children.map(child => generateComponentCode(child)).join('\n  ')
     : '';

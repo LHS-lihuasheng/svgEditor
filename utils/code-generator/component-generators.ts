@@ -37,19 +37,12 @@ export const COMPONENT_GENERATORS: {
 export function generateComponentCode(component: BaseComponent): string {
   const generator = COMPONENT_GENERATORS[component.type];
 
-  if (generator) {
-    const childrenCode = component.children
-      ?.map(child => generateComponentCode(child))
-      ?.join('\n') || '';
-
-    return generator({
-      ...component,
-      children: childrenCode
-    });
+  if (!generator) {
+    console.warn(`Unsupported component tag: ${component.tag}`);
+    return '';
   }
 
-  console.warn(`Unsupported component tag: ${component.tag}`);
-  return '';
+  return generator(component);
 }
 
 /**

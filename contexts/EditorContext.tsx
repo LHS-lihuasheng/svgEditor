@@ -95,7 +95,7 @@ function editorReducer(draft: EditorState, action: EditorAction) {
         for (const component of newComponent) {
             component.id = generateComponentId(component.type);
             if (component.children?.length) {
-                updateComponentIds(component.children);
+                component.children = updateComponentIds(component.children);
             }
         }
         return newComponent;
