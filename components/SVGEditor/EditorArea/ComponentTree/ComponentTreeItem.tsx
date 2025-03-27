@@ -20,19 +20,16 @@ interface ComponentTreeItemProps {
   component: BaseComponent;
   level: number;
   index: number;
-  parentId: string | null;
 }
 
 export function ComponentTreeItem({
   component,
   level,
   index,
-  parentId,
 }: ComponentTreeItemProps) {
   const { updateComponent, selectedComponent, selectComponent, handleDrop, deleteComponent, clearSelection, selectPrevComponent, duplicateComponent } = useEditor();
   const { shiftFirstSelectedImage } = useAssets();
   const [isExpanded, setIsExpanded] = useState(true);
-  const [name, setName] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const isSelected = selectedComponent?.id === component.id;
@@ -43,18 +40,6 @@ export function ComponentTreeItem({
     onDrop: handleDrop,
     isDescendant: isDescendantOf
   });
-
-  // 添加背景图名称处理逻辑
-  useEffect(() => {
-    if (component.style?.backgroundImage) {
-      const bgImage = component.style.backgroundImage;
-      // 提取最后一个/后的所有内容，并移除单引号和右括号
-      const fileName = bgImage.split('/').pop()?.replace(/[')]/g, '') || '';
-      setName(fileName);
-    } else {
-      setName('');
-    }
-  }, [component.style?.backgroundImage]);
 
   /**
    * @description 处理向组件添加图片的功能
@@ -76,8 +61,6 @@ export function ComponentTreeItem({
       width: 1080.0,
       height: Number((selectedImage.dimensions.height / selectedImage.dimensions.width * 1080.0).toFixed(2))
     };
-
-    setName(selectedImage.name);
 
     updateComponent(updatedComponent);
   }, [component, updateComponent, shiftFirstSelectedImage]);
@@ -103,7 +86,6 @@ export function ComponentTreeItem({
             component={child}
             level={level + 1}
             index={childIndex}
-            parentId={component.id}
           />
         ))}
       </div>
@@ -141,9 +123,16 @@ export function ComponentTreeItem({
         `}
       >
         <span className="text-sm text-blue-600 mr-2">{index + 1}</span>
-        <span className="mr-2">{component.type}</span>
-        <span className="font-medium">
-          {component.style?.backgroundImage && name && `-${name}`}
+        <span className={`mr-2 ${'text-gray-700'}`}>
+          <span className="font-bold text-sm">{component.type}</span>
+          {component.attributes?.id && (
+            <span className="text-blue-500 text-xs">{`#${component.attributes.id}`}</span>
+          )}
+          {component.style?.backgroundImage && (
+            <span className="italic text-gray-600 text-xs">
+              {`(${component.style.backgroundImage.split('/').pop()?.replace(/[')]/g, '')})`}
+            </span>
+          )}
         </span>
 
         <div className="ml-auto flex items-center">
@@ -230,8 +219,6 @@ export function ComponentTreeItem({
             <AlertDialogAction
               onClick={(e) => {
                 e.stopPropagation();
-                // 删除前清除背景图关联的名称
-                setName('');
                 deleteComponent(component.id);
                 setShowDeleteDialog(false);
               }}

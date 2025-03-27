@@ -19,12 +19,16 @@ export const ANIMATE_TRANSFORM_TEMPLATE: BaseComponentTemplate = {
       values: '0 0;10 0;0 0',
       begin: 'click',
       dur: '1s',
-      repeatCount: '1'
+      repeatCount: '1',
+      fill: 'freeze',
+      restart: 'never'
     },
     fixedProperties: [
       'attributes.id',
       'attributes.attributeName',
-      'attributes.type'
+      'attributes.type',
+      'attributes.begin',
+      'attributes.dur',
     ],
     animationMode: 'values',
     children: []

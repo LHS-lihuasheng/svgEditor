@@ -132,7 +132,7 @@ export function createProperty<T extends PropertyControlType>(
   return {
     controlType,
     label,
-    showLabel: true,
+    showLabel: false,
     description: '',
     defaultValue: undefined,
     ...(controlType === 'string' ? { placeholder: '' } : {}),
@@ -153,4 +153,9 @@ export function createProperty<T extends PropertyControlType>(
   } as Extract<propertyConfig, { controlType: T }>;
 }
 
-export type PropertyStorageName = keyof typeof ALL_PROPERTY_STORAGE;
+// 统一控件接口
+export interface ControlProps {
+  propertyConfig: propertyConfig;
+  value: any;
+  onChange: (value: any) => void;
+}

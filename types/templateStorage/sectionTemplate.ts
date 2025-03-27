@@ -4,9 +4,9 @@
  */
 import { BaseComponentTemplate } from '@/types/component';
 
-export const SECTION_TEMPLATE: BaseComponentTemplate = {
-    templateName: 'Section容器',
-    description: '容器元素，用于布局和内容分组',
+export const NORMAL_SECTION_TEMPLATE: BaseComponentTemplate = {
+    templateName: '(常规)Section',
+    description: '常规Section容器，用于包裹其他元素',
     component: [{
         id: '',
         type: 'section',
@@ -14,20 +14,59 @@ export const SECTION_TEMPLATE: BaseComponentTemplate = {
             id: ''
         },
         style: {
-            width: '100%',
-            height: 'auto',
-            display: 'block',
-            margin: { top: 0, right: 0, bottom: 0, left: 0 },
-            padding: { top: 0, right: 0, bottom: 0, left: 0 },
-            textAlign: 'center',
             lineHeight: '0',
-            position: 'relative',
-            overflow: 'hidden',
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            textAlign: 'center',
         },
         fixedProperties: [
             'attributes.id'
         ],
         children: []
     }]
-}; 
+};
+
+export const ZERO_HEIGHT_SECTION_TEMPLATE: BaseComponentTemplate = {
+    templateName: '(零高)Section',
+    description: '零高容器，用于层级叠加',
+    component: [{
+        id: '',
+        type: 'section',
+        attributes: {
+            id: ''
+        },
+        style: {
+            height: '0',
+            lineHeight: '0',
+            pointerEvents: 'none',
+            textAlign: 'center',
+        },
+        fixedProperties: [
+            'attributes.id'
+        ],
+        children: []
+    }]
+};
+
+export const OVERFLOW_SECTION_TEMPLATE: BaseComponentTemplate = {
+    templateName: '(最外层)Section',
+    description: '用于包裹其他元素，并设置溢出隐藏',
+    component: [{
+        id: '',
+        type: 'section',
+        attributes: {
+            id: ''
+        },
+        style: {
+            overflow: 'hidden',
+            lineHeight: '0',
+            pointerEvents: 'none',
+            textAlign: 'center',
+        },
+        fixedProperties: [
+            'attributes.id'
+        ],
+        children: []
+    }]
+};
+
+

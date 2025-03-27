@@ -7,12 +7,14 @@ import { createProperty, propertyStorage } from './types';
 export const SET_PROPERTY: propertyStorage = {
   attributes: {
     id: createProperty('string', 'ID', {
+      showLabel: true,
       defaultValue: '',
       description: '元素唯一标识符',
       placeholder: '输入标识符'
     }),
 
     attributeName: createProperty('select', 'Target Attribute', {
+      showLabel: true,
       defaultValue: 'visibility',
       description: '要设置的目标属性',
       options: [
@@ -26,12 +28,14 @@ export const SET_PROPERTY: propertyStorage = {
     }),
 
     to: createProperty('string', 'To Value', {
+      showLabel: true,
       defaultValue: 'hidden',
       description: '目标属性值',
       placeholder: '例如: hidden, visible, #ff0000'
     }),
 
     begin: createProperty('trigger', '触发方式', {
+      showLabel: true,
       defaultValue: '0s',
       description: '设置开始触发条件',
       options: [
@@ -43,12 +47,14 @@ export const SET_PROPERTY: propertyStorage = {
     }),
 
     dur: createProperty('string', 'Duration', {
+      showLabel: true,
       defaultValue: '1ms',
       description: '设置持续时间',
       placeholder: '例如: 1ms, 0s'
     }),
 
     fill: createProperty('select', 'Fill Mode', {
+      showLabel: true,
       defaultValue: 'freeze',
       description: '设置完成后效果',
       options: [

@@ -22,7 +22,7 @@ export function SliderWithInput({
     max = 100,
     step = 1,
     inputWidth = "w-16",
-    showLabel = true,
+    showLabel = false,
     defaultValue = 0,
     description
   } = propertyConfig as SliderPropertyConfig;

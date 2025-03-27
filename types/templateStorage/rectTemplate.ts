@@ -4,23 +4,22 @@
 import { BaseComponentTemplate } from '@/types/component';
 
 export const RECT_TEMPLATE: BaseComponentTemplate = {
-  templateName: '矩形',
-  description: '热区',
+  templateName: '热区',
+  description: '基本图形，默认可点击，点击一次后消失，常用作触发热区',
   component: [{
     id: '',
     type: 'rect',
     attributes: {
-      id: '',
-      x: 0,
-      y: 0,
-      width: 100,
-      height: 100
+      id: '热区',
+      x: '0',
+      y: '0',
+      width: '100%',
+      height: '100%'
     },
     style: {
       fill: '#000000',
-      opacity: 1,
-      stroke: 'none',
-      strokeWidth: 1
+      opacity: 0,
+      pointerEvents: 'visible'
     },
     fixedProperties: [
       'attributes.id',
@@ -29,6 +28,26 @@ export const RECT_TEMPLATE: BaseComponentTemplate = {
       'attributes.width',
       'attributes.height',
     ],
-    children: []
+    children: [{
+      id: '',
+      type: 'set',
+      attributes: {
+        id: '隐藏动画',
+        attributeName: 'visibility',
+        to: 'hidden',
+        begin: 'click',
+        dur: '1ms',
+        fill: 'freeze'
+      },
+      fixedProperties: [
+        'attributes.id',
+        'attributes.attributeName',
+        'attributes.to',
+        'attributes.begin',
+        'attributes.dur',
+        'attributes.fill'
+      ],
+      children: []
+    }]
   }]
 }; 

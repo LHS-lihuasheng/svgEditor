@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InfoIcon } from "lucide-react";
 import { SelectPropertyConfig, ControlProps } from "@/types";
-
+import { useEffect } from "react";
 
 
 export function SelectControl({
@@ -17,7 +17,7 @@ export function SelectControl({
     const {
         label,
         options = [],
-        showLabel = true,
+        showLabel = false,
         description,
         placeholder = "选择选项",
         defaultValue
@@ -27,6 +27,10 @@ export function SelectControl({
     if (value === undefined && defaultValue !== undefined) {
         onChange(defaultValue);
     }
+
+    useEffect(() => {
+        console.log("showLabel===========", showLabel);
+    }, [showLabel]);
 
     return (
         <div className="space-y-2">

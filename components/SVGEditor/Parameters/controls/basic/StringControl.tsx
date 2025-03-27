@@ -15,7 +15,7 @@ export function StringControl({
     const {
         label,
         placeholder = "",
-        showLabel = true,
+        showLabel = false,
         description,
         defaultValue = ""
     } = propertyConfig as StringPropertyConfig;

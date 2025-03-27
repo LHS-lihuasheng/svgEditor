@@ -2,9 +2,8 @@
 
 import { useMemo, useState, useCallback } from "react";
 import { useEditor } from '@/contexts/EditorContext';
-import { COMPONENT_TEMPLATES } from '@/types/templateStorage';
 import { ALL_PROPERTY_STORAGE } from '@/types/propertyStorage';
-import type { BaseComponent, propertyConfig, PropertyControlType, BaseComponentTemplate, category } from '@/types';
+import type { BaseComponent, propertyConfig, StringPropertyConfig, propertyStorage } from '@/types';
 import _ from 'lodash';
 
 // 属性项接口定义
@@ -60,15 +59,10 @@ export function useProperties(excludePaths: string[] = []): PropertyManagerResul
     const { selectedComponent, updateComponent, updateComponentStyle, updateComponentAttribute } = useEditor();
     const [selectedProperty, setSelectedProperty] = useState<string>("");
 
-    const template = useMemo(() => {
-        if (!selectedComponent) return {} as BaseComponentTemplate;
-        return COMPONENT_TEMPLATES[selectedComponent.type] || {} as BaseComponentTemplate;
+    const propertyStorage: propertyStorage = useMemo(() => {
+        if (!selectedComponent) return { attributes: {}, style: {} };
+        return ALL_PROPERTY_STORAGE[selectedComponent.type];
     }, [selectedComponent]);
-
-    const propertyStorage = useMemo(() => {
-        if (!selectedComponent) return {};
-        return ALL_PROPERTY_STORAGE[template.propertyStorageName] || {};
-    }, [selectedComponent, template]);
 
     const updateProperty = useCallback((path: string, value: any) => {
         if (!selectedComponent || _.isEmpty(path)) return;
@@ -117,7 +111,7 @@ export function useProperties(excludePaths: string[] = []): PropertyManagerResul
 
     // 移除属性
     const removeProperty = useCallback((path: string) => {
-        if (!selectedComponent || template.fixedProperties?.includes(path)) return;
+        if (!selectedComponent || selectedComponent.fixedProperties?.includes(path)) return;
 
         // 深拷贝组件并删除属性
         const newComponent = _.cloneDeep(selectedComponent);
@@ -130,15 +124,7 @@ export function useProperties(excludePaths: string[] = []): PropertyManagerResul
         }
 
         updateComponent(newComponent);
-    }, [selectedComponent, template.fixedProperties, updateComponent]);
-
-    // 推断属性类型
-    const inferPropertyControlType = useCallback((key: string, value: any): PropertyControlType => {
-        if (_.isNumber(value)) return 'number';
-        if (_.isBoolean(value)) return 'boolean';
-        if (key.includes('color') || key.includes('fill') || key.includes('stroke')) return 'color';
-        return 'string';
-    }, []);
+    }, [selectedComponent, updateComponent]);
 
     // 创建PropertyItem辅助函数
     const createPropertyItem = useCallback((path: string, key: string, value: any): PropertyItem => {
@@ -150,32 +136,24 @@ export function useProperties(excludePaths: string[] = []): PropertyManagerResul
             return {
                 path,
                 config,
-                isFixed: template.fixedProperties?.includes(path)
+                isFixed: selectedComponent?.fixedProperties?.includes(path) || false
             };
         }
 
         // 自动推断未定义的属性，确保包含所有必需字段
-        const controlType = inferPropertyControlType(key, value);
         return {
             path,
             config: {
-                controlType,
+                controlType: 'string',
                 label: _.startCase(key),
                 description: `${_.startCase(key)} 属性`,
                 defaultValue: value,
                 showLabel: true,
-                ...(controlType === 'string' ? { placeholder: `输入${_.startCase(key)}` } : {}),
-                ...(controlType === 'number' ? {
-                    min: 0, max: 100, step: 1,
-                    placeholder: `输入${_.startCase(key)}`
-                } : {}),
-                ...(controlType === 'select' ? { options: [], placeholder: '请选择' } : {}),
-                ...(controlType === 'color' ? { presetColors: [] } : {}),
-                ...(controlType === 'slider' ? { min: 0, max: 100, step: 1, inputWidth: '60px' } : {})
-            },
+                placeholder: `输入${_.startCase(key)}`
+            } as StringPropertyConfig,
             isFixed: false
         };
-    }, [propertyStorage, template.fixedProperties, inferPropertyControlType]);
+    }, [propertyStorage, selectedComponent?.fixedProperties]);
 
     // 属性收集逻辑
     const { existingProperties, addableProperties } = useMemo(() => {
@@ -192,7 +170,7 @@ export function useProperties(excludePaths: string[] = []): PropertyManagerResul
                 if (existingPaths.has(path) || excludePaths.includes(path)) return;
 
                 const item = createPropertyItem(path, key, value);
-                item.isFixed = template.fixedProperties?.includes(path) || false;
+                item.isFixed = selectedComponent?.fixedProperties?.includes(path) || false;
                 existingProps.push(item);
                 existingPaths.add(path);
             });
@@ -207,7 +185,7 @@ export function useProperties(excludePaths: string[] = []): PropertyManagerResul
         }
 
         // 2. 确保固定属性存在（即使组件中不存在）
-        template.fixedProperties?.forEach(path => {
+        selectedComponent.fixedProperties?.forEach(path => {
             if (!existingPaths.has(path)) {
                 const [category, propertyKey] = path.split('.');
                 const config = propertyStorage[category as keyof typeof propertyStorage]?.[propertyKey];
@@ -242,14 +220,14 @@ export function useProperties(excludePaths: string[] = []): PropertyManagerResul
             .filter(prop =>
                 !existingPaths.has(prop.path) &&
                 !excludePaths.includes(prop.path) &&
-                !template.fixedProperties?.includes(prop.path)
+                !selectedComponent?.fixedProperties?.includes(prop.path)
             );
 
         return {
             existingProperties: existingProps.sort((a, b) => a.config.label.localeCompare(b.config.label)),
             addableProperties: addableProps.sort((a, b) => a.config.label.localeCompare(b.config.label))
         };
-    }, [selectedComponent, template, propertyStorage, excludePaths, createPropertyItem]);
+    }, [selectedComponent, propertyStorage, excludePaths, createPropertyItem]);
 
     return {
         selectedProperty,

@@ -6,12 +6,14 @@ import { createProperty, propertyStorage } from './types';
 export const FOREIGN_OBJECT_PROPERTY: propertyStorage = {
   attributes: {
     id: createProperty('string', 'ID', {
+      showLabel: true,
       defaultValue: '',
       description: '元素唯一标识符',
       placeholder: '输入标识符'
     }),
 
     x: createProperty('number', 'X坐标', {
+      showLabel: true,
       defaultValue: 0,
       step: 1,
       min: -9999,
@@ -21,6 +23,7 @@ export const FOREIGN_OBJECT_PROPERTY: propertyStorage = {
     }),
 
     y: createProperty('number', 'Y坐标', {
+      showLabel: true,
       defaultValue: 0,
       step: 1,
       min: -9999,
@@ -29,20 +32,16 @@ export const FOREIGN_OBJECT_PROPERTY: propertyStorage = {
       placeholder: '输入Y坐标'
     }),
 
-    width: createProperty('number', '宽度', {
-      defaultValue: 200,
-      step: 1,
-      min: 0,
-      max: 9999,
+    width: createProperty('string', '宽度', {
+      showLabel: true,
+      defaultValue: '100%',
       description: '元素的宽度',
       placeholder: '输入宽度'
     }),
 
-    height: createProperty('number', '高度', {
-      defaultValue: 100,
-      step: 1,
-      min: 0,
-      max: 9999,
+    height: createProperty('string', '高度', {
+      showLabel: true,
+      defaultValue: '100%',
       description: '元素的高度',
       placeholder: '输入高度'
     })

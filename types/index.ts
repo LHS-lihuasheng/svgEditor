@@ -8,11 +8,4 @@ export * from './drag';
 export * from './propertyStorage/index';
 export * from './templateStorage/index';
 
-import { propertyConfig } from './propertyStorage/types';
 
-// 统一控件接口
-export interface ControlProps {
-    propertyConfig: propertyConfig;
-    value: any;
-    onChange: (value: any) => void;
-}

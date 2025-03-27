@@ -8,6 +8,7 @@ import { createProperty, propertyStorage } from './types';
 export const SECTION_PROPERTY: propertyStorage = {
     attributes: {
         id: createProperty('string', 'ID', {
+            showLabel: true,
             defaultValue: '',
             description: '元素唯一标识符',
             placeholder: '输入标识符'

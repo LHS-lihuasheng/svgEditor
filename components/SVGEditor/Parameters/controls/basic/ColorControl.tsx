@@ -25,7 +25,7 @@ export function ColorControl({
         label,
         presetColors = DEFAULT_COLORS,
         description,
-        showLabel = true
+        showLabel = false
     } = propertyConfig as ColorPropertyConfig;
 
     const [color, setColor] = useState(value);

@@ -20,7 +20,7 @@ export function NumberControl({
         step = 1,
         description,
         placeholder = "输入数值",
-        showLabel = true,
+        showLabel = false,
         defaultValue = 0
     } = propertyConfig as NumberPropertyConfig;
 

@@ -1,5 +1,3 @@
-import { PropertyStorageName } from './propertyStorage';
-
 // 基础组件类型定义
 export interface BaseComponent {
   id: string;

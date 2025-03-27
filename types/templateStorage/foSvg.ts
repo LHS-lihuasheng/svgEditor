@@ -1,8 +1,8 @@
 import { BaseComponentTemplate } from '@/types/component';
 
-export const FO_SVG_TEMPLATE: BaseComponentTemplate = {
-    templateName: 'FO SVG',
-    description: 'g+fo+svg',
+export const FO_PICTURE_TEMPLATE: BaseComponentTemplate = {
+    templateName: 'FO 图片',
+    description: 'g{fo{svg}}',
     component: [{
         id: '',
         type: 'g',

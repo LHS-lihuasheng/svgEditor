@@ -20,7 +20,7 @@ export function ImageControl({
     const {
         label = "图片",
         description,
-        showLabel = true,
+        showLabel = false,
         acceptTypes = "image/*",
         placeholder = "输入图片URL"
     } = propertyConfig as ImagePropertyConfig;

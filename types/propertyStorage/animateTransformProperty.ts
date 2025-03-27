@@ -7,18 +7,21 @@ import { createProperty, propertyStorage } from './types';
 export const ANIMATE_TRANSFORM_PROPERTY: propertyStorage = {
   attributes: {
     id: createProperty('string', 'ID', {
+      showLabel: true,
       defaultValue: '',
       description: '元素唯一标识符',
       placeholder: '输入标识符'
     }),
 
     attributeName: createProperty('string', 'Attribute Name', {
+      showLabel: true,
       defaultValue: 'transform',
       description: '要变换的属性名称',
       placeholder: '通常为transform'
     }),
 
     type: createProperty('select', 'Transform Type', {
+      showLabel: true,
       defaultValue: 'translate',
       description: '变换类型',
       options: [
@@ -56,6 +59,7 @@ export const ANIMATE_TRANSFORM_PROPERTY: propertyStorage = {
     }),
 
     begin: createProperty('trigger', '触发方式', {
+      showLabel: true,
       defaultValue: '0s',
       description: '动画开始触发条件',
       options: [
@@ -67,6 +71,7 @@ export const ANIMATE_TRANSFORM_PROPERTY: propertyStorage = {
     }),
 
     dur: createProperty('string', 'Duration', {
+      showLabel: true,
       defaultValue: '1s',
       description: '动画持续时间',
       placeholder: '例如: 1s, 500ms'

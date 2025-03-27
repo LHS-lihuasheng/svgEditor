@@ -7,61 +7,48 @@ import { createProperty, propertyStorage } from './types';
 export const RECT_PROPERTY: propertyStorage = {
   attributes: {
     id: createProperty('string', 'ID', {
+      showLabel: true,
       defaultValue: '',
       description: '元素唯一标识符',
       placeholder: '输入标识符'
     }),
 
-    x: createProperty('number', 'X Position', {
-      defaultValue: 0,
-      min: -9999,
-      max: 9999,
-      step: 1,
+    x: createProperty('string', 'X Position', {
+      showLabel: true,
+      defaultValue: '0',
       description: '矩形左上角的X坐标',
       placeholder: '输入X坐标'
     }),
 
-    y: createProperty('number', 'Y Position', {
-      defaultValue: 0,
-      min: -9999,
-      max: 9999,
-      step: 1,
+    y: createProperty('string', 'Y Position', {
+      showLabel: true,
+      defaultValue: '0',
       description: '矩形左上角的Y坐标',
       placeholder: '输入Y坐标'
     }),
 
-    width: createProperty('number', 'Width', {
-      defaultValue: 100,
-      min: 0,
-      max: 9999,
-      step: 1,
+    width: createProperty('string', 'Width', {
+      showLabel: true,
+      defaultValue: '100%',
       description: '矩形的宽度',
       placeholder: '输入宽度'
     }),
 
-    height: createProperty('number', 'Height', {
-      defaultValue: 100,
-      min: 0,
-      max: 9999,
-      step: 1,
+    height: createProperty('string', 'Height', {
+      showLabel: true,
+      defaultValue: '100%',
       description: '矩形的高度',
       placeholder: '输入高度'
     }),
 
-    rx: createProperty('number', 'X Radius', {
-      defaultValue: 0,
-      min: 0,
-      max: 500,
-      step: 1,
+    rx: createProperty('string', 'X Radius', {
+      defaultValue: '0',
       description: '矩形X方向的圆角半径',
       placeholder: '输入X圆角'
     }),
 
-    ry: createProperty('number', 'Y Radius', {
-      defaultValue: 0,
-      min: 0,
-      max: 500,
-      step: 1,
+    ry: createProperty('string', 'Y Radius', {
+      defaultValue: '0',
       description: '矩形Y方向的圆角半径',
       placeholder: '输入Y圆角'
     })

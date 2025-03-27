@@ -13,14 +13,17 @@ export const SET_TEMPLATE: BaseComponentTemplate = {
       id: '',
       attributeName: 'visibility',
       to: 'hidden',
-      begin: '0s',
+      begin: 'click',
       dur: '1ms',
       fill: 'freeze'
     },
     fixedProperties: [
       'attributes.id',
       'attributes.attributeName',
-      'attributes.to'
+      'attributes.to',
+      'attributes.begin',
+      'attributes.dur',
+      'attributes.fill'
     ],
     children: []
   }]
