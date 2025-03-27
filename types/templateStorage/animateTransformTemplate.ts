@@ -4,10 +4,11 @@
 import { BaseComponentTemplate } from '@/types/component';
 
 export const ANIMATE_TRANSFORM_TEMPLATE: BaseComponentTemplate = {
-  label: 'AnimateTransform动画',
-  icon: '🔄',
+  templateName: 'AnimateTransform动画',
   description: 'SVG AnimateTransform元素，用于变换属性动画',
-  defaultProperties: {
+  component: [{
+    id: '',
+    type: 'animateTransform',
     attributes: {
       id: '',
       attributeName: 'transform',
@@ -20,12 +21,12 @@ export const ANIMATE_TRANSFORM_TEMPLATE: BaseComponentTemplate = {
       dur: '1s',
       repeatCount: '1'
     },
-    animationMode: 'values'
-  },
-  fixedProperties: [
-    'attributes.id',
-    'attributes.attributeName',
-    'attributes.type'
-  ],
-  propertyStorageName: 'ANIMATE_TRANSFORM'
+    fixedProperties: [
+      'attributes.id',
+      'attributes.attributeName',
+      'attributes.type'
+    ],
+    animationMode: 'values',
+    children: []
+  }]
 }; 

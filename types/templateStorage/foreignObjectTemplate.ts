@@ -5,24 +5,25 @@
 import { BaseComponentTemplate } from '@/types/component';
 
 export const FOREIGN_OBJECT_TEMPLATE: BaseComponentTemplate = {
-  label: 'ForeignObject',
-  icon: '📝',
+  templateName: 'ForeignObject',
   description: '可嵌入HTML或外部内容的容器',
-  defaultProperties: {
+  component: [{
+    id: '',
+    type: 'foreignObject',
     attributes: {
       id: '',
       x: 0,
       y: 0,
       width: '100%',
       height: '100%'
-    }
-  },
-  fixedProperties: [
-    'attributes.id',
-    'attributes.x',
-    'attributes.y',
-    'attributes.width',
-    'attributes.height'
-  ],
-  propertyStorageName: 'FOREIGN_OBJECT'
+    },
+    fixedProperties: [
+      'attributes.id',
+      'attributes.x',
+      'attributes.y',
+      'attributes.width',
+      'attributes.height'
+    ],
+    children: []
+  }]
 }; 

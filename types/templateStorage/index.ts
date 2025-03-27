@@ -11,17 +11,17 @@ import { ANIMATE_TRANSFORM_TEMPLATE } from './animateTransformTemplate';
 import { FOREIGN_OBJECT_TEMPLATE } from './foreignObjectTemplate';
 import { SECTION_TEMPLATE } from './sectionTemplate';
 import { BaseComponentTemplate } from '@/types/component';
+import { FO_SVG_TEMPLATE } from './foSvg';
 
 // 注册所有组件模板
-export const COMPONENT_TEMPLATES: Record<string, BaseComponentTemplate> = {
-  'svgPic': SVG_PIC_TEMPLATE,
-  'g': GROUP_TEMPLATE,
-  'rect': RECT_TEMPLATE,
-  'set': SET_TEMPLATE,
-  'animate': ANIMATE_TEMPLATE,
-  'animateTransform': ANIMATE_TRANSFORM_TEMPLATE,
-  'foreignObject': FOREIGN_OBJECT_TEMPLATE,
-  'section': SECTION_TEMPLATE
-};
-
-export type TEMPLATE = keyof typeof COMPONENT_TEMPLATES;
+export const COMPONENT_TEMPLATES: BaseComponentTemplate[] = [
+  SVG_PIC_TEMPLATE,
+  GROUP_TEMPLATE,
+  RECT_TEMPLATE,
+  SET_TEMPLATE,
+  ANIMATE_TEMPLATE,
+  ANIMATE_TRANSFORM_TEMPLATE,
+  FOREIGN_OBJECT_TEMPLATE,
+  SECTION_TEMPLATE,
+  FO_SVG_TEMPLATE
+];

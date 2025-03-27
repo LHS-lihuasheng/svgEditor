@@ -2,15 +2,14 @@
 
 import { Card } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { TEMPLATE_NAMES } from '@/types/templateStorage'
 import { COMPONENT_TEMPLATES } from '@/types/templateStorage'
-import { Component, GripHorizontal } from "lucide-react"
+import { GripHorizontal } from "lucide-react"
 import { useDrag } from "react-dnd"
-import type { DragItem } from '@/types'
+import type { DragItem } from '@/types/drag'
 import { cn } from "@/lib/utils"
 import { useEditor } from "@/contexts/EditorContext"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-
+import type { BaseComponentTemplate } from '@/types/component'
 export function ComponentsTab() {
     return (
         <div className="p-4">
@@ -23,13 +22,10 @@ export function ComponentsTab() {
                 <ScrollArea className="h-[calc(100vh-240px)]">
                     <div className="grid grid-cols-1 gap-3 pr-4">
                         {/* 显示所有组件 */}
-                        {Object.entries(COMPONENT_TEMPLATES).map(([type, template]) => (
+                        {COMPONENT_TEMPLATES.map(template => (
                             <ComponentCard
-                                key={type}
-                                type={type}
-                                title={template.label}
-                                description={template.description || ''}
-                                icon={template.icon}
+                                key={template.templateName}
+                                template={template}
                             />
                         ))}
                     </div>
@@ -40,22 +36,17 @@ export function ComponentsTab() {
 }
 
 interface ComponentCardProps {
-    type: TEMPLATE_NAMES
-    title: string
-    description: string
-    icon: React.ReactNode | string
+    template: BaseComponentTemplate
 }
 
-function ComponentCard({ type, title, description, icon }: ComponentCardProps) {
+function ComponentCard({ template }: ComponentCardProps) {
 
     const { addComponent } = useEditor();
 
     const [{ isDragging }, drag] = useDrag(() => ({
-        type: 'TOOL',
+        type: 'TEMPLATE',
         item: {
-            type: type,
-            isToolItem: true,
-            id: `temp-${type}-${Date.now()}`
+            component: template.component
         } as DragItem,
         collect: (monitor) => ({
             isDragging: !!monitor.isDragging(),
@@ -75,18 +66,12 @@ function ComponentCard({ type, title, description, icon }: ComponentCardProps) {
                         <div
                             ref={drag as unknown as React.RefObject<HTMLDivElement>}
                             className="cursor-grab active:cursor-grabbing"
-                            onClick={() => addComponent(type)}
+                            onClick={() => addComponent(template.component)}
                         >
                             <div className="flex items-center p-3 group">
-                                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md bg-blue-50 text-blue-600 mr-3">
-                                    {typeof icon === 'string' ?
-                                        <span className="text-lg">{icon}</span> :
-                                        <Component className="h-4 w-4" />
-                                    }
-                                </div>
 
                                 <div className="flex-grow min-w-0">
-                                    <h4 className="text-sm font-medium text-gray-900 truncate">{title}</h4>
+                                    <h4 className="text-sm font-medium text-gray-900 truncate">{template.templateName}</h4>
                                 </div>
 
                                 {/* 拖拽提示器 */}
@@ -98,7 +83,7 @@ function ComponentCard({ type, title, description, icon }: ComponentCardProps) {
                     </Card>
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p className="text-xs text-gray-500 truncate">{description}</p>
+                    <p className="text-xs text-gray-500 truncate">{template.description}</p>
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>

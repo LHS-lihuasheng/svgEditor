@@ -2,15 +2,14 @@
  * @description 组件操作工具函数
  * 提供通用的组件操作逻辑
  */
-import type { BaseComponent } from '@/types';
-import { TEMPLATE } from '@/types/templateStorage';
+import type { BaseComponent, BasicTag } from '@/types';
 
 /**
  * @description 生成唯一的组件ID
  * @param {TEMPLATE} type - 组件类型
  * @returns {string} 唯一ID
  */
-export function generateComponentId(type: TEMPLATE): string {
+export function generateComponentId(type: BasicTag): string {
     return `${type}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 }
 

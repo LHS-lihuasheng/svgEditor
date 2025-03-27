@@ -5,10 +5,11 @@
 import { BaseComponentTemplate } from '@/types/component';
 
 export const SECTION_TEMPLATE: BaseComponentTemplate = {
-    label: 'Section容器',
-    icon: '📦',
+    templateName: 'Section容器',
     description: '容器元素，用于布局和内容分组',
-    defaultProperties: {
+    component: [{
+        id: '',
+        type: 'section',
         attributes: {
             id: ''
         },
@@ -23,10 +24,10 @@ export const SECTION_TEMPLATE: BaseComponentTemplate = {
             position: 'relative',
             overflow: 'hidden',
             pointerEvents: 'none'
-        }
-    },
-    fixedProperties: [
-        'attributes.id'
-    ],
-    propertyStorageName: 'SECTION',
+        },
+        fixedProperties: [
+            'attributes.id'
+        ],
+        children: []
+    }]
 }; 

@@ -1,4 +1,4 @@
-import type { BaseComponent } from '@/types';
+import type { BaseComponent, BasicTag } from '@/types/component';
 import { generateSVGPicCode } from './generators/svg';
 import { generateRectCode } from './generators/shapes';
 import {
@@ -14,24 +14,17 @@ import {
 } from './generators/animation';
 
 /**
- * @description 组件类型到代码生成模块的映射表
- */
-type CodeGeneratorMap = {
-  [key: string]: (component: BaseComponent) => string;
-};
-
-/**
  * @description 组件类型到代码生成函数的映射
  */
-export const COMPONENT_GENERATORS: CodeGeneratorMap = {
-  'svgPic': generateSVGPicCode,
-  'svgSeamlessPic': generateSVGPicCode,
+export const COMPONENT_GENERATORS: {
+  [key in BasicTag]: (component: BaseComponent) => string;
+} = {
+  'svg': generateSVGPicCode,
   'g': generateGroupCode,
   'rect': generateRectCode,
   'set': generateSetCode,
   'animate': generateAnimateCode,
   'animateTransform': generateAnimateTransformCode,
-  'animateMotion': generateAnimateMotionCode,
   'foreignObject': generateForeignObjectCode,
   'section': generateSectionCode
 };
@@ -45,11 +38,18 @@ export function generateComponentCode(component: BaseComponent): string {
   const generator = COMPONENT_GENERATORS[component.type];
 
   if (generator) {
-    return generator(component);
-  } else {
-    console.warn(`Unsupported component type: ${component.type}`);
-    return '';
+    const childrenCode = component.children
+      ?.map(child => generateComponentCode(child))
+      ?.join('\n') || '';
+
+    return generator({
+      ...component,
+      children: childrenCode
+    });
   }
+
+  console.warn(`Unsupported component tag: ${component.tag}`);
+  return '';
 }
 
 /**

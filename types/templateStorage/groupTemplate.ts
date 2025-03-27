@@ -4,10 +4,11 @@
 import { BaseComponentTemplate } from '@/types/component';
 
 export const GROUP_TEMPLATE: BaseComponentTemplate = {
-  label: 'g分组',
-  icon: '🔄',
+  templateName: 'g分组',
   description: 'SVG组合元素，可以包含多个子元素',
-  defaultProperties: {
+  component: [{
+    id: '',
+    type: 'g',
     attributes: {
       id: '',
       transform: {
@@ -19,10 +20,10 @@ export const GROUP_TEMPLATE: BaseComponentTemplate = {
     },
     style: {
       opacity: 1
-    }
-  },
-  fixedProperties: [
-    'attributes.id'
-  ],
-  propertyStorageName: 'GROUP'
+    },
+    fixedProperties: [
+      'attributes.id'
+    ],
+    children: []
+  }]
 }; 

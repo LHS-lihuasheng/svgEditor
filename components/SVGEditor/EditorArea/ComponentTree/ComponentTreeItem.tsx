@@ -9,7 +9,6 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
-import { COMPONENT_TEMPLATES } from '@/types/templateStorage';
 import { useDragDrop } from '@/hooks/useDragDrop';
 import { isDescendantOf } from '@/utils/component';
 import type { BaseComponent } from '@/types';
@@ -38,13 +37,9 @@ export function ComponentTreeItem({
 
   const isSelected = selectedComponent?.id === component.id;
 
-  const template = COMPONENT_TEMPLATES[component.type];
-
   // 拖放逻辑
   const { ref, isDragging, isOver, isOverCurrent, dropPosition } = useDragDrop({
     component,
-    index,
-    parentId,
     onDrop: handleDrop,
     isDescendant: isDescendantOf
   });
@@ -146,9 +141,8 @@ export function ComponentTreeItem({
         `}
       >
         <span className="text-sm text-blue-600 mr-2">{index + 1}</span>
-        <span className="mr-2">{template?.icon}</span>
+        <span className="mr-2">{component.type}</span>
         <span className="font-medium">
-          {template?.label}
           {component.style?.backgroundImage && name && `-${name}`}
         </span>
 
@@ -166,7 +160,7 @@ export function ComponentTreeItem({
           )}
 
           {/* 添加图片按钮 */}
-          {(component.type === 'svgPic' || component.type === 'svgSeamlessPic') && (
+          {(component.type === 'svg') && (
             <Button
               variant="ghost"
               size="sm"
@@ -225,7 +219,7 @@ export function ComponentTreeItem({
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除组件</AlertDialogTitle>
             <AlertDialogDescription>
-              此操作将删除组件"{template?.label}"及其所有子组件，此操作无法撤销。
+              此操作将删除组件"{component.type}"及其所有子组件，此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

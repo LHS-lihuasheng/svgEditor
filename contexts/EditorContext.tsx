@@ -3,8 +3,7 @@ import { useImmerReducer } from 'use-immer';
 import { useDrop } from 'react-dnd';
 import { generateComponentId } from '@/utils/component';
 import type { BaseComponent, DragItem } from '@/types';
-import type { TEMPLATE } from '@/types/templateStorage';
-import { COMPONENT_TEMPLATES } from '@/types/templateStorage';
+import type { BaseComponentTemplate } from '@/types/component';
 
 // 定义状态类型
 interface EditorState {
@@ -18,13 +17,13 @@ type EditorAction =
     | { type: 'RESET_COMPONENTS' }
     | { type: 'CLEAR_SELECTION' }
     | { type: 'SELECT_ADJACENT_COMPONENT'; payload: { direction: 'next' | 'prev' } }
-    | { type: 'ADD_COMPONENT'; payload: { TEMPLATE: TEMPLATE } }
+    | { type: 'ADD_COMPONENT'; payload: { components: BaseComponent[] } }
     | { type: 'UPDATE_COMPONENT'; payload: { component: BaseComponent } }
     | { type: 'DELETE_COMPONENT'; payload: { id: string } }
     | { type: 'UPDATE_COMPONENT_STYLE'; payload: { id: string; property: string; value: any } }
     | { type: 'UPDATE_COMPONENT_ATTRIBUTE'; payload: { id: string; property: string; value: any } }
     | { type: 'DUPLICATE_COMPONENT'; payload: { id: string } }
-    | { type: 'HANDLE_DROP'; payload: { item: DragItem; targetId: string | null } };
+    | { type: 'HANDLE_DROP'; payload: { type: 'COMPONENT' | 'TEMPLATE'; dragItem: DragItem; targetId: string | null } };
 
 type EditorContextType = {
     // 状态
@@ -41,7 +40,7 @@ type EditorContextType = {
     findComponentById: (components: BaseComponent[], id: string) => [BaseComponent | null, BaseComponent[] | null, number];
 
     // 组件树操作
-    addComponent: (type: TEMPLATE) => void;
+    addComponent: (components: BaseComponent[]) => void;
     updateComponent: (updated: BaseComponent) => void;
     deleteComponent: (id: string) => void;
     resetComponents: () => void;
@@ -51,7 +50,7 @@ type EditorContextType = {
     duplicateComponent: (componentId: string) => void;
 
     // 拖放操作
-    handleDrop: (item: DragItem, targetId: string | null) => void;
+    handleDrop: (type: 'COMPONENT' | 'TEMPLATE', dragItem: DragItem, targetId: string | null) => void;
     editorDrop: any;
 }
 
@@ -90,14 +89,16 @@ function editorReducer(draft: EditorState, action: EditorAction) {
         }, []);
     };
 
-    const createComponent = (type: TEMPLATE): BaseComponent => {
-        const template = COMPONENT_TEMPLATES[type];
-        return {
-            id: generateComponentId(type),
-            type,
-            children: [],
-            ...(JSON.parse(JSON.stringify(template.defaultProperties)))
-        } as BaseComponent;
+    // 更新所有组件的ID
+    const updateComponentIds = (components: BaseComponent[]) => {
+        const newComponent = JSON.parse(JSON.stringify(components));
+        for (const component of newComponent) {
+            component.id = generateComponentId(component.type);
+            if (component.children?.length) {
+                updateComponentIds(component.children);
+            }
+        }
+        return newComponent;
     };
 
     switch (action.type) {
@@ -132,14 +133,15 @@ function editorReducer(draft: EditorState, action: EditorAction) {
         }
 
         case 'ADD_COMPONENT': {
-            const newComponent = createComponent(action.payload.TEMPLATE);
+            const newComponents = updateComponentIds(action.payload.components);
 
+            // 添加所有组件
             if (draft.selectedComponentId === null) {
-                if (!draft.components.length) {
-                    draft.components.push(newComponent);
-                    draft.selectedComponentId = newComponent.id;
+                if (!draft.components.length && newComponents.length > 0) {
+                    draft.components.push(...newComponents);
+                    draft.selectedComponentId = newComponents[0].id;
                 } else {
-                    draft.components.push(newComponent);
+                    draft.components.push(...newComponents);
                 }
             } else {
                 const [selectedComponent] = findComponentById(draft.components, draft.selectedComponentId);
@@ -147,10 +149,9 @@ function editorReducer(draft: EditorState, action: EditorAction) {
                     if (!selectedComponent.children) {
                         selectedComponent.children = [];
                     }
-                    selectedComponent.children.push(newComponent);
+                    selectedComponent.children.push(...newComponents);
                 }
             }
-
             break;
         }
 
@@ -216,72 +217,83 @@ function editorReducer(draft: EditorState, action: EditorAction) {
         }
 
         case 'HANDLE_DROP': {
-            const { item, targetId } = action.payload;
+            const { type, dragItem, targetId } = action.payload;
 
-            if (item.isToolItem) {
-                const newComponent = createComponent(item.type);
+            switch (type) {
+                case 'TEMPLATE':
+                    const newComponent = updateComponentIds(dragItem.component);
 
-                if (!targetId) {
-                    draft.components.push(newComponent);
-                    return;
+                    if (!targetId) {
+                        draft.components.push(...newComponent);
+                        return;
+                    }
+
+                    const [target, parentArray, index] = findComponentById(draft.components, targetId);
+                    if (!target || !parentArray) {
+                        draft.components.push(...newComponent);
+                        return;
+                    }
+
+                    const position = dragItem.dropPosition || 'after';
+
+                    switch (position) {
+                        case 'nested': {
+                            if (!target.children) target.children = [];
+                            target.children.push(...newComponent);
+                            break;
+                        }
+                        case 'before': {
+                            parentArray.splice(index, 0, ...newComponent);
+                            break;
+                        }
+                        default: {
+                            parentArray.splice(index + 1, 0, ...newComponent);
+                            break;
+                        }
+                    }
+                    break;
+                case 'COMPONENT': {
+                    const [source, sourceParent, sourceIndex] = findComponentById(draft.components, dragItem.component[0].id);
+                    if (!source || !sourceParent || sourceIndex === -1) return;
+
+                    // 避免拖到自身的子组件中
+                    if (targetId) {
+                        const isDescendant = (parent: BaseComponent, childId: string): boolean => {
+                            if (!parent.children) return false;
+                            return parent.children.some(child =>
+                                child.id === childId || isDescendant(child, childId)
+                            );
+                        };
+
+                        if (isDescendant(source, targetId)) return;
+                    }
+
+                    // 移除拖拽的组件
+                    const componentToMove = sourceParent.splice(sourceIndex, 1)[0];
+
+                    if (!targetId) {
+                        draft.components.push(componentToMove);
+                        return;
+                    }
+
+                    const [target, targetParent, targetIndex] = findComponentById(draft.components, targetId);
+                    if (!target || !targetParent) {
+                        draft.components.push(componentToMove);
+                        return;
+                    }
+
+                    const position = dragItem.dropPosition || 'after';
+                    if (position === 'nested') {
+                        if (!target.children) target.children = [];
+                        target.children.push(componentToMove);
+                    } else if (position === 'before') {
+                        targetParent.splice(targetIndex, 0, componentToMove);
+                    } else {
+                        targetParent.splice(targetIndex + 1, 0, componentToMove);
+                    }
                 }
-
-                const [target, parentArray, index] = findComponentById(draft.components, targetId);
-                if (!target || !parentArray) {
-                    draft.components.push(newComponent);
-                    return;
-                }
-
-                const position = item.dropPosition || 'after';
-                if (position === 'nested') {
-                    if (!target.children) target.children = [];
-                    target.children.push(newComponent);
-                } else if (position === 'before') {
-                    parentArray.splice(index, 0, newComponent);
-                } else {
-                    parentArray.splice(index + 1, 0, newComponent);
-                }
-            } else {
-                const [source, sourceParent, sourceIndex] = findComponentById(draft.components, item.id);
-                if (!source || !sourceParent || sourceIndex === -1) return;
-
-                // 避免拖到自身的子组件中
-                if (targetId) {
-                    const isDescendant = (parent: BaseComponent, childId: string): boolean => {
-                        if (!parent.children) return false;
-                        return parent.children.some(child =>
-                            child.id === childId || isDescendant(child, childId)
-                        );
-                    };
-
-                    if (isDescendant(source, targetId)) return;
-                }
-
-                const componentToMove = JSON.parse(JSON.stringify(source));
-                sourceParent.splice(sourceIndex, 1);
-
-                if (!targetId) {
-                    draft.components.push(componentToMove);
-                    return;
-                }
-
-                const [target, targetParent, targetIndex] = findComponentById(draft.components, targetId);
-                if (!target || !targetParent) {
-                    draft.components.push(componentToMove);
-                    return;
-                }
-
-                const position = item.dropPosition || 'after';
-                if (position === 'nested') {
-                    if (!target.children) target.children = [];
-                    target.children.push(componentToMove);
-                } else if (position === 'before') {
-                    targetParent.splice(targetIndex, 0, componentToMove);
-                } else {
-                    targetParent.splice(targetIndex + 1, 0, componentToMove);
-                }
+                    break;
             }
-            break;
         }
     }
 }
@@ -340,8 +352,8 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'SELECT_ADJACENT_COMPONENT', payload: { direction: 'prev' } });
     }, [dispatch]);
 
-    const addComponent = useCallback((type: TEMPLATE) => {
-        dispatch({ type: 'ADD_COMPONENT', payload: { TEMPLATE: type } });
+    const addComponent = useCallback((components: BaseComponent[]) => {
+        dispatch({ type: 'ADD_COMPONENT', payload: { components } });
     }, [dispatch]);
 
     const updateComponent = useCallback((updated: BaseComponent) => {
@@ -370,15 +382,15 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'DUPLICATE_COMPONENT', payload: { id: componentId } });
     }, [dispatch]);
 
-    const handleDrop = useCallback((item: DragItem, targetId: string | null) => {
-        dispatch({ type: 'HANDLE_DROP', payload: { item, targetId } });
+    const handleDrop = useCallback((type: 'COMPONENT' | 'TEMPLATE', dragItem: DragItem, targetId: string | null) => {
+        dispatch({ type: 'HANDLE_DROP', payload: { type, dragItem, targetId } });
     }, [dispatch]);
 
     /**
      * 编辑器区域拖放
      */
     const editorDrop = useDrop<DragItem, void, any>(() => ({
-        accept: ['TOOL', 'COMPONENT'],
+        accept: ['TEMPLATE', 'COMPONENT'],
         drop: (item: DragItem, monitor) => {
             if (monitor.didDrop()) return;
 
@@ -392,11 +404,11 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
             const x = offset.x - editorRect.left;
             const y = offset.y - editorRect.top;
 
-            const updatedItem = { ...item, x, y };
+            const updatedItem: DragItem = { ...item, x, y };
             const targetElement = document.elementFromPoint(offset.x, offset.y);
             const targetComponentId = targetElement?.closest('[data-component-id]')?.getAttribute('data-component-id') || null;
 
-            handleDrop(updatedItem, targetComponentId);
+            handleDrop(monitor.getItemType() as 'COMPONENT' | 'TEMPLATE', updatedItem, targetComponentId);
         }
     }))[1];
 

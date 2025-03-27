@@ -4,10 +4,11 @@
 import { BaseComponentTemplate } from '@/types/component';
 
 export const ANIMATE_TEMPLATE: BaseComponentTemplate = {
-  label: 'Animate动画',
-  icon: '🔄',
+  templateName: 'Animate动画',
   description: 'SVG Animate元素，用于属性值动画',
-  defaultProperties: {
+  component: [{
+    id: '',
+    type: 'animate',
     attributes: {
       id: '',
       attributeName: 'opacity',
@@ -21,11 +22,11 @@ export const ANIMATE_TEMPLATE: BaseComponentTemplate = {
       dur: '1s',
       repeatCount: '1'
     },
-    animationMode: 'values'
-  },
-  fixedProperties: [
-    'attributes.id',
-    'attributes.attributeName'
-  ],
-  propertyStorageName: 'ANIMATE'
+    fixedProperties: [
+      'attributes.id',
+      'attributes.attributeName'
+    ],
+    animationMode: 'values',
+    children: []
+  }]
 }; 

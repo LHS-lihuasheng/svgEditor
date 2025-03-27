@@ -8,16 +8,12 @@ import type { BaseComponent, DragItem, DropPosition } from '@/types';
 
 interface UseDragDropOptions {
   component: BaseComponent;
-  index: number;
-  parentId: string | null;
-  onDrop: (item: DragItem, targetId: string | null) => void;
+  onDrop: (type: 'COMPONENT' | 'TEMPLATE', item: DragItem, targetId: string | null) => void;
   isDescendant: (component: BaseComponent, childId: string) => boolean;
 }
 
 export function useDragDrop({
   component,
-  index,
-  parentId,
   onDrop,
   isDescendant
 }: UseDragDropOptions) {
@@ -48,10 +44,7 @@ export function useDragDrop({
   const [{ isDragging }, drag] = useDrag({
     type: 'COMPONENT',
     item: {
-      id: component.id,
-      type: component.type,
-      index,
-      parentId
+      component: [component],
     } as DragItem,
     collect: monitor => ({
       isDragging: monitor.isDragging()
@@ -60,20 +53,20 @@ export function useDragDrop({
 
   // 设置放置目标
   const [{ isOver, isOverCurrent, dropPosition }, drop] = useDrop({
-    accept: ['COMPONENT', 'TOOL'],
+    accept: ['COMPONENT', 'Template'],
     drop: (item: DragItem, monitor) => {
       if (monitor.didDrop()) return;
-      if (item.id === component.id) return;
+      if (item.component[0].id === component.id) return;
 
-      onDrop(item, component.id);
+      onDrop(monitor.getItemType() as 'COMPONENT' | 'TEMPLATE', item, component.id);
     },
     hover: (item: DragItem, monitor) => {
       if (!ref.current) return;
-      if (!item.id || item.id === component.id) return;
+      if (!item.component[0].id || item.component[0].id === component.id) return;
 
       const position = getDropPosition(monitor);
 
-      if (position === 'nested' && !item.isToolItem && isDescendant(component, item.id)) {
+      if (position === 'nested' && isDescendant(component, item.component[0].id)) {
         item.dropPosition = 'after';
       } else {
         item.dropPosition = position;
