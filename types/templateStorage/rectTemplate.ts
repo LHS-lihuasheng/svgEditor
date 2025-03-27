@@ -4,7 +4,9 @@
 import { BaseComponentTemplate } from '@/types/component';
 
 export const RECT_TEMPLATE: BaseComponentTemplate = {
-  templateName: '热区',
+  templateName: '矩形热区',
+  icon: '⬛',
+  category: 'basic',
   description: '基本图形，默认可点击，点击一次后消失，常用作触发热区',
   component: [{
     id: '',

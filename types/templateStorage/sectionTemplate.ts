@@ -6,6 +6,8 @@ import { BaseComponentTemplate } from '@/types/component';
 
 export const NORMAL_SECTION_TEMPLATE: BaseComponentTemplate = {
     templateName: '(常规)Section',
+    icon: '📦',
+    category: 'basic',
     description: '常规Section容器，用于包裹其他元素',
     component: [{
         id: '',
@@ -27,6 +29,8 @@ export const NORMAL_SECTION_TEMPLATE: BaseComponentTemplate = {
 
 export const ZERO_HEIGHT_SECTION_TEMPLATE: BaseComponentTemplate = {
     templateName: '(零高)Section',
+    icon: '📦',
+    category: 'basic',
     description: '零高容器，用于层级叠加',
     component: [{
         id: '',
@@ -49,6 +53,8 @@ export const ZERO_HEIGHT_SECTION_TEMPLATE: BaseComponentTemplate = {
 
 export const OVERFLOW_SECTION_TEMPLATE: BaseComponentTemplate = {
     templateName: '(最外层)Section',
+    icon: '📦',
+    category: 'basic',
     description: '用于包裹其他元素，并设置溢出隐藏',
     component: [{
         id: '',

@@ -6,6 +6,8 @@ import { BaseComponentTemplate } from '@/types/component';
 
 export const FOREIGN_OBJECT_TEMPLATE: BaseComponentTemplate = {
   templateName: 'ForeignObject',
+  icon: '🔗',
+  category: 'basic',
   description: '可嵌入HTML或外部内容的容器',
   component: [{
     id: '',

@@ -234,8 +234,8 @@ export function Parameters() {
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <p className="text-gray-600 text-sm font-medium">请选择一个组件进行编辑</p>
-                    <p className="text-gray-500 text-xs mt-2">在左侧组件面板或画布中选择要编辑的组件</p>
+                    <p className="text-gray-600 text-sm font-medium">在中间组件树中选择要编辑的组件</p>
+                    <p className="text-gray-500 text-xs mt-2">请选择一个组件进行编辑</p>
                   </div>
                 </div>
               )}

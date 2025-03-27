@@ -5,6 +5,8 @@ import { BaseComponentTemplate } from '@/types/component';
 
 export const ANIMATE_TRANSFORM_TEMPLATE: BaseComponentTemplate = {
   templateName: 'AnimateTransform动画',
+  icon: '↔️',
+  category: 'animation',
   description: 'SVG AnimateTransform元素，用于变换属性动画',
   component: [{
     id: '',

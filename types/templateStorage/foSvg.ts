@@ -2,7 +2,9 @@ import { BaseComponentTemplate } from '@/types/component';
 
 export const FO_PICTURE_TEMPLATE: BaseComponentTemplate = {
     templateName: 'FO 图片',
+    icon: '🔗',
     description: 'g{fo{svg}}',
+    category: 'basic',
     component: [{
         id: '',
         type: 'g',

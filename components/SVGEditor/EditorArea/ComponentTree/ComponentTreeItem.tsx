@@ -2,13 +2,9 @@
  * @description 组件树项
  * 渲染单个组件和其子组件
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Trash, ImagePlus, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
-} from '@/components/ui/alert-dialog';
 import { useDragDrop } from '@/hooks/useDragDrop';
 import { isDescendantOf } from '@/utils/component';
 import type { BaseComponent } from '@/types';
@@ -20,17 +16,18 @@ interface ComponentTreeItemProps {
   component: BaseComponent;
   level: number;
   index: number;
+  onDeleteRequest: (component: BaseComponent) => void;
 }
 
 export function ComponentTreeItem({
   component,
   level,
   index,
+  onDeleteRequest
 }: ComponentTreeItemProps) {
-  const { updateComponent, selectedComponent, selectComponent, handleDrop, deleteComponent, clearSelection, selectPrevComponent, duplicateComponent } = useEditor();
+  const { updateComponent, selectedComponent, selectComponent, handleDrop, clearSelection, selectPrevComponent, duplicateComponent } = useEditor();
   const { shiftFirstSelectedImage } = useAssets();
   const [isExpanded, setIsExpanded] = useState(true);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const isSelected = selectedComponent?.id === component.id;
 
@@ -86,6 +83,7 @@ export function ComponentTreeItem({
             component={child}
             level={level + 1}
             index={childIndex}
+            onDeleteRequest={onDeleteRequest}
           />
         ))}
       </div>
@@ -141,6 +139,7 @@ export function ComponentTreeItem({
             <button
               className="p-1 hover:bg-gray-100 rounded"
               onClick={(e) => {
+                e.stopPropagation();
                 setIsExpanded(!isExpanded);
               }}
             >
@@ -182,7 +181,7 @@ export function ComponentTreeItem({
             className="p-1 hover:text-red-600 transition-colors duration-200"
             onClick={(e) => {
               e.stopPropagation();
-              setShowDeleteDialog(true);
+              onDeleteRequest(component);
             }}
             title="删除组件"
           >
@@ -190,7 +189,6 @@ export function ComponentTreeItem({
               className="h-4 w-4"
             />
           </button>
-
         </div>
       </div>
 
@@ -201,34 +199,6 @@ export function ComponentTreeItem({
 
       {/* 拖放指示器 */}
       <DragIndicator isOver={isOverCurrent} position={dropPosition} />
-
-      {/* 删除确认对话框 */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认删除组件</AlertDialogTitle>
-            <AlertDialogDescription>
-              此操作将删除组件"{component.type}"及其所有子组件，此操作无法撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={(e) => {
-              e.stopPropagation();
-              setShowDeleteDialog(false);
-            }}>取消</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.stopPropagation();
-                deleteComponent(component.id);
-                setShowDeleteDialog(false);
-              }}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              删除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 } 

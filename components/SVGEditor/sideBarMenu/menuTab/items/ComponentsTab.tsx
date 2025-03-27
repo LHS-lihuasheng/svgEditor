@@ -6,30 +6,44 @@ import { COMPONENT_TEMPLATES } from '@/types/templateStorage'
 import { GripHorizontal } from "lucide-react"
 import { useDrag } from "react-dnd"
 import type { DragItem } from '@/types/drag'
+import { Tabs, TabsContent, TabsList, TabsTrigger, } from "@/components/ui/tabs"
+import { COMPONENT_CATEGORIES, categoryDisplayNames } from "@/types/component"
 import { cn } from "@/lib/utils"
 import { useEditor } from "@/contexts/EditorContext"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import type { BaseComponentTemplate } from '@/types/component'
+
 export function ComponentsTab() {
     return (
         <div className="p-4">
             <div className="space-y-4">
                 <div className="space-y-1">
-                    <h3 className="text-lg font-semibold">组件库</h3>
-                    <p className="text-sm text-muted-foreground">拖拽组件到画布或点击添加</p>
+                    <h3 className="inline-block text-lg font-semibold mr-4">组件库</h3>
+                    <p className="inline-block text-sm text-muted-foreground">拖拽组件到画布或点击添加</p>
                 </div>
-
-                <ScrollArea className="h-[calc(100vh-240px)]">
-                    <div className="grid grid-cols-1 gap-3 pr-4">
-                        {/* 显示所有组件 */}
-                        {COMPONENT_TEMPLATES.map(template => (
-                            <ComponentCard
-                                key={template.templateName}
-                                template={template}
-                            />
+                <Tabs defaultValue="basic">
+                    <TabsList>
+                        {COMPONENT_CATEGORIES.map(category => (
+                            <TabsTrigger key={category} value={category}>
+                                {categoryDisplayNames[category]}
+                            </TabsTrigger>
                         ))}
-                    </div>
-                </ScrollArea>
+                    </TabsList>
+                    <ScrollArea className="h-[calc(100vh-200px)]">
+                        {COMPONENT_CATEGORIES.map(category => (
+                            <TabsContent key={category} value={category}>
+                                <div className="grid grid-cols-1 gap-3 pr-4">
+                                    {COMPONENT_TEMPLATES.filter(template => template.category === category).map(template => (
+                                        <ComponentCard
+                                            key={template.templateName}
+                                            template={template}
+                                        />
+                                    ))}
+                                </div>
+                            </TabsContent>
+                        ))}
+                    </ScrollArea>
+                </Tabs>
             </div>
         </div>
     )
@@ -69,7 +83,7 @@ function ComponentCard({ template }: ComponentCardProps) {
                             onClick={() => addComponent(template.component)}
                         >
                             <div className="flex items-center p-3 group">
-
+                                <div className="flex-shrink-0 mr-2 text-gray-400">{template.icon}</div>
                                 <div className="flex-grow min-w-0">
                                     <h4 className="text-sm font-medium text-gray-900 truncate">{template.templateName}</h4>
                                 </div>

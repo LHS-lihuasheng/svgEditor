@@ -5,6 +5,8 @@ import { BaseComponentTemplate } from '@/types/component';
 
 export const SVG_PIC_TEMPLATE: BaseComponentTemplate = {
   templateName: 'SVG普通图片',
+  icon: '🖼️',
+  category: 'basic',
   description: '零行高、点击穿透的svg容器',
   component: [{
     id: '',
@@ -34,6 +36,8 @@ export const SVG_PIC_TEMPLATE: BaseComponentTemplate = {
 
 export const SVG_SEAMLESS_TEMPLATE: BaseComponentTemplate = {
   templateName: 'SVG无缝图片',
+  icon: '🖼️',
+  category: 'basic',
   description: '基本封装过的svg无缝图片容器',
   component: [{
     id: '',

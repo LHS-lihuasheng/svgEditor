@@ -5,6 +5,8 @@ import { BaseComponentTemplate } from '@/types/component';
 
 export const ANIMATE_TEMPLATE: BaseComponentTemplate = {
   templateName: 'Animate动画',
+  icon: '✨',
+  category: 'animation',
   description: 'SVG Animate元素，用于属性值动画',
   component: [{
     id: '',
