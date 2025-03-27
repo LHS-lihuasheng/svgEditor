@@ -35,6 +35,7 @@ export async function POST(request: Request) {
     wxFormData.append("media", file)
 
     const response = await fetch(uploadUrl, {
+      cache: "no-store",
       method: "POST",
       body: wxFormData,
     })

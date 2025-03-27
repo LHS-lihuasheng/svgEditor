@@ -23,6 +23,7 @@ export async function fetchDrafts(offset = 0, count = 20, no_content = 0): Promi
   try {
     const response = await fetch("/api/drafts", {
       method: "POST",
+      cache: "no-store",
       headers: {
         "Content-Type": "application/json",
       },
@@ -44,6 +45,7 @@ export async function createDraft(drafts: DraftNewsItem[]): Promise<{ media_id: 
   try {
     const response = await fetch("/api/drafts/add", {
       method: "POST",
+      cache: "no-store",
       headers: {
         "Content-Type": "application/json",
       },
@@ -69,6 +71,7 @@ export async function updateDraft(
   try {
     const response = await fetch("/api/drafts/update", {
       method: "POST",
+      cache: "no-store",
       headers: {
         "Content-Type": "application/json",
       },
@@ -90,6 +93,7 @@ export async function getDraft(mediaId: string): Promise<NewsItem> {
   try {
     const response = await fetch("/api/drafts/get", {
       method: "POST",
+      cache: "no-store",
       headers: {
         "Content-Type": "application/json",
       },
@@ -111,6 +115,7 @@ export async function deleteDraft(mediaId: string): Promise<{ errcode: number; e
   try {
     const response = await fetch("/api/drafts/delete", {
       method: "POST",
+      cache: "no-store",
       headers: {
         "Content-Type": "application/json",
       },
@@ -143,6 +148,7 @@ export async function uploadMaterial(
 
   const response = await fetch(`/api/material/add?type=${type}`, {
     method: "POST",
+    cache: "no-store",
     body: formData,
   })
 

@@ -29,7 +29,7 @@ interface ImageCropDialogProps {
 export function ImageCropDialog({ isOpen, onClose, imageSrc, initialCrops, onCropComplete }: ImageCropDialogProps) {
   const imageRef = useRef<HTMLImageElement | null>(null)
   const [selectedRatio, setSelectedRatio] = useState<"2.35:1" | "1:1">("2.35:1")
-  
+
   // 计算最佳裁剪区域
   const calculateOptimalCrop = useCallback((image: HTMLImageElement, aspectRatio: number): Crop => {
     const imageWidth = image.width
@@ -85,23 +85,46 @@ export function ImageCropDialog({ isOpen, onClose, imageSrc, initialCrops, onCro
   const [currentCrop, setCurrentCrop] = useState<Crop>(crop235)
 
   useEffect(() => {
+    // 仅在selectedRatio变化时更新currentCrop
     const newCrop = selectedRatio === "2.35:1" ? crop235 : crop11
-    setCurrentCrop(newCrop)
+    setCurrentCrop(prev => {
+      // 如果相同则不更新
+      if (prev.x === newCrop.x &&
+        prev.y === newCrop.y &&
+        prev.width === newCrop.width &&
+        prev.height === newCrop.height) {
+        return prev
+      }
+      return newCrop
+    })
   }, [selectedRatio, crop235, crop11])
 
   const onImageLoad = useCallback((image: HTMLImageElement) => {
+    // 防止重复处理
+    if (imageRef.current === image) return
+
     imageRef.current = image
 
     // 计算两种比例的最佳裁剪区域
     const newCrop235 = calculateOptimalCrop(image, 2.35)
     const newCrop11 = calculateOptimalCrop(image, 1)
 
-    setCrop235(newCrop235)
-    setCrop11(newCrop11)
-    
-    // 设置当前选中的裁剪框
-    setCurrentCrop(selectedRatio === "2.35:1" ? newCrop235 : newCrop11)
-  }, [calculateOptimalCrop, selectedRatio])
+    setCrop235(prev => {
+      // 如果已经有自定义裁剪，则不覆盖
+      if (initialCrops?.crop235) return prev
+      return newCrop235
+    })
+
+    setCrop11(prev => {
+      if (initialCrops?.crop11) return prev
+      return newCrop11
+    })
+
+    // 更新当前选中的裁剪框
+    setCurrentCrop(selectedRatio === "2.35:1" ?
+      (initialCrops?.crop235 || newCrop235) :
+      (initialCrops?.crop11 || newCrop11))
+  }, [calculateOptimalCrop, selectedRatio, initialCrops])
 
   const onCropChange = useCallback((newCrop: Crop) => {
     setCurrentCrop(newCrop)
@@ -199,9 +222,8 @@ export function ImageCropDialog({ isOpen, onClose, imageSrc, initialCrops, onCro
 
               <div className="space-y-2">
                 <Card
-                  className={`p-4 cursor-pointer hover:bg-accent ${
-                    selectedRatio === "2.35:1" ? "border-primary" : ""
-                  }`}
+                  className={`p-4 cursor-pointer hover:bg-accent ${selectedRatio === "2.35:1" ? "border-primary" : ""
+                    }`}
                   onClick={() => setSelectedRatio("2.35:1")}
                 >
                   <div className="flex items-center justify-between">
@@ -212,9 +234,8 @@ export function ImageCropDialog({ isOpen, onClose, imageSrc, initialCrops, onCro
                 </Card>
 
                 <Card
-                  className={`p-4 cursor-pointer hover:bg-accent ${
-                    selectedRatio === "1:1" ? "border-primary" : ""
-                  }`}
+                  className={`p-4 cursor-pointer hover:bg-accent ${selectedRatio === "1:1" ? "border-primary" : ""
+                    }`}
                   onClick={() => setSelectedRatio("1:1")}
                 >
                   <div className="flex items-center justify-between">

@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { useMessage } from '@/contexts/MessageContext'
 import { createDraft, updateDraft, uploadMaterial } from "@/lib/api"
-import { useDraftCache } from "@/hooks/useDraftCache"
 import { useImageCrop } from "@/hooks/useImageCrop"
 import { CoverImageUploader } from "./CoverImageUploader"
 import type { NewsItem, CropState, CroppedImages } from "@/types/draft"
@@ -29,7 +29,8 @@ export default function DraftEditor({
   onSave,
   onCancel
 }: DraftEditorProps) {
-  const { cache, updateCache, clearCache } = useDraftCache(mediaId)
+  // 在组件内部
+  const { tip } = useMessage()
   const [draft, setDraft] = useState<NewsItem>(() => {
     const defaultDraft = {
       article_type: "news",
@@ -45,7 +46,7 @@ export default function DraftEditor({
       url: "",
     }
 
-    return cache || initialDraft || defaultDraft
+    return initialDraft || defaultDraft
   })
 
   const {
@@ -56,64 +57,110 @@ export default function DraftEditor({
     isCropDialogOpen,
     setIsCropDialogOpen,
     handleCropComplete,
-  } = useImageCrop(cache?.originalImage || null, cache?.crops)
+  } = useImageCrop(null, undefined)
 
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const { value: cachedToken, setValue: setCachedToken } = useLocalStorage<{ token: string, expiry: number } | null>("accessToken", null)
 
   useEffect(() => {
-    const fetchToken = async () => {
-      if (cachedToken && cachedToken.expiry > Date.now()) {
-        setAccessToken(cachedToken.token)
-        return
-      }
+    if (cachedToken && cachedToken.expiry > Date.now()) {
+      setAccessToken(cachedToken.token)
+      return
+    }
 
+    const fetchToken = async () => {
       try {
         const response = await fetch('/api/token')
+
+        if (!response.ok) {
+          // 请求失败，HTTP 状态码非 2xx
+          const errorData = await response.json()
+          tip(`获取访问令牌失败: ${errorData.message || '请稍后重试'}`)
+          setAccessToken(null)
+          return
+        }
+
         const data = await response.json()
 
-        if (!data.error && !data.errcode) {
-          setAccessToken(data.access_token)
-          setCachedToken({
-            token: data.access_token,
-            expiry: Date.now() + (data.expires_in - 300) * 1000
-          })
+        // 检查微信 API 返回的错误码
+        if (data.errcode) {
+          tip(`微信 API 错误: ${data.errmsg} (错误码: ${data.errcode})`)
+          setAccessToken(null)
+          return
         }
+
+        // 成功获取 token
+        setAccessToken(data.access_token)
+        setCachedToken({
+          token: data.access_token,
+          expiry: Date.now() + (data.expires_in - 300) * 1000
+        })
       } catch (err) {
         console.error("获取访问令牌失败:", err)
+        tip('网络请求失败，无法获取微信访问令牌')
+        setAccessToken(null)
       }
     }
 
     fetchToken()
-  }, [cachedToken, setCachedToken])
+  }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    const updatedDraft = { ...draft, [name]: value }
-    setDraft(updatedDraft)
-    updateCache(updatedDraft)
+    setDraft(prev => ({
+      ...prev,
+      [name]: value
+    }))
   }
 
   const handleSwitchChange = (name: string) => (checked: boolean) => {
-    const updatedDraft = { ...draft, [name]: checked ? 1 : 0 }
-    setDraft(updatedDraft)
-    updateCache(updatedDraft)
+    setDraft(prev => ({
+      ...prev,
+      [name]: checked ? 1 : 0
+    }))
   }
 
-  const handleImageSelect = (imageUrl: string) => {
-    setOriginalImage(imageUrl)
-    updateCache({ originalImage: imageUrl })
+  const handleImageSelect = (file: File) => {
+    const fileUrl = URL.createObjectURL(file)
+    setOriginalImage({
+      file,
+      url: fileUrl
+    })
     setIsCropDialogOpen(true)
   }
 
-  const handleCropCompleted = useCallback((result: { crops: CropState; images: CroppedImages }) => {
-    const updates = handleCropComplete(result)
-    setDraft(prev => ({ ...prev, ...updates }))
-    updateCache(updates)
-  }, [handleCropComplete, updateCache])
+  const handleCropCompleted = async (result: { crops: CropState; images: CroppedImages }) => {
+    // 从第一个Base64图像创建File对象以上传
+    try {
+      const base64Crop = result.images.crop235 || result.images.crop11
+      if (!base64Crop) return
+
+      // 将base64转换为Blob
+      const fetchRes = await fetch(base64Crop)
+      const blob = await fetchRes.blob()
+
+      // 创建File对象
+      const file = new File([blob], "cover.jpg", { type: "image/jpeg" })
+
+      // 上传图片并获取media_id
+      const mediaId = await handleCoverImageUpload(file)
+
+      if (mediaId) {
+        // 如果上传成功，更新草稿状态
+        setDraft(prev => ({
+          ...prev,
+          thumb_media_id: mediaId
+        }))
+      }
+    } catch (error) {
+      console.error("处理裁剪图片失败:", error)
+      tip('处理裁剪图片失败')
+    }
+  }
 
   const handleSave = useCallback(async () => {
     if (!accessToken || !draft.title || !draft.content || !draft.thumb_media_id) {
+      tip('请填写标题、内容并上传封面图片')
       return
     }
 
@@ -123,15 +170,14 @@ export default function DraftEditor({
       } else {
         await createDraft([draft])
       }
-      clearCache()
       onSave()
     } catch (error) {
       console.error("Error saving draft:", error)
+      tip('保存草稿失败，请稍后重试')
     }
-  }, [draft, mediaId, index, accessToken, onSave, clearCache])
+  }, [draft, mediaId, index, accessToken, onSave, tip])
 
   const handleCancel = () => {
-    clearCache()
     onCancel()
   }
 
@@ -141,6 +187,7 @@ export default function DraftEditor({
       return url
     } catch (error) {
       console.error("Error uploading content image:", error)
+      tip('上传内容图片失败')
       return null
     }
   }
@@ -155,6 +202,7 @@ export default function DraftEditor({
       return url
     } catch (error) {
       console.error("Error uploading cover image:", error)
+      tip('上传封面图片失败')
       return null
     }
   }
@@ -198,7 +246,6 @@ export default function DraftEditor({
         onImageUpload={handleCoverImageUpload}
         onCropDialogClose={() => setIsCropDialogOpen(false)}
         onCropComplete={handleCropCompleted}
-        initialCrops={cache?.cropState}
         maxSize={10 * 1024 * 1024}
         acceptedFormats={["image/jpeg", "image/png", "image/gif", "image/bmp"]}
       />

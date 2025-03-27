@@ -55,14 +55,26 @@ export function CoverPreview({ imageUrl, previews }: CoverPreviewProps) {
   }, [])
 
   useEffect(() => {
+    // 防止重复渲染
+    if (!imageUrl) return
+
+    let isComponentMounted = true
     const img = new Image()
-    img.src = imageUrl
+
     img.onload = () => {
+      if (!isComponentMounted) return
+
       previews.forEach((preview, index) => {
         const canvas = canvasRefs.current[index]
-        if (!canvas) return
+        if (!canvas || !preview.crop) return
         drawPreview(img, canvas, preview)
       })
+    }
+
+    img.src = imageUrl
+
+    return () => {
+      isComponentMounted = false
     }
   }, [imageUrl, previews, drawPreview])
 

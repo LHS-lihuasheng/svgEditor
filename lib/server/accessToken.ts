@@ -1,74 +1,66 @@
+import type { TokenResponse, ErrorResponse, TokenCache } from "@/types/APIResponse"
+
 const APPID = process.env.NEXT_PUBLIC_WECHAT_APPID
 const SECRET = process.env.NEXT_PUBLIC_WECHAT_SECRET
 
-export type AccessTokenResponse = {
-    access_token: string
-    expires_in: number
-}
-
-export type AccessTokenError = {
-    errcode: number
-    errmsg: string
-}
-
-// 保存token和过期时间
-let accessToken: string | null = null
-let expirationTime: number | null = null
+// 服务器内存缓存
+let tokenCache: TokenCache = {
+    token: null,
+    expiresAt: null
+};
 
 /**
- * 请求微信接口获取token
- * 请求成功，更新token和过期时间并返回
- * 请求失败，返回错误信息
+ * 从微信服务器获取新 token
  */
-async function fetchAccessToken(): Promise<AccessTokenResponse | AccessTokenError> {
+async function fetchAccessToken(): Promise<TokenResponse | ErrorResponse> {
     try {
-        console.log("请求微信接口获取token")
         const response = await fetch(
-            `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APPID}&secret=${SECRET}`
-        )
-        const data: AccessTokenResponse | AccessTokenError = await response.json()
-        console.log("data", data)
+            `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APPID}&secret=${SECRET}`,
+            {
+                cache: "no-store",
+            }
+        );
+        const data = await response.json() as TokenResponse | ErrorResponse;
 
-        if ("errcode" in data) return data
+        if ("errcode" in data) return data;
 
-        accessToken = (data as AccessTokenResponse).access_token
-        expirationTime = Date.now() + ((data as AccessTokenResponse).expires_in - 300) * 1000 // 提前5分钟过期
+        // 计算过期时间（提前5分钟过期）
+        const expiresAt = Date.now() + (data.expires_in - 300) * 1000;
+        
+        // 更新服务器内存缓存
+        tokenCache = {
+            token: data.access_token,
+            expiresAt
+        };
 
-        return data
+        return data;
     } catch (error) {
-        console.error("Error fetching access token:", error)
-        throw error
+        console.error("获取微信 access token 失败:", error);
+        throw error;
     }
 }
 
 /**
- * 获取当前令牌的剩余有效期（秒）
+ * 获取令牌剩余有效期（秒）
  */
 export function getTokenExpiresIn(): number {
-    if (!expirationTime) return 0
-    const remainingTime = Math.max(0, expirationTime - Date.now())
-    return Math.floor(remainingTime / 1000)
+    if (!tokenCache.expiresAt) return 0;
+    return Math.max(0, Math.floor((tokenCache.expiresAt - Date.now()) / 1000));
 }
 
 /**
- * API路由处理函数
- * 返回请求结果
+ * 获取有效的 access token
+ * 在服务器端使用内存缓存
  */
-export async function handleTokenRequest(): Promise<AccessTokenResponse | AccessTokenError> {
-    try {
-        // 存在token且未过期，直接返回
-        if (accessToken && expirationTime && Date.now() < expirationTime) {
-            console.log("accessToken", accessToken)
-            return ({
-                access_token: accessToken,
-                expires_in: getTokenExpiresIn()
-            })
-        }
-
-        const result = await fetchAccessToken()
-        return result
-    } catch (error) {
-        throw error
+export async function handleTokenRequest(): Promise<TokenResponse | ErrorResponse> {
+    // 检查服务器内存缓存是否有效
+    if (tokenCache.token && tokenCache.expiresAt && Date.now() < tokenCache.expiresAt) {
+        return {
+            access_token: tokenCache.token,
+            expires_in: getTokenExpiresIn()
+        };
     }
+    
+    // 内存缓存无效，获取新 token
+    return await fetchAccessToken();
 }
-

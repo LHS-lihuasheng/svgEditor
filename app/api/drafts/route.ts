@@ -19,6 +19,7 @@ export async function POST(request: Request) {
 
     const response = await fetch(`${WECHAT_API_BASE}/draft/batchget?access_token=${accessToken}`, {
       method: "POST",
+      cache: "no-store",
       headers: {
         "Content-Type": "application/json",
       },

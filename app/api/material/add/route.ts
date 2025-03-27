@@ -61,6 +61,7 @@ export async function POST(request: Request) {
     }
 
     const response = await fetch(uploadUrl, {
+      cache: "no-store",
       method: "POST",
       body: wxFormData,
     })
