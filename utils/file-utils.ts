@@ -1,3 +1,6 @@
+import { formatDistanceToNow } from "date-fns"
+import { zhCN } from "date-fns/locale"
+
 // 文件系统类型定义
 interface FileSystemHandle {
   kind: 'file' | 'directory'
@@ -112,13 +115,6 @@ export async function selectDirectory(
     return { directories: [], files: [], currentDirectory: 'root' }
   }
 }
-
-
-// 清理文件 URL
-export function clearFiles(files: FileEntry[]) {
-  files.forEach(file => URL.revokeObjectURL(file.url))
-}
-
 // 获取相对路径
 export async function getRelativePath(
   directoryHandle: FileSystemDirectoryHandle,
@@ -134,24 +130,22 @@ export async function getRelativePath(
   }
 }
 
-// 构建相对路径映射
-export async function buildPathToHandle(rootHandle: FileSystemDirectoryHandle) {
-  const pathMap = new Map<string, FileSystemHandle>()
+// 格式化文件大小
+export const formatFileSize = (bytes: number) => {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
 
-  const build = async (currentHandle: FileSystemDirectoryHandle) => {
-    for await (const [, entry] of currentHandle.entries()) {
-      if (entry.kind === 'directory') {
-        await build(entry as FileSystemDirectoryHandle)
-      } else if (entry.kind === 'file') {
-        // 使用getRelativePath获取相对于根目录的路径
-        const relativePath = await getRelativePath(rootHandle, entry as FileSystemFileHandle)
-        if (relativePath) {
-          pathMap.set(relativePath, entry)
-        }
-      }
-    }
-  }
+// 格式化最后修改时间
+export const formatLastModified = (timestamp: number) => {
+  return formatDistanceToNow(new Date(timestamp), {
+    addSuffix: true,
+    locale: zhCN
+  })
+}
 
-  await build(rootHandle)
-  return pathMap
+// 格式化尺寸显示
+export const formatDimensions = (width: number, height: number) => {
+  return `${width} × ${height}`
 }
