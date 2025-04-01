@@ -14,14 +14,12 @@ import { useAssets } from '@/contexts/AssetContext';
 
 interface ComponentTreeItemProps {
   component: BaseComponent;
-  level: number;
   index: number;
   onDeleteRequest: (component: BaseComponent) => void;
 }
 
 export function ComponentTreeItem({
   component,
-  level,
   index,
   onDeleteRequest
 }: ComponentTreeItemProps) {
@@ -81,7 +79,6 @@ export function ComponentTreeItem({
           <ComponentTreeItem
             key={child.id}
             component={child}
-            level={level + 1}
             index={childIndex}
             onDeleteRequest={onDeleteRequest}
           />

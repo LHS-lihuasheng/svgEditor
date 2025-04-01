@@ -4,9 +4,8 @@
  */
 import React from 'react';
 import { ComponentTree } from "./ComponentTree";
-import { EmptyEditorState } from "./EmptyEditorState";
 import { useEditor } from '@/contexts/EditorContext';
-
+import { Image } from "lucide-react";
 export function EditorContent() {
     const { components, clearSelection, editorDrop } = useEditor();
 
@@ -22,7 +21,10 @@ export function EditorContent() {
             }}
         >
             {components.length === 0 ? (
-                <EmptyEditorState />
+                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                <Image className="h-12 w-12 mb-4 opacity-50" />
+                <p>点击或拖动左侧组件至此以继续添加</p>
+            </div>
             ) : (
                 <ComponentTree />
             )}

@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from "react"
 import { usePanel } from "@/contexts/PanelContext"
 import { useCode } from '@/contexts/CodeContext'
 import { useAssets } from '@/contexts/AssetContext'
+import { generatePreviewHTML } from "@/utils/assetUtils"
 
 export function PreviewTab() {
     const { isMenuBarOpen } = usePanel()
@@ -40,72 +41,6 @@ export function PreviewTab() {
         );
     };
 
-    const generatePreviewHTML = () => {
-        const processedCode = processImagePaths(code);
-        return `
-      <!DOCTYPE html>
-      <html lang="zh-CN">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            * {
-              margin: 0;
-              padding: 0;
-              max-width: 100% !important;
-              box-sizing: border-box !important;
-              -webkit-box-sizing: border-box !important;
-              word-wrap: break-word !important;
-            }
-            
-            body, html {
-              margin: 0;
-              padding: 0;
-              width: 100%;
-              height: 100%;
-              overflow: hidden;
-              background: transparent;
-              user-select: none;
-              -webkit-user-select: none;
-              cursor: default !important;
-            }
-            
-            .rich_media_content {
-              overflow: hidden;
-              color: #333;
-              font-size: 17px;
-              word-wrap: break-word;
-              -webkit-hyphens: auto;
-              -ms-hyphens: auto;
-              hyphens: auto;
-              text-align: justify;
-              position: relative;
-              z-index: 0;
-              background-color: white;
-              width: 100%;
-              height: 100%;
-            }
-            
-            .svg-container {
-              width: 100%;
-              height: 100%;
-              background-color: white;
-              overflow: auto;
-              position: relative;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="rich_media_content">
-            <div class="svg-container">
-              ${processedCode}
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-    };
-
     // 更新iframe内容
     const updatePreview = () => {
         if (iframeRef.current) {
@@ -118,20 +53,19 @@ export function PreviewTab() {
                     if (!isIframeInitialized) {
                         // 首次初始化整个iframe内容
                         doc.open();
-                        doc.write(generatePreviewHTML());
+                        doc.write(generatePreviewHTML(code, findImageByPath));
                         doc.close();
                         setIsIframeInitialized(true);
                     } else {
                         // 保存当前滚动位置
                         const scrollContainer = doc.querySelector('.svg-container');
                         const scrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
-                        
+
                         // 仅更新SVG内容部分
                         const svgContainer = doc.querySelector('.svg-container');
                         if (svgContainer) {
-                            const processedCode = processImagePaths(code);
-                            svgContainer.innerHTML = processedCode;
-                            
+                            svgContainer.innerHTML = processImagePaths(code);
+
                             // 恢复滚动位置
                             if (scrollContainer) {
                                 scrollContainer.scrollTop = scrollTop;

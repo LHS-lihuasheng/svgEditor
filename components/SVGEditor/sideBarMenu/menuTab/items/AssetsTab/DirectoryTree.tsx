@@ -10,47 +10,13 @@ import {
     DropdownMenuSubTrigger,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
-
-export interface DirectoryNode {
-    name: string
-    path: string
-    children: DirectoryNode[]
-}
+import type { DirectoryNode } from "@/types/asset"
+import { buildDirectoryTree } from "@/utils/assetUtils"
 
 interface DirectoryTreeProps {
     directories: string[]
     currentDirectory: string
     onSelect: (path: string) => void
-}
-
-const buildDirectoryTree = (directories: string[]): DirectoryNode[] => {
-    const root: DirectoryNode[] = []
-    const map: { [key: string]: DirectoryNode } = {}
-
-    directories.sort((a, b) => a.split('/').length - b.split('/').length)
-
-    directories.forEach(path => {
-        const parts = path.split('/')
-        const name = parts[parts.length - 1]
-        const parentPath = parts.slice(0, -1).join('/')
-
-        const node: DirectoryNode = {
-            name,
-            path,
-            children: []
-        }
-
-        map[path] = node
-
-        if (parentPath) {
-            const parent = map[parentPath]
-            parent?.children.push(node)
-        } else {
-            root.push(node)
-        }
-    })
-
-    return root
 }
 
 export function DirectoryTree({ directories, currentDirectory, onSelect }: DirectoryTreeProps) {

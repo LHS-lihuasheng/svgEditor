@@ -1,190 +1,146 @@
 "use client"
 
-import type React from "react"
-import { createContext, useReducer, useContext, useCallback } from "react"
-import { normalizeAssetPath } from '@/utils/pathUtils'
-import { getRelativePath } from '@/utils/file-utils'
-
-// 图片资源数据结构
-interface ImageAsset {
-  name: string
-  relativePath: string
-  url: string
-  dimensions: { width: number, height: number }
-  lastModified: number
-}
-
-// 资源上下文类型定义
-interface AssetContextType {
-  imageAssets: Map<string, ImageAsset>
-  selectedImagePaths: string[]
-  loadAssets: (directoryHandle: FileSystemDirectoryHandle) => Promise<void>
-  selectImage: (relativePath: string) => void
-  getOrderedSelectedImages: () => ImageAsset[]
-  findImageByPath: (path: string) => ImageAsset | undefined
-  rootDirectory: FileSystemDirectoryHandle | null
-  setRootDirectory: (handle: FileSystemDirectoryHandle | null) => void
-  refreshAssets: () => Promise<void>
-  shiftFirstSelectedImage: () => ImageAsset | undefined
-}
+import { createContext, useContext } from "react"
+import { useImmer } from "use-immer"
+import type { ImageAsset } from "@/types/asset"
+import { filterAssetsByDirectory, getImageAssetsWithDirectories } from "@/utils/assetUtils"
 
 // 状态类型
 interface AssetState {
-  imageAssets: Map<string, ImageAsset>;
-  selectedImagePaths: string[];
-  rootDirectory: FileSystemDirectoryHandle | null;
+  imageAssets: Map<string, ImageAsset>
+  selectedImagePaths: Set<string>
+  rootDirectory: FileSystemDirectoryHandle | null
+  directories: string[]
+  currentDirectory: string
+  isLoading: boolean
 }
 
-// Action类型
-type AssetAction =
-  | { type: 'SET_IMAGE_ASSETS'; payload: Map<string, ImageAsset> }
-  | { type: 'SET_ROOT_DIRECTORY'; payload: FileSystemDirectoryHandle | null }
-  | { type: 'TOGGLE_IMAGE_SELECTION'; payload: string }
-  | { type: 'SHIFT_FIRST_SELECTED_IMAGE' }
-  | { type: 'CLEAR_SELECTED_IMAGES' };
+// 定义上下文类型
+interface AssetContextType {
+  // 状态
+  imageAssets: Map<string, ImageAsset>
+  selectedImagePaths: Set<string>
+  rootDirectory: FileSystemDirectoryHandle | null
+  directories: string[]
+  currentDirectory: string
+  currentAssets: ImageAsset[]
+  isLoading: boolean
 
-// Reducer函数
-function assetReducer(state: AssetState, action: AssetAction): AssetState {
-  switch (action.type) {
-    case 'SET_IMAGE_ASSETS':
-      return { ...state, imageAssets: action.payload };
-
-    case 'SET_ROOT_DIRECTORY':
-      return { ...state, rootDirectory: action.payload };
-
-    case 'TOGGLE_IMAGE_SELECTION': {
-      const path = action.payload;
-      const isSelected = state.selectedImagePaths.includes(path);
-
-      return {
-        ...state,
-        selectedImagePaths: isSelected
-          ? state.selectedImagePaths.filter(p => p !== path)
-          : [...state.selectedImagePaths, path]
-      };
-    }
-
-    case 'SHIFT_FIRST_SELECTED_IMAGE': {
-      if (state.selectedImagePaths.length === 0) return state;
-      return {
-        ...state,
-        selectedImagePaths: state.selectedImagePaths.slice(1)
-      };
-    }
-
-    case 'CLEAR_SELECTED_IMAGES':
-      return { ...state, selectedImagePaths: [] };
-
-    default:
-      return state;
-  }
+  // 操作
+  loadAssets: (directoryHandle: FileSystemDirectoryHandle) => Promise<void>
+  refreshAssets: () => Promise<void>
+  selectImage: (path: string) => void
+  findImageByPath: (path: string) => ImageAsset | undefined
+  shiftFirstSelectedImage: () => ImageAsset | undefined
+  clearSelectedImages: () => void
+  changeDirectory: (directory: string) => void
+  setLoading: (isLoading: boolean) => void
 }
 
 const AssetContext = createContext<AssetContextType | null>(null)
 
+// 提供者组件
 export function AssetProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(assetReducer, {
+  const [state, updateState] = useImmer<AssetState>({
     imageAssets: new Map(),
-    selectedImagePaths: [],
-    rootDirectory: null
-  });
+    selectedImagePaths: new Set<string>(),
+    rootDirectory: null,
+    directories: [],
+    currentDirectory: 'root',
+    isLoading: false
+  })
 
-  const { imageAssets, selectedImagePaths, rootDirectory } = state;
+  // 获取当前目录的资源
+  const currentAssets = filterAssetsByDirectory(state.imageAssets, state.currentDirectory)
 
-  // 获取图片尺寸
-  const getImageDimensions = (url: string): Promise<{ width: number; height: number }> => {
-    return new Promise((resolve) => {
-      const img = new Image()
-      img.onload = () => resolve({
-        width: img.naturalWidth,
-        height: img.naturalHeight
-      })
-      img.src = url
-    })
-  }
-
-  // 加载目录资源
-  const loadAssets = useCallback(async (directoryHandle: FileSystemDirectoryHandle) => {
-    dispatch({ type: 'SET_ROOT_DIRECTORY', payload: directoryHandle });
-    const newAssets = new Map<string, ImageAsset>()
-
-    // 递归处理文件
-    async function processEntry(entry: FileSystemHandle, parentPath: string = '') {
-      if (entry.kind === 'file') {
-        const fileHandle = entry as FileSystemFileHandle
-        const file = await fileHandle.getFile()
-
-        if (file.name.match(/\.(jpg|jpeg|png|gif|svg)$/i)) {
-          const relativePath = await getRelativePath(directoryHandle, fileHandle) ||
-            (parentPath ? `./${parentPath}/${file.name}` : `./${file.name}`)
-
-          const url = URL.createObjectURL(file)
-          const dimensions = await getImageDimensions(url)
-
-          newAssets.set(relativePath, {
-            name: file.name,
-            relativePath,
-            url,
-            dimensions,
-            lastModified: file.lastModified
-          })
-        }
-      } else if (entry.kind === 'directory') {
-        const dirHandle = entry as FileSystemDirectoryHandle
-        for await (const [name, childEntry] of dirHandle.entries()) {
-          if (childEntry.kind === 'directory') {
-            await processEntry(childEntry, parentPath ? `${parentPath}/${name}` : name)
-          } else {
-            await processEntry(childEntry, parentPath)
-          }
-        }
-      }
-    }
-
-    try {
-      for await (const [_, entry] of directoryHandle.entries()) {
-        await processEntry(entry, '')
-      }
-
-      dispatch({ type: 'SET_IMAGE_ASSETS', payload: newAssets });
-      dispatch({ type: 'CLEAR_SELECTED_IMAGES' });
-    } catch (error) {
-      console.error('资源加载失败:', error)
-    }
-  }, [])
-
-  // 提供给Context的值
+  // 上下文值
   const contextValue: AssetContextType = {
-    imageAssets,
-    selectedImagePaths,
-    loadAssets,
+    imageAssets: state.imageAssets,
+    selectedImagePaths: state.selectedImagePaths,
+    rootDirectory: state.rootDirectory,
+    directories: state.directories,
+    currentDirectory: state.currentDirectory,
+    currentAssets,
+    isLoading: state.isLoading,
 
-    selectImage: (path) => {
-      dispatch({ type: 'TOGGLE_IMAGE_SELECTION', payload: path });
-    },
+    loadAssets: async (directoryHandle: FileSystemDirectoryHandle) => {
+      try {
+        updateState(draft => { draft.isLoading = true })
 
-    getOrderedSelectedImages: () =>
-      selectedImagePaths.map(path => imageAssets.get(path)).filter(Boolean) as ImageAsset[],
+        const { assets: newAssets, directories: newDirectories } =
+          await getImageAssetsWithDirectories(directoryHandle, directoryHandle)
 
-    findImageByPath: (path) => path ? imageAssets.get(path) : undefined,
-
-    rootDirectory,
-
-    setRootDirectory: (handle) => {
-      dispatch({ type: 'SET_ROOT_DIRECTORY', payload: handle });
+        // 使用 Immer 简化状态更新
+        updateState(draft => {
+          draft.rootDirectory = directoryHandle
+          draft.imageAssets = newAssets
+          draft.directories = newDirectories
+          draft.currentDirectory = 'root'
+        })
+      } finally {
+        updateState(draft => { draft.isLoading = false })
+      }
     },
 
     refreshAssets: async () => {
-      if (rootDirectory) await loadAssets(rootDirectory);
+      if (state.rootDirectory) {
+        try {
+          updateState(draft => { draft.isLoading = true })
+
+          const { assets: newAssets, directories: newDirectories } =
+            await getImageAssetsWithDirectories(state.rootDirectory!, state.rootDirectory!)
+
+          updateState(draft => {
+            draft.imageAssets = newAssets
+            draft.directories = newDirectories
+          })
+        } finally {
+          updateState(draft => { draft.isLoading = false })
+        }
+      }
     },
 
+    selectImage: (path: string) => {
+      updateState(draft => {
+        if (draft.selectedImagePaths.has(path)) {
+          draft.selectedImagePaths.delete(path)
+        } else {
+          draft.selectedImagePaths.add(path)
+        }
+      })
+    },
+
+    clearSelectedImages: () => {
+      updateState(draft => {
+        draft.selectedImagePaths.clear()
+      })
+    },
+
+    findImageByPath: (path: string) => path ? state.imageAssets.get(path) : undefined,
+
     shiftFirstSelectedImage: () => {
-      if (selectedImagePaths.length === 0) return undefined;
-      const firstPath = selectedImagePaths[0];
-      dispatch({ type: 'SHIFT_FIRST_SELECTED_IMAGE' });
-      return imageAssets.get(firstPath);
+      if (state.selectedImagePaths.size === 0) return undefined
+
+      const firstPath = Array.from(state.selectedImagePaths)[0]
+      updateState(draft => {
+        draft.selectedImagePaths.delete(firstPath)
+      })
+
+      return state.imageAssets.get(firstPath)
+    },
+
+    changeDirectory: (directory: string) => {
+      updateState(draft => {
+        draft.currentDirectory = directory
+      })
+    },
+
+    setLoading: (loading: boolean) => {
+      updateState(draft => {
+        draft.isLoading = loading
+      })
     }
-  };
+  }
 
   return (
     <AssetContext.Provider value={contextValue}>
@@ -196,6 +152,6 @@ export function AssetProvider({ children }: { children: React.ReactNode }) {
 // 自定义hook
 export const useAssets = () => {
   const context = useContext(AssetContext)
-  if (!context) throw new Error('useAssets must be used within an AssetProvider')
+  if (!context) throw new Error('useAssets必须在AssetProvider内部使用')
   return context
 }

@@ -35,7 +35,6 @@ export function ComponentTree() {
                 <ComponentTreeItem
                     key={component.id}
                     component={component}
-                    level={0}
                     index={index}
                     onDeleteRequest={handleDeleteRequest}
                 />
