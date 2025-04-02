@@ -39,7 +39,8 @@ export const getImageDimensions = (url: string): Promise<{ width: number; height
 export const createImageAssetFromFile = async (
   file: File,
   relativePath: string,
-  directory: string = ''
+  directory: string = '',
+  hash: string
 ): Promise<ImageAsset> => {
   const url = URL.createObjectURL(file)
   const dimensions = await getImageDimensions(url)
@@ -51,7 +52,8 @@ export const createImageAssetFromFile = async (
     dimensions,
     lastModified: file.lastModified,
     directory,
-    size: file.size
+    size: file.size,
+    hash: hash
   }
 }
 
@@ -60,54 +62,113 @@ export const normalizePath = (path: string): string => {
   return path.replace(/^\/+|\/+$/g, '')
 }
 
+// --- Web Worker 初始化与管理 ---
+let worker: Worker | null = null;
+// 存储待处理的哈希请求的回调函数 Map<relativePath, { resolve, reject }>
+const pendingHashes = new Map<string, { resolve: (hash: string) => void, reject: (error: any) => void }>();
+
+if (typeof window !== 'undefined') {
+  worker = new Worker('/hash.worker.js'); // Worker 脚本路径
+
+  worker.onmessage = (event) => {
+    const { hash, relativePath, error } = event.data;
+    const promiseCallbacks = pendingHashes.get(relativePath);
+    if (promiseCallbacks) {
+      if (error) {
+        promiseCallbacks.reject(new Error(`Worker 计算哈希错误 (${relativePath}): ${error}`));
+      } else {
+        promiseCallbacks.resolve(hash);
+      }
+      pendingHashes.delete(relativePath);
+    }
+  };
+
+  worker.onerror = (event) => {
+    console.error('Web Worker 发生错误:', event.message, event);
+    pendingHashes.forEach(({ reject }, path) => {
+      reject(new Error(`Worker 失败，未计算 ${path} 的哈希值`));
+    });
+    pendingHashes.clear();
+    worker?.terminate();
+    worker = null;
+  };
+} else {
+  console.warn("Web Worker 只能在客户端环境初始化。");
+}
+
+/**
+ * 向 Worker 请求计算文件哈希值。
+ * @param file 文件对象
+ * @param relativePath 文件的相对路径，用作唯一标识
+ * @returns 返回一个 Promise，解析时为哈希字符串，拒绝时为错误
+ */
+function getHashFromWorker(file: File, relativePath: string): Promise<string> {
+  if (!worker) {
+    return Promise.reject(new Error("Worker 不可用。"));
+  }
+  return new Promise((resolve, reject) => {
+    pendingHashes.set(relativePath, { resolve, reject });
+    try {
+      worker!.postMessage({ file, relativePath });
+    } catch (postError) {
+      pendingHashes.delete(relativePath);
+      reject(new Error(`发送文件 ${relativePath} 到 Worker 失败: ${postError}`));
+    }
+  });
+}
+// --- Web Worker 初始化与管理结束 ---
+
+
 // 获取资源和目录结构信息
 export const getImageAssetsWithDirectories = async (
   currentDirectory: FileSystemDirectoryHandle,
   rootDirectory: FileSystemDirectoryHandle,
 ): Promise<{ assets: Map<string, ImageAsset>, directories: string[] }> => {
-  const newAssets = new Map<string, ImageAsset>()
-  const directories = new Set<string>()
 
-  for await (const [, handle] of (currentDirectory as any).entries()) {
-    if (handle.kind === 'file') {
-      const fileHandle = handle as FileSystemFileHandle
-      const file = await fileHandle.getFile()
+  const newAssets = new Map<string, ImageAsset>();
+  const directories = new Set<string>();
+  const fileProcessingPromises: Promise<ImageAsset | null>[] = [];
 
-      if (file.name.match(/\.(jpg|jpeg|png|gif|svg)$/i)) {
+  for await (const [name, handle] of (currentDirectory as any).entries()) {
+    if (handle.kind === 'file' && name.match(/\.(jpg|jpeg|png|gif|svg)$/i)) {
+      const fileHandle = handle as FileSystemFileHandle;
+
+      const processFilePromise = (async (): Promise<ImageAsset | null> => {
         try {
-          const pathArray = await rootDirectory.resolve(fileHandle);
-          if (pathArray) {
-            const relativePath = './' + pathArray.join('/')
-            const directory = pathArray.slice(0, -1).join('/')
+          const file = await fileHandle.getFile();
+            const pathArray = await rootDirectory.resolve(fileHandle);
 
-            if (directory) {
-              directories.add(directory)
+            if (!pathArray) {
+              console.warn(`无法解析文件路径: ${fileHandle.name}`);
+              return null;
             }
 
-            const asset = await createImageAssetFromFile(file, relativePath, directory)
-            newAssets.set(relativePath, asset)
-          } else {
-            console.warn(`无法解析文件路径: ${fileHandle.name}`);
-          }
-        } catch (error) {
-          console.error(`处理文件 ${fileHandle.name} 时出错:`, error);
-        }
-      }
-    } else if (handle.kind === 'directory' && !handle.name.startsWith('.')) {
-      const dirHandle = handle as FileSystemDirectoryHandle
+            const relativePath = './' + pathArray.join('/');
+            const directory = pathArray.slice(0, -1).join('/');
 
+            const hash = await getHashFromWorker(file, relativePath);
+
+            const asset = await createImageAssetFromFile(file, relativePath, directory, hash);
+            return asset;
+
+          } catch (error) {
+            console.error(`处理文件 ${rootDirectory.resolve(fileHandle)}) 时出错:`, error);
+            return null;
+          }
+      })();
+      fileProcessingPromises.push(processFilePromise);
+    } else if (handle.kind === 'directory' && !handle.name.startsWith('.')) {
+      const dirHandle = handle as FileSystemDirectoryHandle;
       try {
         const dirPathArray = await rootDirectory.resolve(dirHandle);
         if (dirPathArray) {
           const directoryPath = dirPathArray.join('/');
           directories.add(directoryPath);
 
-          const result = await getImageAssetsWithDirectories(dirHandle, rootDirectory)
+          const result = await getImageAssetsWithDirectories(dirHandle, rootDirectory);
 
-          for (const [path, asset] of result.assets.entries()) {
-            newAssets.set(path, asset)
-          }
-          result.directories.forEach(dir => directories.add(dir))
+          result.assets.forEach((asset, path) => newAssets.set(path, asset));
+          result.directories.forEach(dir => directories.add(dir));
         } else {
           console.warn(`无法解析目录路径: ${dirHandle.name}`);
         }
@@ -117,11 +178,19 @@ export const getImageAssetsWithDirectories = async (
     }
   }
 
+  const results = await Promise.allSettled(fileProcessingPromises);
+  results.forEach(result => {
+    if (result.status === 'fulfilled' && result.value) {
+      newAssets.set(result.value.relativePath, result.value);
+    } else if (result.status === 'rejected') {
+      console.error("文件处理 Promise 被拒绝:", result.reason);
+    }
+  });
+
   return {
     assets: newAssets,
-    // 对最终的目录列表进行排序
     directories: Array.from(directories).sort()
-  }
+  };
 }
 
 // 过滤指定目录的资源

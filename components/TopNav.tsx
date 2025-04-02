@@ -19,7 +19,7 @@ export default function TopNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="flex items-center px-6 h-14 bg-white">
+    <nav className="flex items-center px-6 h-14 bg-white border-b border-gray-200">
       <div className="flex items-center gap-8">
         <Link href="/" className="font-bold text-xl">
           Logo

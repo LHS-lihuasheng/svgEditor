@@ -16,6 +16,7 @@ export interface ImageAsset {
     lastModified: number
     directory: string
     size: number
+    hash: string
 }
 
 // 目录树节点

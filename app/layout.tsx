@@ -6,10 +6,14 @@ import { ThemeProvider } from "@/components/theme-provider"
 import TopNav from "@/components/TopNav"
 import { MessageProvider } from '@/contexts/MessageContext'
 import { MessageModal } from "@/components/MessageModal"
+import { enableMapSet } from 'immer'
+
 const inter = Inter({ subsets: ["latin"] })
 
+enableMapSet()
+
 export const metadata: Metadata = {
-  title: "WeChat Editor",
+  title: "WaveSVG",
   description: "SVG Editor for WeChat Official Account"
 }
 
@@ -20,13 +24,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
+      <body className={`${inter.className} h-screen overflow-hidden`} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <MessageProvider>
-            <div className="flex flex-col h-screen bg-gray-50">
+            <div className="flex flex-col h-full bg-gray-50 overflow-hidden">
               <TopNav />
-              <main className="flex-1 overflow-auto">{children}</main>
-              {/* 全局消息提示框 */}
+              <main className="overflow-hidden" style={{ height: 'calc(100% - 57px)' }}>
+                {children}
+              </main>
               <MessageModal />
             </div>
           </MessageProvider>

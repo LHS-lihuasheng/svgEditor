@@ -1,18 +1,18 @@
 "use client"
 
 import React from 'react';
-import { SideBarMenu } from "./sideBarMenu";
+import { SideBarMenu } from "./SideBarMenu";
 import { EditorArea } from "./EditorArea";
 import { Parameters } from "./Parameters/index";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CodePreviewModal } from "./CodePreviewModal";
-import { PanelProvider } from '@/contexts/PanelContext';
+import { PanelProvider, usePanel } from '@/contexts/PanelContext';
 import { EditorProvider } from '@/contexts/EditorContext';
-import { usePanel } from '@/contexts/PanelContext';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { CodeProvider } from '@/contexts/CodeContext';
 import { AssetProvider } from "@/contexts/AssetContext"
+import { cn } from "@/lib/utils"
 
 /**
  * @description SVG编辑器的顶层容器组件，提供所有必要的上下文
@@ -26,7 +26,8 @@ export default function SVGEditorContainer() {
           <PanelProvider>
             <CodeProvider>
               <TooltipProvider>
-                <SVGEditor />
+                <EditorLayout />
+                <CodePreviewModalWrapper />
               </TooltipProvider>
             </CodeProvider>
           </PanelProvider>
@@ -36,28 +37,30 @@ export default function SVGEditorContainer() {
   );
 }
 
-/**
- * @description SVG编辑器的主要组件，处理编辑器的核心功能
- * @returns {JSX.Element} SVG编辑器的用户界面
- */
-function SVGEditor() {
-  const { showCodePreview } = usePanel();
+// 内部组件用于访问 PanelContext 并应用 Grid 布局
+function EditorLayout() {
+  const { isMenuBarOpen, isParametersPanelOpen } = usePanel();
+
+  const gridTemplateColumns = cn(
+    isMenuBarOpen ? "1fr" : "48px",
+    "2fr",
+    isParametersPanelOpen ? "1fr" : "48px"
+  );
 
   return (
-    <div className="h-full flex bg-gray-50">
-      {/* 左侧工具栏 */}
+    <div
+      className="grid h-full transition-[grid-template-columns] duration-300 ease-in-out bg-gray-50 gap-x-2"
+      style={{ gridTemplateColumns }}
+    >
       <SideBarMenu />
-
-      {/* 中间编辑区域 */}
       <EditorArea />
-
-      {/* 右侧参数面板 */}
       <Parameters />
-
-      {/* 代码预览模态框 */}
-      {showCodePreview && (
-        <CodePreviewModal />
-      )}
     </div>
   );
+}
+
+// 用于访问 PanelContext 以控制 CodePreviewModal 的显示
+function CodePreviewModalWrapper() {
+  const { showCodePreview } = usePanel();
+  return showCodePreview ? <CodePreviewModal /> : null;
 }

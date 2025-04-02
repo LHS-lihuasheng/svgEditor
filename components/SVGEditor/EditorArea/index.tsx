@@ -2,22 +2,37 @@
 
 import { cn } from "@/lib/utils"
 import { EditorToolbar } from "./EditorToolbar"
-import { EditorContent } from "./EditorContent"
-  
+import { useEditor } from "@/contexts/EditorContext"
+import { Image } from "lucide-react"
+import { ComponentTree } from "./ComponentTree"
 
 export function EditorArea() {
+  const { editorDrop, clearSelection, components } = useEditor();
   return (
     <div className={cn(
-      "flex-1 transition-all duration-300 ml-96 mr-96",
+      "flex flex-col overflow-hidden bg-white"
     )}>
-      <div className="h-full flex">
-        <div className="flex-1 flex flex-col bg-white shadow-sm rounded-lg">
-          {/* 顶部工具栏 */}
-          <EditorToolbar />
+      <div className="flex-1 flex flex-col">
+        <EditorToolbar />
 
-          {/* 编辑区域 */}
-          <EditorContent
-          />
+        <div className="flex-1 overflow-auto">
+          <div
+            ref={editorDrop}
+            id="editor-area"
+            className="relative h-full"
+            onClick={clearSelection}
+          >
+            <div className="p-6 h-full">
+              {components.length === 0 ? (
+                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                  <Image className="h-12 w-12 mb-4 opacity-50" />
+                  <p>点击或拖动左侧组件至此以继续添加</p>
+                </div>
+              ) : (
+                <ComponentTree />
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

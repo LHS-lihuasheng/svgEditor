@@ -5,7 +5,7 @@ import { DirectoryTree } from "./DirectoryTree"
 import { FolderOpen, RefreshCw, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAssets } from "@/contexts/AssetContext"
-import { MasonryGallery } from "@/components/SVGEditor/sideBarMenu/menuTab/items/AssetsTab/MasonryGallery"
+import { MasonryGallery } from "@/components/svgeditor/SideBarMenu/menuTab/items/AssetsTab/MasonryGallery"
 
 export function AssetsTab() {
   const {

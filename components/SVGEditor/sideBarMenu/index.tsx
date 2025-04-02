@@ -9,11 +9,10 @@ import { MenuTab } from "./menuTab/menuTab"
 export function SideBarMenu() {
     const { isMenuBarOpen } = usePanel()
 
-    return (    
+    return (
         <div
             className={cn(
-                "fixed top-[57px] left-0 bottom-0 bg-white shadow-lg transition-[width] duration-300 ease-in-out z-10",
-                isMenuBarOpen ? "w-96" : "w-12"
+                "bg-white shadow-lg transition-[width] duration-300 ease-in-out overflow-hidden"
             )}
         >
             <div className="h-full flex">

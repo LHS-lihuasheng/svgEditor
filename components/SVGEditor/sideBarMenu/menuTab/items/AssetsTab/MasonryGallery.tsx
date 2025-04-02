@@ -40,10 +40,8 @@ export function MasonryGallery({
   // 引用
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // 计算值
   const columnWidth = state.containerWidth / columnsCount
 
-  // 确保信息栏完整展示的最小高度
   const MIN_IMAGE_HEIGHT = 120
 
   const { ref: observerRef, inView } = useInView({
@@ -105,7 +103,7 @@ export function MasonryGallery({
     return () => clearTimeout(timeout)
   }, [state.images.length, updateState, state.images])
 
-  // 懒加载更多图片
+  // 触发懒加载、加载更多图片
   useEffect(() => {
     if (inView && state.visibleCount < state.images.length) {
       updateState(draft => {
