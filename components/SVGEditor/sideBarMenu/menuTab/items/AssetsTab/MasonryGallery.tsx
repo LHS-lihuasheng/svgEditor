@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { useImmer } from "use-immer"
 import { useInView } from "react-intersection-observer"
 import { ImagePreview } from "./ImagePreview"
 import type { ImageAsset, ImageItem } from "@/types/asset"
 import { naturalSortCompare } from "@/utils/assetUtils"
+import _ from "lodash"
 
-// 接口定义
 interface MasonryGalleryProps {
   assets: ImageAsset[]
   selectedImagePaths: string[]
@@ -15,13 +15,16 @@ interface MasonryGalleryProps {
   columnsCount?: number
 }
 
-// 画廊状态接口
 interface GalleryState {
   images: ImageItem[]
   columns: ImageItem[][]
   containerWidth: number
   visibleCount: number
+  columnHeights: number[]
 }
+
+const INITIAL_VISIBLE_COUNT = 10
+const LOAD_MORE_COUNT = 10
 
 export function MasonryGallery({
   assets,
@@ -29,163 +32,191 @@ export function MasonryGallery({
   onSelectImage,
   columnsCount = 2
 }: MasonryGalleryProps) {
-  // 使用 useImmer 管理状态
   const [state, updateState] = useImmer<GalleryState>({
     images: [],
-    columns: Array(columnsCount).fill([]).map(() => []),
+    columns: Array(columnsCount).fill(0).map(() => []),
     containerWidth: 0,
-    visibleCount: 10
+    visibleCount: INITIAL_VISIBLE_COUNT,
+    columnHeights: Array(columnsCount).fill(0)
   })
 
-  // 引用
   const containerRef = useRef<HTMLDivElement>(null)
-
-  const columnWidth = state.containerWidth / columnsCount
-
-  const MIN_IMAGE_HEIGHT = 120
+  const columnWidth = useMemo(() => state.containerWidth > 0 ? state.containerWidth / columnsCount : 0, [state.containerWidth, columnsCount])
+  const MIN_IMAGE_HEIGHT = useMemo(() => 120, [])
+  const preVisibleCount = useRef(0)
+  const lastInViewRef = useRef(false);
 
   const { ref: observerRef, inView } = useInView({
     threshold: 0.1,
     triggerOnce: false,
   })
 
-  // 计算容器宽度
+  //处理容器宽度变化
   useEffect(() => {
     if (!containerRef.current) return
 
-    const updateWidth = () => {
-      updateState(draft => {
-        draft.containerWidth = containerRef.current?.clientWidth || 0
-      })
+    const updateContainerWidth = () => {
+      const newWidth = containerRef.current?.clientWidth || 0
+      if (newWidth > 0 && newWidth !== state.containerWidth) {
+        updateState(draft => {
+          draft.containerWidth = newWidth
+          const newColumnWidth = newWidth / columnsCount
+          draft.images = draft.images.map(img => ({
+            ...img,
+            realHeight: Math.max(newColumnWidth / img.dimensions.width * img.dimensions.height, MIN_IMAGE_HEIGHT),
+          }))
+
+          const newColumnHeights = Array(columnsCount).fill(0);
+          draft.columns.forEach((column, index) => {
+            newColumnHeights[index] = column.reduce((sum, img) => {
+              const updatedImg = draft.images.find(i => i.relativePath === img.relativePath);
+              return sum + (updatedImg?.realHeight || MIN_IMAGE_HEIGHT);
+            }, 0);
+          });
+          draft.columnHeights = newColumnHeights;
+        })
+      } else if (newWidth > 0 && state.containerWidth === 0) {
+        updateState(draft => {
+          draft.containerWidth = newWidth
+          if (draft.images.length > 0) {
+            const initialColumnWidth = newWidth / columnsCount;
+            draft.images = draft.images.map(img => ({
+              ...img,
+              realHeight: Math.max(initialColumnWidth / img.dimensions.width * img.dimensions.height, MIN_IMAGE_HEIGHT),
+            }))
+          }
+          if (draft.columnHeights.length !== columnsCount) {
+            draft.columnHeights = Array(columnsCount).fill(0);
+          }
+        })
+      }
     }
 
-    updateWidth()
-    window.addEventListener('resize', updateWidth)
-    return () => window.removeEventListener('resize', updateWidth)
-  }, [updateState])
+    updateContainerWidth()
+    const debouncedUpdateContainerWidth = _.debounce(updateContainerWidth, 300)
+    window.addEventListener('resize', debouncedUpdateContainerWidth)
+    return () => { window.removeEventListener('resize', updateContainerWidth) }
+  }, [columnsCount, MIN_IMAGE_HEIGHT, updateState, state.containerWidth, state.columns, state.images.length])
 
-  // 初始化图片数据 - 使用自然排序
+  //处理资源变化
   useEffect(() => {
+    if (columnWidth <= 0 && assets.length > 0) return
+
     const sortedAssets = [...assets].sort((a, b) =>
       naturalSortCompare(a.name, b.name)
     )
 
     updateState(draft => {
-      draft.images = sortedAssets.map(asset => ({
-        ...asset,
-        height: 0,
-        loaded: false,
-        visible: false
-      }))
+      if (draft.images.length !== sortedAssets.length || draft.images[0]?.relativePath !== sortedAssets[0]?.relativePath) {
+        draft.images = sortedAssets.map(asset => ({
+          ...asset,
+          realHeight: columnWidth > 0 ? Math.max(columnWidth / asset.dimensions.width * asset.dimensions.height, MIN_IMAGE_HEIGHT) : MIN_IMAGE_HEIGHT,
+        }))
+        draft.columns = Array(columnsCount).fill(0).map(() => [])
+        draft.visibleCount = INITIAL_VISIBLE_COUNT
+        draft.columnHeights = Array(columnsCount).fill(0)
+        preVisibleCount.current = 0
+        lastInViewRef.current = false;
+      }
     })
-  }, [assets, updateState])
+  }, [assets, columnWidth, columnsCount, MIN_IMAGE_HEIGHT, updateState])
 
-  // 逐步显示图片
+  //处理新增图片分配
   useEffect(() => {
-    if (state.images.length === 0) return
-    let timeout: NodeJS.Timeout
+    if (state.columns.length !== columnsCount || state.columnHeights.length !== columnsCount) {
+      if (containerRef.current?.clientWidth) {
+        updateState(draft => {
+          draft.containerWidth = containerRef.current?.clientWidth || 0
+          draft.columns = Array(columnsCount).fill(0).map(() => [])
+          draft.columnHeights = Array(columnsCount).fill(0)
+          preVisibleCount.current = 0
+          const newColumnWidth = draft.containerWidth / columnsCount;
+          draft.images = draft.images.map(img => ({
+            ...img,
+            realHeight: Math.max(newColumnWidth / img.dimensions.width * img.dimensions.height, MIN_IMAGE_HEIGHT),
+          }));
+          draft.visibleCount = INITIAL_VISIBLE_COUNT;
+        });
+      }
+      return;
+    }
 
-    const showImages = () => {
-      updateState(draft => {
-        const firstInvisibleIndex = draft.images.findIndex(img => !img.visible)
-        if (firstInvisibleIndex !== -1) {
-          draft.images[firstInvisibleIndex].visible = true
-        }
-      })
+    if (state.images.length === 0 || columnWidth <= 0) {
+      return;
+    }
 
-      const hasInvisibleImages = state.images.some(img => !img.visible)
-      if (hasInvisibleImages) {
-        timeout = setTimeout(showImages, 50)
+    const startIndex = preVisibleCount.current
+    const endIndex = Math.min(state.visibleCount, state.images.length);
+
+    if (startIndex < endIndex) {
+      const imagesToProcess = state.images.slice(startIndex, endIndex)
+
+      if (imagesToProcess.length > 0) {
+        updateState(draft => {
+          const currentColumnHeights = draft.columnHeights;
+
+          imagesToProcess.forEach((image) => {
+            const minHeight = Math.min(...currentColumnHeights)
+            let minHeightIndex = currentColumnHeights.indexOf(minHeight)
+
+            if (minHeightIndex < 0 || minHeightIndex >= columnsCount) {
+              minHeightIndex = 0
+            }
+
+            if (draft.columns[minHeightIndex]) {
+              const imageHeight = image.realHeight || MIN_IMAGE_HEIGHT;
+              draft.columns[minHeightIndex].push(image)
+              draft.columnHeights[minHeightIndex] += imageHeight
+            } else {
+              console.warn(`MasonryGallery: 尝试添加图片到不存在的列索引: ${minHeightIndex}`);
+            }
+          })
+        })
+        preVisibleCount.current = endIndex
       }
     }
+  }, [state.images, state.visibleCount, columnWidth, columnsCount, MIN_IMAGE_HEIGHT, updateState, state.columnHeights])
 
-    timeout = setTimeout(showImages, 0)
-    return () => clearTimeout(timeout)
-  }, [state.images.length, updateState, state.images])
-
-  // 触发懒加载、加载更多图片
+  // 处理懒加载
   useEffect(() => {
-    if (inView && state.visibleCount < state.images.length) {
+    if (inView && !lastInViewRef.current && state.visibleCount < state.images.length) {
       updateState(draft => {
-        draft.visibleCount = Math.min(draft.visibleCount + 10, draft.images.length)
+        draft.visibleCount = Math.min(draft.visibleCount + LOAD_MORE_COUNT, state.images.length)
       })
     }
+    lastInViewRef.current = inView;
   }, [inView, state.images.length, state.visibleCount, updateState])
-
-  // 当图片加载完成时更新高度
-  const handleImageLoad = (index: number, dimensions: { width: number; height: number }) => {
-    updateState(draft => {
-      if (!draft.images[index]) return
-
-      const aspectRatio = dimensions.width / dimensions.height
-      const calculatedHeight = columnWidth / aspectRatio
-      const finalHeight = Math.max(calculatedHeight, MIN_IMAGE_HEIGHT)
-
-      draft.images[index].height = finalHeight
-      draft.images[index].loaded = true
-    })
-  }
-
-  // 分配图片到最短的列
-  useEffect(() => {
-    if (state.images.length === 0 || columnWidth <= 0) return
-
-    const columnHeights = Array(columnsCount).fill(0)
-    const newColumns: ImageItem[][] = Array(columnsCount).fill([]).map(() => [])
-    const imagesToProcess = state.images.slice(0, state.visibleCount)
-
-    for (const image of imagesToProcess) {
-      const minHeightIndex = columnHeights.indexOf(Math.min(...columnHeights))
-      newColumns[minHeightIndex].push(image)
-      columnHeights[minHeightIndex] += image.loaded ? image.height : MIN_IMAGE_HEIGHT
-    }
-
-    updateState(draft => {
-      draft.columns = newColumns
-    })
-  }, [state.images, columnWidth, columnsCount, state.visibleCount, updateState])
 
   return (
     <div ref={containerRef} className="w-full">
-      <div className="flex gap-2">
-        {state.columns.map((column, columnIndex) => (
-          <div key={columnIndex} className="flex-1 flex flex-col gap-2">
-            {column.map((image) => {
-              const isSelected = selectedImagePaths.includes(image.relativePath)
+      {columnWidth > 0 && state.columns.length === columnsCount && (
+        <div className="flex gap-2">
+          {state.columns.map((column, columnIndex) => (
+            <div key={columnIndex} className="flex-1 flex flex-col gap-2">
+              {column.map((image) => {
+                const isSelected = selectedImagePaths.includes(image.relativePath)
+                return (
+                  <ImagePreview
+                    key={image.relativePath}
+                    asset={image}
+                    isSelected={isSelected}
+                    minHeight={MIN_IMAGE_HEIGHT}
+                    onClick={() => onSelectImage(image.relativePath)}
+                  />
+                )
+              })}
+            </div>
+          ))}
+        </div>
+      )}
 
-              return (
-                <ImagePreview
-                  key={image.relativePath}
-                  asset={image}
-                  isSelected={isSelected}
-                  height={image.loaded ? image.height : 'auto'}
-                  minHeight={MIN_IMAGE_HEIGHT}
-                  columnWidth={columnWidth}
-                  isVisible={image.visible}
-                  onLoad={(dimensions) => handleImageLoad(
-                    state.images.indexOf(image),
-                    dimensions
-                  )}
-                  onClick={() => onSelectImage(image.relativePath)}
-                  onCheckboxClick={(e) => {
-                    e.stopPropagation();
-                    onSelectImage(image.relativePath);
-                  }}
-                />
-              )
-            })}
-          </div>
-        ))}
-      </div>
-
-      {/* 懒加载触发器 */}
       <div
         ref={observerRef}
         className="h-10 w-full mt-4 flex items-center justify-center"
       >
-        {state.visibleCount < state.images.length && inView && (
-          <div className="animate-pulse text-muted-foreground text-sm">
-            加载更多...
+        {state.visibleCount < state.images.length && (
+          <div className="text-muted-foreground text-sm">
+            {inView ? '加载更多...' : ''}
           </div>
         )}
       </div>

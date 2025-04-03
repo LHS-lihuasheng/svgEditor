@@ -28,9 +28,7 @@ export interface DirectoryNode {
 
 // 用于MasonryGallery的扩展图片项
 export interface ImageItem extends ImageAsset {
-    height: number
-    loaded: boolean
-    visible: boolean
+    realHeight: number
 }
 
 // 资源查找函数类型

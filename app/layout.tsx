@@ -6,11 +6,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 import TopNav from "@/components/TopNav"
 import { MessageProvider } from '@/contexts/MessageContext'
 import { MessageModal } from "@/components/MessageModal"
-import { enableMapSet } from 'immer'
 
 const inter = Inter({ subsets: ["latin"] })
-
-enableMapSet()
 
 export const metadata: Metadata = {
   title: "WaveSVG",

@@ -4,7 +4,9 @@ import { createContext, useContext } from "react"
 import { useImmer } from "use-immer"
 import type { ImageAsset } from "@/types/asset"
 import { filterAssetsByDirectory, getImageAssetsWithDirectories } from "@/utils/assetUtils"
+import { enableMapSet } from 'immer'
 
+enableMapSet()
 // 状态类型
 interface AssetState {
   imageAssets: Map<string, ImageAsset>
