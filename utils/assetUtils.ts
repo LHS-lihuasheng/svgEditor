@@ -53,7 +53,8 @@ export const createImageAssetFromFile = async (
     lastModified: file.lastModified,
     directory,
     size: file.size,
-    hash: hash
+    hash: hash,
+    file: file
   }
 }
 
@@ -136,25 +137,30 @@ export const getImageAssetsWithDirectories = async (
       const processFilePromise = (async (): Promise<ImageAsset | null> => {
         try {
           const file = await fileHandle.getFile();
-            const pathArray = await rootDirectory.resolve(fileHandle);
+          const pathArray = await rootDirectory.resolve(fileHandle);
 
-            if (!pathArray) {
-              console.warn(`无法解析文件路径: ${fileHandle.name}`);
-              return null;
-            }
-
-            const relativePath = './' + pathArray.join('/');
-            const directory = pathArray.slice(0, -1).join('/');
-
-            const hash = await getHashFromWorker(file, relativePath);
-
-            const asset = await createImageAssetFromFile(file, relativePath, directory, hash);
-            return asset;
-
-          } catch (error) {
-            console.error(`处理文件 ${rootDirectory.resolve(fileHandle)}) 时出错:`, error);
+          if (!pathArray) {
+            console.warn(`无法解析文件路径: ${fileHandle.name}`);
             return null;
           }
+
+          const relativePath = './' + pathArray.join('/');
+          const directory = pathArray.slice(0, -1).join('/');
+
+          const hash = await getHashFromWorker(file, relativePath);
+
+          const asset = await createImageAssetFromFile(file, relativePath, directory, hash);
+          return asset;
+
+        } catch (error) {
+          let errorPath = fileHandle.name;
+          try {
+            const resolvedPath = await rootDirectory.resolve(fileHandle);
+            if (resolvedPath) errorPath = resolvedPath.join('/');
+          } catch (resolveError) { /* Ignore if resolve fails */ }
+          console.error(`处理文件 ${errorPath} 时出错:`, error);
+          return null;
+        }
       })();
       fileProcessingPromises.push(processFilePromise);
     } else if (handle.kind === 'directory' && !handle.name.startsWith('.')) {

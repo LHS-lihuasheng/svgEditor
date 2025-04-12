@@ -74,7 +74,7 @@ export function ComponentTreeItem({
     }
 
     return (
-      <div className="pl-4 pt-2 space-y-2">
+      <>
         {component.children.map((child, childIndex) => (
           <ComponentTreeItem
             key={child.id}
@@ -83,7 +83,7 @@ export function ComponentTreeItem({
             onDeleteRequest={onDeleteRequest}
           />
         ))}
-      </div>
+      </>
     );
   };
 
@@ -190,7 +190,7 @@ export function ComponentTreeItem({
       </div>
 
       {/* 组件内容区 */}
-      <div className="component-content p-4">
+      <div className="p-4 space-y-1">
         {renderChildren()}
       </div>
 

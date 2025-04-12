@@ -1,4 +1,4 @@
-import SVGEditorContainer from "@/components/svgeditor"
+import SVGEditorContainer from "@/components/svgEditor"
 
 export default function OperationsPage() {
   return (

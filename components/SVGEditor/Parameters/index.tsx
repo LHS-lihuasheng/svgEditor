@@ -188,62 +188,65 @@ export function Parameters() {
   return (
     <div
       className={cn(
-        "bg-white shadow-lg transition-[width] duration-300 ease-in-out overflow-hidden flex flex-col"
+        "bg-white shadow-lg transition-[width] duration-300 ease-in-out overflow-hidden flex flex-col h-full"
       )}
     >
-      <div className="flex items-center justify-end p-2 border-b">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={toggleParametersPanel}
-        >
-          {isParametersPanelOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </Button>
-      </div>
+      <div className="flex flex-col h-full justify-between">
+        {isParametersPanelOpen && (
+          <div className="p-4 flex-1 overflow-hidden">
+            <ScrollArea className="h-full pr-3">
+              <div className="space-y-4 text-nowrap">
+                {selectedComponent ? (
+                  <>
+                    <div className="text-sm flex items-center gap-2">
+                      <span className="font-medium">组件ID:</span>
+                      <span className="text-gray-700 font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">
+                        {selectedComponent.id}
+                      </span>
+                    </div>
 
-      {isParametersPanelOpen && (
-        <div className="p-4 flex-1 overflow-hidden">
-          <ScrollArea className="h-full pr-3">
-            <div className="space-y-4">
-              {selectedComponent ? (
-                <>
-                  <div className="text-sm flex items-center gap-2">
-                    <span className="font-medium">组件ID:</span>
-                    <span className="text-gray-700 font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">
-                      {selectedComponent.id}
-                    </span>
+                    <div className="border-t pt-4 mt-4 space-y-6">
+                      {/* 动画组件的特殊处理 */}
+                      {isAnimationComponent && <AnimationValuesEditor />}
+
+                      {/* 固定属性 */}
+                      {renderFixedProperties()}
+
+                      {/* 可编辑属性 */}
+                      {renderEditableProperties()}
+
+                      {/* 添加属性选择器 */}
+                      {renderAddPropertySelector()}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center h-[calc(100vh-150px)]">
+                    <div className="text-center p-6 rounded-lg bg-gray-50 max-w-xs">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-gray-600 text-sm font-medium">在中间组件树中选择要编辑的组件</p>
+                      <p className="text-gray-500 text-xs mt-2">请选择一个组件进行编辑</p>
+                    </div>
                   </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
 
-                  <div className="border-t pt-4 mt-4 space-y-6">
-                    {/* 动画组件的特殊处理 */}
-                    {isAnimationComponent && <AnimationValuesEditor />}
-
-                    {/* 固定属性 */}
-                    {renderFixedProperties()}
-
-                    {/* 可编辑属性 */}
-                    {renderEditableProperties()}
-
-                    {/* 添加属性选择器 */}
-                    {renderAddPropertySelector()}
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-[calc(100vh-150px)]">
-                  <div className="text-center p-6 rounded-lg bg-gray-50 max-w-xs">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <p className="text-gray-600 text-sm font-medium">在中间组件树中选择要编辑的组件</p>
-                    <p className="text-gray-500 text-xs mt-2">请选择一个组件进行编辑</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
+        {/* 按钮区域始终显示在底部 */}
+        <div className="flex items-center justify-end p-2 mt-auto border-t">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={toggleParametersPanel}
+          >
+            {isParametersPanelOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 } 

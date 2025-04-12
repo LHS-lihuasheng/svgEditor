@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<title>Examples of DataTransfer.{types,items} properties</title>
+<meta content="width=device-width" />
+<style>
+  div {
+    margin: 0em;
+    padding: 2em;
+  }
+
+  #target {
+    border: 1px solid black;
+  }
+</style>
+<script>
+  function dragstart_handler(ev) {
+    console.log("dragStart: target.id = " + ev.target.id);
+
+    // Add this element's id to the drag payload so the drop handler will
+    // know which element to add to its tree
+    ev.dataTransfer.setData("text/plain", ev.target.id);
+    ev.dataTransfer.effectAllowed = "move";
+  }
+
+  function drop_handler(ev) {
+    console.log("drop: target.id = " + ev.target.id);
+    ev.preventDefault();
+
+    // Get the id of the target and add the moved element to the target's DOM
+    const data = ev.dataTransfer.getData("text");
+    ev.target.appendChild(document.getElementById(data));
+
+    // Print each format type
+    for (let i = 0; i < ev.dataTransfer.types.length; i++) {
+      console.log(`… types[${i}] = ${ev.dataTransfer.types[i]}`);
+    }
+
+    // Print each item's "kind" and "type"
+    for (let i = 0; i < ev.dataTransfer.items.length; i++) {
+      console.log(
+        `… items[${i}].kind = ${ev.dataTransfer.items[i].kind}; type = ${ev.dataTransfer.items[i].type}`,
+      );
+    }
+  }
+
+  function dragover_handler(ev) {
+    console.log("dragOver");
+    ev.preventDefault();
+    // Set the dropEffect to move
+    ev.dataTransfer.dropEffect = "move";
+  }
+</script>
+
+<body>
+  <div draggable="true" id="drag-source">拖拽我</div>
+  <div id="drop-target">放置区域</div>
+
+  <script>
+    let prevDataTransfer = null;
+
+    document.getElementById('drag-source').addEventListener('dragstart', (e) => {
+      const dataTransfer = e.dataTransfer;
+      dataTransfer.setData('text/plain', '数据');
+
+      // 记录第一次的 dataTransfer 对象
+      if (!prevDataTransfer) {
+        prevDataTransfer = dataTransfer;
+      } else {
+        // 第二次拖拽时，检查是否是同一个对象
+        console.log('是否是同一个 dataTransfer 实例？', dataTransfer === prevDataTransfer); // 输出 false
+      }
+    });
+  </script>
+</body>
+
+</html>

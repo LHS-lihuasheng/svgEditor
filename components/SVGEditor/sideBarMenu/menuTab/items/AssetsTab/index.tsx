@@ -5,7 +5,11 @@ import { DirectoryTree } from "./DirectoryTree"
 import { FolderOpen, RefreshCw, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAssets } from "@/contexts/AssetContext"
-import { MasonryGallery } from "@/components/svgeditor/SideBarMenu/menuTab/items/AssetsTab/MasonryGallery"
+import { MasonryGallery } from "@/components/svgEditor/SideBarMenu/menuTab/items/AssetsTab/MasonryGallery"
+import { useCallback } from "react"
+
+// 自定义事件名称
+export const DIRECTORY_CHANGE_EVENT = 'svg-editor-directory-change';
 
 export function AssetsTab() {
   const {
@@ -21,6 +25,23 @@ export function AssetsTab() {
     currentAssets,
     isLoading
   } = useAssets()
+
+  // 处理目录切换并触发自定义事件
+  const handleDirectoryChange = useCallback((directory: string) => {
+    // 分发一个自定义事件，通知其他组件目录已经改变
+    const event = new CustomEvent(DIRECTORY_CHANGE_EVENT, {
+      detail: {
+        directory,
+        isRootDirectoryChange: false,
+        // 如果是切换到根目录，也附加根目录名称
+        rootDirectoryName: directory === 'root' && rootDirectory ? rootDirectory.name : undefined
+      }
+    });
+    window.dispatchEvent(event);
+
+    // 调用原始的changeDirectory函数
+    changeDirectory(directory);
+  }, [changeDirectory, rootDirectory]);
 
   // 修改选择目录的处理函数
   const handleSelectDirectory = async () => {
@@ -73,7 +94,7 @@ export function AssetsTab() {
           <DirectoryTree
             directories={directories}
             currentDirectory={currentDirectory}
-            onSelect={changeDirectory}
+            onSelect={handleDirectoryChange}
           />
 
           <div className="flex space-x-2 ml-2">

@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid file format" }, { status: 400 })
     }
 
-    if (file.size > 1024 * 1024) { // 1MB
+    if (file.size > 10 * 1024 * 1024) { // 10MB
       return NextResponse.json({ error: "File too large" }, { status: 400 })
     }
 

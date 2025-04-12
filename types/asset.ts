@@ -17,6 +17,7 @@ export interface ImageAsset {
     directory: string
     size: number
     hash: string
+    file?: File
 }
 
 // 目录树节点

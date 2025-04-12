@@ -6,6 +6,16 @@ import { useCode } from '@/contexts/CodeContext'
 import { useAssets } from '@/contexts/AssetContext'
 import { generatePreviewHTML } from "@/utils/assetUtils"
 
+// Helper function moved outside the component
+const prepareCodeForPreview = (svgCode: string): string => {
+    return svgCode.replace(
+        /background-image:\s*url\("([^"]+)"\)/g,
+        'background-image: url(\'$1\')'
+    );
+};
+
+const ASPECT_RATIO = 9 / 16
+
 export function PreviewTab() {
     const { isMenuBarOpen } = usePanel()
     const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -14,15 +24,6 @@ export function PreviewTab() {
     const { code } = useCode()
     const { findImageByPath } = useAssets()
     const [isIframeInitialized, setIsIframeInitialized] = useState(false)
-
-    const ASPECT_RATIO = 9 / 16
-
-    const prepareCodeForPreview = (svgCode: string): string => {
-        return svgCode.replace(
-            /background-image:\s*url\("([^"]+)"\)/g,
-            'background-image: url(\'$1\')'
-        );
-    };
 
     const processImagePaths = (svgCode: string): string => {
         const codeWithSingleQuotes = prepareCodeForPreview(svgCode);
@@ -64,12 +65,19 @@ export function PreviewTab() {
                         // 仅更新SVG内容部分
                         const svgContainer = doc.querySelector('.svg-container');
                         if (svgContainer) {
+                            const scrollTop = svgContainer.scrollTop; // 保存滚动位置
+
                             svgContainer.innerHTML = processImagePaths(code);
 
-                            // 恢复滚动位置
-                            if (scrollContainer) {
-                                scrollContainer.scrollTop = scrollTop;
-                            }
+                            // 使用 requestAnimationFrame 延迟恢复滚动位置
+                            iframeWindow?.requestAnimationFrame(() => {
+                                const currentContainer = doc.querySelector('.svg-container'); // 重新获取容器引用
+                                if (currentContainer) {
+                                    currentContainer.scrollTop = scrollTop;
+                                }
+                            });
+                        } else {
+                            console.warn("Preview update: .svg-container not found in iframe.");
                         }
                     }
                 } catch (error) {
@@ -110,13 +118,6 @@ export function PreviewTab() {
     useEffect(() => {
         calculateDimensions();
         updatePreview();
-    }, []);
-
-    // 组件卸载时重置初始化状态
-    useEffect(() => {
-        return () => {
-            setIsIframeInitialized(false);
-        };
     }, []);
 
     return (

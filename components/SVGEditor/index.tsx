@@ -42,9 +42,9 @@ function EditorLayout() {
   const { isMenuBarOpen, isParametersPanelOpen } = usePanel();
 
   const gridTemplateColumns = cn(
-    isMenuBarOpen ? "1fr" : "48px",
-    "2fr",
-    isParametersPanelOpen ? "1fr" : "48px"
+    isMenuBarOpen ? "350px" : "48px",
+    "1fr",
+    isParametersPanelOpen ? "350px" : "48px"
   );
 
   return (

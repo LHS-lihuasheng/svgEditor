@@ -23,12 +23,14 @@ type EditorAction =
     | { type: 'UPDATE_COMPONENT_STYLE'; payload: { id: string; property: string; value: any } }
     | { type: 'UPDATE_COMPONENT_ATTRIBUTE'; payload: { id: string; property: string; value: any } }
     | { type: 'DUPLICATE_COMPONENT'; payload: { id: string } }
-    | { type: 'HANDLE_DROP'; payload: { type: 'COMPONENT' | 'TEMPLATE'; dragItem: DragItem; targetId: string | null } };
+    | { type: 'HANDLE_DROP'; payload: { type: 'COMPONENT' | 'TEMPLATE'; dragItem: DragItem; targetId: string | null } }
+    | { type: 'RESTORE_STATE'; payload: { components: BaseComponent[]; selectedComponentId: string | null } };
 
 type EditorContextType = {
     // 状态
     components: BaseComponent[];
     selectedComponent: BaseComponent | null;
+    selectedComponentId: string | null;
 
     // 选择操作
     selectComponent: (id: string) => void;
@@ -44,6 +46,7 @@ type EditorContextType = {
     updateComponent: (updated: BaseComponent) => void;
     deleteComponent: (id: string) => void;
     resetComponents: () => void;
+    restoreState: (components: BaseComponent[], selectedComponentId: string | null) => void;
     // 组件属性操作
     updateComponentStyle: (componentId: string, styleProp: string, value: any) => void;
     updateComponentAttribute: (componentId: string, attrKey: string, value: any) => void;
@@ -216,6 +219,12 @@ function editorReducer(draft: EditorState, action: EditorAction) {
             break;
         }
 
+        case 'RESTORE_STATE': {
+            draft.components = action.payload.components;
+            draft.selectedComponentId = action.payload.selectedComponentId;
+            break;
+        }
+
         case 'HANDLE_DROP': {
             const { type, dragItem, targetId } = action.payload;
 
@@ -382,6 +391,10 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'DUPLICATE_COMPONENT', payload: { id: componentId } });
     }, [dispatch]);
 
+    const restoreState = useCallback((components: BaseComponent[], selectedComponentId: string | null) => {
+        dispatch({ type: 'RESTORE_STATE', payload: { components, selectedComponentId } });
+    }, [dispatch]);
+
     const handleDrop = useCallback((type: 'COMPONENT' | 'TEMPLATE', dragItem: DragItem, targetId: string | null) => {
         dispatch({ type: 'HANDLE_DROP', payload: { type, dragItem, targetId } });
     }, [dispatch]);
@@ -415,6 +428,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     const contextValue: EditorContextType = {
         components: state.components,
         selectedComponent,
+        selectedComponentId: state.selectedComponentId,
 
         selectComponent,
         clearSelection,
@@ -427,6 +441,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         updateComponent,
         deleteComponent,
         resetComponents,
+        restoreState,
 
         updateComponentStyle,
         updateComponentAttribute,

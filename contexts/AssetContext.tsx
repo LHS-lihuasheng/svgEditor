@@ -5,6 +5,7 @@ import { useImmer } from "use-immer"
 import type { ImageAsset } from "@/types/asset"
 import { filterAssetsByDirectory, getImageAssetsWithDirectories } from "@/utils/assetUtils"
 import { enableMapSet } from 'immer'
+import { DIRECTORY_CHANGE_EVENT } from '@/components/svgEditor/SideBarMenu/menuTab/items/AssetsTab'
 
 enableMapSet()
 // 状态类型
@@ -35,7 +36,7 @@ interface AssetContextType {
   findImageByPath: (path: string) => ImageAsset | undefined
   shiftFirstSelectedImage: () => ImageAsset | undefined
   clearSelectedImages: () => void
-  changeDirectory: (directory: string) => void
+  changeDirectory: (directory: string, callback?: (directory: string) => void) => void
   setLoading: (isLoading: boolean) => void
 }
 
@@ -72,13 +73,18 @@ export function AssetProvider({ children }: { children: React.ReactNode }) {
         const { assets: newAssets, directories: newDirectories } =
           await getImageAssetsWithDirectories(directoryHandle, directoryHandle)
 
-        // 使用 Immer 简化状态更新
         updateState(draft => {
           draft.rootDirectory = directoryHandle
           draft.imageAssets = newAssets
           draft.directories = newDirectories
           draft.currentDirectory = 'root'
         })
+
+        // 触发根目录变化事件
+        const event = new CustomEvent(DIRECTORY_CHANGE_EVENT, {
+          detail: { directory: 'root', isRootDirectoryChange: true, rootDirectoryName: directoryHandle.name }
+        });
+        window.dispatchEvent(event);
       } finally {
         updateState(draft => { draft.isLoading = false })
       }
@@ -118,7 +124,19 @@ export function AssetProvider({ children }: { children: React.ReactNode }) {
       })
     },
 
-    findImageByPath: (path: string) => path ? state.imageAssets.get(path) : undefined,
+    findImageByPath: (path: string) => {
+      if (!path) return undefined;
+
+      let decodedPath = path;
+      try {
+        decodedPath = decodeURIComponent(path);
+      } catch (e) {
+        console.warn(`无法解码路径: "${path}"`, e);
+      }
+
+      const lookupPath = decodedPath.startsWith('./') ? decodedPath : './' + decodedPath;
+      return state.imageAssets.get(lookupPath);
+    },
 
     shiftFirstSelectedImage: () => {
       if (state.selectedImagePaths.size === 0) return undefined
@@ -131,10 +149,15 @@ export function AssetProvider({ children }: { children: React.ReactNode }) {
       return state.imageAssets.get(firstPath)
     },
 
-    changeDirectory: (directory: string) => {
+    changeDirectory: (directory: string, callback?: (directory: string) => void) => {
       updateState(draft => {
         draft.currentDirectory = directory
       })
+
+      // 如果提供了回调函数，则执行它
+      if (callback) {
+        callback(directory)
+      }
     },
 
     setLoading: (loading: boolean) => {
